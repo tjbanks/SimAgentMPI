@@ -30,6 +30,7 @@ from ServerInterface import ServerInterface
 
 class SimJob(object):
     properties_file = ".properties"
+    log_file = ".log"
     version = "1.0"
     
     def __init__(self, sim_directory_object, job_directory):
@@ -64,7 +65,7 @@ class SimJob(object):
         self.dir_results = ""
         
         self.version = SimJob.version
-        self.log = ""
+        self.log = SimJob.log_file
         self.notes = ""
         self.status = ""
         self.batch_file = ""
@@ -79,7 +80,7 @@ class SimJob(object):
         self.server_email = ""
         self.server_status_email = "false"
         self.server_remote_identifier = ""
-        self.write_properties()
+        
         return
     
     

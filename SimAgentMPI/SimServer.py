@@ -44,6 +44,12 @@ class ServersFile(object):
                 return s
         return None
     
+    def get_server_byname(self, server_name):
+        for s in self.servers:
+            if s.name == server_name:
+                return s
+        return None
+    
     def update_server_details(self, sim_server):
         
         self.update = False

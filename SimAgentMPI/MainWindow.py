@@ -10,7 +10,9 @@ import tkinter as tk
 from tkinter import messagebox,ttk,filedialog
 from tktable import Table
 
+from NewJobWindow import JobEntryBox
 from NewServerConfig import ServerEntryBox
+from SimDirectory import SimDirectory
 
 import threading
 
@@ -18,7 +20,7 @@ class MainWindow():
     def __init__(self):
         self.root = tk.Tk()
         self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - Banks)"
-        self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri\n\nWritten by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nInitial Neuron Code:  Feng et al. (2016)\n\nEmail tbg28@mail.missouri.edu with questions"
+        self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri\n\nWritten by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
         
         self.window_size = '1220x600'
         self.default_status = "Status: Ready"
@@ -145,42 +147,55 @@ class MainWindow():
         
         #open project dir
         #print(filedialog.askdirectory())
-        
+        directory_frame = tk.LabelFrame(root, text="Directory")
         jobs_frame = tk.LabelFrame(root, text="Jobs")
         notes_frame = tk.LabelFrame(root, text="Job Notes")
         log_frame = tk.LabelFrame(root, text="Job Log")
-        
-        """=Jobs Frame======================================"""
         button_width = 15
+        
+        
+        b = tk.Button(directory_frame, text="Select Directory", command=self.load_dir, width=button_width)
+        b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
+        
+        self.sim_dir_var = tk.StringVar(root)
+        self.sim_dir_label = tk.Label(directory_frame, fg="blue",textvariable=self.sim_dir_var)
+        self.sim_dir_label.grid(column=1,row=0,sticky='news',padx=10,pady=5)
+            
+        """=Jobs Frame======================================"""
         
         buttons_frame = tk.LabelFrame(jobs_frame, text="")        
         buttons_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
         
-        b = tk.Button(buttons_frame, text="Clone to New", command=self.new_job, width=button_width)
+        
+        
+        b = tk.Button(buttons_frame, text="New Job", command=self.new_job, width=button_width)
         b.grid(pady=5, padx=5, column=1, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="New", command=self.new_job, width=button_width)
+        b = tk.Button(buttons_frame, text="Clone to New Job", command=self.new_job, width=button_width)
         b.grid(pady=5, padx=5, column=2, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Edit", command=self.new_job, width=button_width)
+        b = tk.Button(buttons_frame, text="Edit Job", command=self.new_job, width=button_width)
         b.grid(pady=5, padx=5, column=3, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Start", command=self.new_job, width=button_width)
+        b = tk.Button(buttons_frame, text="Start Job", command=self.new_job, width=button_width)
         b.grid(pady=5, padx=5, column=4, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Stop", command=self.new_job, width=button_width)
+        b = tk.Button(buttons_frame, text="Stop Job", command=self.new_job, width=button_width)
         b.grid(pady=5, padx=5, column=5, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Open Results", command=self.new_job, width=button_width)
-        b.grid(pady=5, padx=5, column=5, row=0, sticky="WE")
+        b = tk.Button(buttons_frame, text="Open Job Results", command=self.new_job, width=button_width)
+        b.grid(pady=5, padx=5, column=6, row=0, sticky="WE")
         
-        table = Table(jobs_frame, ["Name", "Server", "Status"], column_minwidths=[200, 200, 200],height=200)
+        def printrow(row):
+            print(str(table.row(row)))
+            
+        table = Table(jobs_frame, ["Name", "Server", "Status"], column_minwidths=[200, 200, 200],height=200, onselect_method=printrow)
         
         table.grid(row=1,column=0,padx=10,pady=10)
     
         table.set_data([[1,2,3],[4,5,6], [10,11,12], [13,14,15],[15,16,18], [19,20,21]])
         #table.cell(0,0, " a fdas fasd fasdf asdf asdfasdf asdf asdfa sdfas asd sadf ")
-        table.grid_propagate(False)
+        table.grid_propagate(False) #Is this really the only way to get it to a specific size?
         table.insert_row([22,23,24])
         table.insert_row([25,26,27],index=0)
         
@@ -195,10 +210,10 @@ class MainWindow():
         """================================================="""
         
         
-        
-        jobs_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5,columnspan=2)
-        notes_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5)
-        log_frame.grid(column=1,row=1,sticky='news',padx=10,pady=5)
+        directory_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5,columnspan=2)
+        jobs_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5,columnspan=2)
+        notes_frame.grid(column=0,row=2,sticky='news',padx=10,pady=5)
+        log_frame.grid(column=1,row=2,sticky='news',padx=10,pady=5)
         
         return
 
@@ -207,15 +222,18 @@ class MainWindow():
             
     def about(self):
         messagebox.showinfo("About", self.about_text, icon='info')
-        
+            
     def new_job(self):
+        new_job = JobEntryBox(self.root, self.sim_dir)
+        if(new_job.confirm and new_job.is_valid()):
+            self.sim_dir.add_new_job(new_job.to_simjob())
+            return
         return
     
-    
-"""    
-def main():
-    main_window = MainWindow()
-    main_window.show()
-    
-main()
-"""
+    def load_dir(self):
+            dir_ = filedialog.askdirectory()
+            if not dir_:
+                return
+            self.sim_dir = SimDirectory(dir_,initialize=True)
+            self.sim_dir_var.set(self.sim_dir.sim_directory)
+            return

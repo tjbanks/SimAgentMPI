@@ -208,21 +208,21 @@ class Scrolling_Area(Frame, object):
         self.canvas.configure(scrollregion="0 0 %s %s" % (window_width, window_height), width=canvas_width, height=canvas_height)
         self.canvas.itemconfigure("inner_frame", width=window_width, height=window_height)
 
+def cell_selected(event,table,row):
+    table.select_row(row)
+
 class Cell(Frame):
     """Base class for cells"""
 
-def cell_selected(event,row):
-    print("Row selected: " + str(row))
-
 class Data_Cell(Cell):
-    def __init__(self, master, variable, anchor=W, bordercolor=None, borderwidth=1, padx=0, pady=0, background=None, foreground=None, font=None, row_num=0):
+    def __init__(self, master, variable, anchor=W, bordercolor=None, borderwidth=1, padx=0, pady=0, background=None, foreground=None, font=None, row_num=0, table=None):
         Cell.__init__(self, master, background=background, highlightbackground=bordercolor, highlightcolor=bordercolor, highlightthickness=borderwidth, bd= 0)
 
         self._message_widget = Message(self, textvariable=variable, font=font, background=background, foreground=foreground)
         self._message_widget.pack(expand=True, padx=padx, pady=pady, anchor=anchor)
         
-        self.bind('<Button-1>', lambda event, row=row_num: cell_selected(event, row))
-        self._message_widget.bind('<Button-1>', lambda event, row=row_num: cell_selected(event, row))
+        self.bind('<Button-1>', lambda event, row=row_num, table=table: cell_selected(event, table, row))
+        self._message_widget.bind('<Button-1>', lambda event, row=row_num, table=table: cell_selected(event, table, row))
 
 class Header_Cell(Cell):
     def __init__(self, master, text, bordercolor=None, borderwidth=1, padx=0, pady=0, background=None, foreground=None, font=None, anchor=CENTER, separator=True):
@@ -243,10 +243,13 @@ class Header_Cell(Cell):
         self.configure(height=height, width=width)
         
 class Table(Frame):
-    def __init__(self, master, columns, column_weights=None, column_minwidths=None, height=500, minwidth=20, minheight=20, padx=5, pady=5, cell_font=None, cell_foreground="black", cell_background="white", cell_anchor=W, header_font=None, header_background="white", header_foreground="black", header_anchor=CENTER, bordercolor = "#999999", innerborder=True, outerborder=True, stripped_rows=("#EEEEEE", "white"), on_change_data=None, mousewheel_speed = 2, scroll_horizontally=False, scroll_vertically=True):
+    def __init__(self, master, columns, column_weights=None, column_minwidths=None, height=500, minwidth=20, minheight=20, padx=5, pady=5, cell_font=None, cell_foreground="black", cell_background="white", cell_anchor=W, header_font=None, header_background="white", header_foreground="black", header_anchor=CENTER, bordercolor = "#999999", innerborder=True, outerborder=True, stripped_rows=("#EEEEEE", "white"), on_change_data=None, mousewheel_speed = 2, scroll_horizontally=False, scroll_vertically=True,onselect_method=None):
         outerborder_width = 1 if outerborder else 0
 
         Frame.__init__(self,master, bd= 0)
+        
+        self.selected_row = -1
+        self.onselect_method = onselect_method
 
         self._cell_background = cell_background
         self._cell_foreground = cell_foreground
@@ -339,16 +342,16 @@ class Table(Frame):
         for i in range(number_of_rows, number_of_rows+n):
             list_of_vars = []
             for j in range(number_of_columns):
-                var = StringVar()
+                var = StringVar()#idea -> extend this class to hold a Data_Cell array, call all cells config when selected, will also need a reset to original color method, store all Datacells in array too
                 list_of_vars.append(var)
 
                 if self._stripped_rows:
-                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._stripped_rows[i%2], foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor, row_num=i)
+                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._stripped_rows[i%2], foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor, row_num=i, table=self)
                 else:
-                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._cell_background, foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor,row_num=i)
+                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._cell_background, foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor,row_num=i, table=self)
 
                 cell.grid(row=i, column=j, sticky=N+E+W+S)
-
+                #cell.config(bg="blue")
             self._data_vars.append(list_of_vars)
             
         if number_of_rows == 0:
@@ -410,6 +413,15 @@ class Table(Frame):
     @property
     def number_of_columns(self):
         return self._number_of_columns
+    
+    def row_objs(self, index):
+        row = []
+        row_of_vars = self._data_vars[index]
+
+        for j in range(self.number_of_columns):
+            row.append(row_of_vars[j])
+            
+        return row
 
     def row(self, index, data=None):
         if data is None:
@@ -524,6 +536,11 @@ class Table(Frame):
 
     def on_change_data(self, callback):
         self._on_change_data = callback
+        
+    def select_row(self, row):
+        self.selected_row = row
+        if(self.onselect_method):
+            self.onselect_method(self.selected_row)
 
 if __name__ == "__main__":
     try:

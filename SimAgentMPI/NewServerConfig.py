@@ -44,9 +44,7 @@ class ServerEntryBox:
             self.user = tk.StringVar(top)
             self.password = tk.StringVar(top)
             self.keyfile = tk.StringVar(top)
-            self.partition = tk.StringVar(top)
-            self.nodes = tk.StringVar(top)
-            self.cores = tk.StringVar(top)
+            
             self.nsg_url = tk.StringVar(top)
             self.nsg_user = tk.StringVar(top)
             self.nsg_password = tk.StringVar(top)
@@ -252,5 +250,6 @@ class ServerEntryBox:
             self.confirm = True
             self.save_file()
             self.top.destroy()
+            
         def cancel(self):
             self.top.destroy()

@@ -30,8 +30,7 @@ import zipfile
 class SimDirectory(object):
     results_folder_name = "SimAgentResults"
      
-    def __init__(self, directory, servers_file_obj, initialize=False):
-        self.servers_file_obj = servers_file_obj
+    def __init__(self, directory, initialize=False):
         self.sim_directory = directory
         self.sim_directory_relative = os.path.basename(self.sim_directory)
         self.sim_jobs = []
@@ -61,7 +60,7 @@ class SimDirectory(object):
         
         #Initialize all jobs
         for job_folder in results_dir_folder_names:
-            self.sim_jobs.append(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
+            self.add_new_job(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
         
         
         return
@@ -101,7 +100,7 @@ class SimDirectory(object):
     def add_new_job(self,simjob):
         self.sim_jobs.append(simjob)
         return
-    
+        
 """    
 def test():
     directory = "C:\\Users\\Tyler\\Desktop\\git_stage\\Sample_Model"
