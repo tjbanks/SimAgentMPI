@@ -6,6 +6,7 @@ Created on Sun May 20 16:46:40 2018
 """
 import os
 from nsg.nsgclient import Client
+from SimServer import ServersFile
 
 class ServerInterface(object):
     
@@ -13,12 +14,9 @@ class ServerInterface(object):
         return
     
     def get_server(self, simjob):
-        servers = simjob.sim_directory_object.servers_file_obj
+        servers = ServersFile()
         server = servers.get_server(simjob.server_connector) #will return Mone if not found
         
-        if not server:
-            raise Exception("Server connection not found in servers file")
-            
         return server
     
     def validate_simjob(self, simjob):

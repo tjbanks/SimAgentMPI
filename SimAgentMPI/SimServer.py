@@ -5,6 +5,7 @@ Created on Sun May 20 16:46:40 2018
 @author: Tyler
 """
 import json
+import os.path
 
 class ServersFile(object):
     servers_file = ".servers"
@@ -13,18 +14,28 @@ class ServersFile(object):
         if not filename:
             self.filename = ServersFile.servers_file
             
+        if not os.path.isfile(self.filename):
+            self.create_file()
+            
         self.reload_servers()
+        
+        
+    def create_file(self):
+        open(self.filename, 'a').close()
+        return
     
     def reload_servers(self):
-        json_data = None
+        self.json_data = None
         self.servers = []
         
-        with open(self.filename) as json_file:  
-            json_data = json.load(json_file)
-        
-        for s in json_data:
-            self.servers.append(SimServer().from_dict(s))#joson load array of dicts
-                
+        try:
+            with open(self.filename) as json_file:  
+                self.json_data = json.load(json_file)
+            
+            for s in self.json_data:
+                self.servers.append(SimServer().from_dict(s))#joson load array of dicts
+        except Exception as e:
+            print(e)
         return self.servers
     
     def get_server(self, server_id):
@@ -33,19 +44,30 @@ class ServersFile(object):
                 return s
         return None
     
-    def add_server(self, sim_server):
-        self.servers.append(sim_server)
+    def update_server_details(self, sim_server):
+        
+        self.update = False
+        for s in self.servers:
+            if s.id == sim_server.id:
+                self.update = True
+                s.from_dict(sim_server.to_dict())
+        if not self.update:
+            self.servers.append(sim_server)
+            
+            
         json_data = []
         for s in self.servers:
-            json_data.append(s.to_dict)
+            json_data.append(s.to_dict())
+            
         with open(self.filename, 'w') as outfile:  
             json.dump(json_data, outfile)
         return
 
 class SimServer(object):
     propname_id = "id"
+    propname_name = "name"
     propname_type = "type"
-    propnamee_host = "host"
+    propname_host = "host"
     propname_port = "port"
     propname_user = "user"
     propname_password = "password"
@@ -56,13 +78,18 @@ class SimServer(object):
     
     
     def __init__(self):
+        self.set_to_defaults()
+        return
+    
+    def set_to_defaults(self):
         self.id = "-1"
+        self.name = ""
         self.type = "nsg"
         self.host = ""
         self.port = "22"
         self.user = "user"
         self.password = "pass"
-        self.priv_key_location = "."
+        self.priv_key_location = ""
         self.nsg_api_url = "https://nsgr.sdsc.edu:8443/cipresrest/v1"
         self.nsg_api_appname = "nsgappname"
         self.nsg_api_appid = "nsgappname-id"
@@ -71,6 +98,7 @@ class SimServer(object):
     def to_dict(self):
         data = {}
         data[self.propname_id] = self.id
+        data[self.propname_name] = self.name
         data[self.propname_type] = self.type
         data[self.propname_host] = self.host
         data[self.propname_port] = self.port
@@ -84,6 +112,7 @@ class SimServer(object):
     
     def from_dict(self, data):
         self.id = data[self.propname_id]
+        self.name = data[self.propname_name]
         self.type = data[self.propname_type]
         self.host = data[self.propname_host]
         self.port = data[self.propname_port]

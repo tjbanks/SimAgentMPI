@@ -8,6 +8,9 @@ from Utils import CreateToolTip, Autoresized_Notebook
 
 import tkinter as tk
 from tkinter import messagebox,ttk,filedialog
+from tktable import Table
+
+from NewServerConfig import ServerEntryBox
 
 import threading
 
@@ -121,24 +124,19 @@ class MainWindow():
         threading.Timer(4.0, self.reset_app_status).start()
         
     def menu_bar(self, root):
-        def hello():
-            messagebox.showinfo("Create New Server", "To be implemented")
             
-        def about():
-            messagebox.showinfo("About", self.about_text, icon='info')
-    
         menubar = tk.Menu(root)
         
         # create a pulldown menu, and add it to the menu bar
         filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Add Server", command=hello)
+        filemenu.add_command(label="Add Server", command=self.add_server)
         #filemenu.add_command(label="Save", command=hello)
         #filemenu.add_separator()
         #filemenu.add_command(label="Exit", command=root.quit)
         menubar.add_cascade(label="File", menu=filemenu)
         
         helpmenu = tk.Menu(menubar, tearoff=0)
-        helpmenu.add_command(label="About", command=about)
+        helpmenu.add_command(label="About", command=self.about)
         menubar.add_cascade(label="Help", menu=helpmenu)
         return menubar
     
@@ -146,5 +144,78 @@ class MainWindow():
     def jobs_page(self, root):
         
         #open project dir
-        print(filedialog.askdirectory())
+        #print(filedialog.askdirectory())
+        
+        jobs_frame = tk.LabelFrame(root, text="Jobs")
+        notes_frame = tk.LabelFrame(root, text="Job Notes")
+        log_frame = tk.LabelFrame(root, text="Job Log")
+        
+        """=Jobs Frame======================================"""
+        button_width = 15
+        
+        buttons_frame = tk.LabelFrame(jobs_frame, text="")        
+        buttons_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        b = tk.Button(buttons_frame, text="Clone to New", command=self.new_job, width=button_width)
+        b.grid(pady=5, padx=5, column=1, row=0, sticky="WE")
+        
+        b = tk.Button(buttons_frame, text="New", command=self.new_job, width=button_width)
+        b.grid(pady=5, padx=5, column=2, row=0, sticky="WE")
+        
+        b = tk.Button(buttons_frame, text="Edit", command=self.new_job, width=button_width)
+        b.grid(pady=5, padx=5, column=3, row=0, sticky="WE")
+        
+        b = tk.Button(buttons_frame, text="Start", command=self.new_job, width=button_width)
+        b.grid(pady=5, padx=5, column=4, row=0, sticky="WE")
+        
+        b = tk.Button(buttons_frame, text="Stop", command=self.new_job, width=button_width)
+        b.grid(pady=5, padx=5, column=5, row=0, sticky="WE")
+        
+        b = tk.Button(buttons_frame, text="Open Results", command=self.new_job, width=button_width)
+        b.grid(pady=5, padx=5, column=5, row=0, sticky="WE")
+        
+        table = Table(jobs_frame, ["Name", "Server", "Status"], column_minwidths=[200, 200, 200],height=200)
+        
+        table.grid(row=1,column=0,padx=10,pady=10)
+    
+        table.set_data([[1,2,3],[4,5,6], [10,11,12], [13,14,15],[15,16,18], [19,20,21]])
+        #table.cell(0,0, " a fdas fasd fasdf asdf asdfasdf asdf asdfa sdfas asd sadf ")
+        table.grid_propagate(False)
+        table.insert_row([22,23,24])
+        table.insert_row([25,26,27],index=0)
+        
+        """=Note Frame======================================"""
+        
+        
+        
+        
+        """=Logs Frame======================================"""
+        
+        
+        """================================================="""
+        
+        
+        
+        jobs_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5,columnspan=2)
+        notes_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5)
+        log_frame.grid(column=1,row=1,sticky='news',padx=10,pady=5)
+        
         return
+
+    def add_server(self):
+        ServerEntryBox(self.root)#,server_id="180521092555")
+            
+    def about(self):
+        messagebox.showinfo("About", self.about_text, icon='info')
+        
+    def new_job(self):
+        return
+    
+    
+"""    
+def main():
+    main_window = MainWindow()
+    main_window.show()
+    
+main()
+"""
