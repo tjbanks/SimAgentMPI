@@ -43,9 +43,11 @@ class JobEntryBox:
             self.server_nodes = tk.StringVar(top)
             self.server_cores = tk.StringVar(top)
             self.server_nsg_tool = tk.StringVar(top)
+            self.server_ssh_tool = tk.StringVar(top)
             self.server_nsg_python = tk.IntVar(top)
             self.server_mpi_partition = tk.StringVar(top)
             self.server_max_runtime = tk.StringVar(top)
+            self.server_max_runtime.set("1")
             #self.server_email = tk.StringVar(top)
             self.server_status_email = tk.IntVar(top)
             self.confirm = tk.BooleanVar(top)
@@ -57,7 +59,7 @@ class JobEntryBox:
         
         def display(self):            
             top = self.top
-            top.geometry('375x375')
+            top.geometry('375x435')
             top.resizable(0,0)
             top.title(self.window_title)
            
@@ -65,10 +67,10 @@ class JobEntryBox:
             def on_server_type_change(type_):
                 if(type_ == "nsg"):
                     conn_option_frame.grid_forget()
-                    nsgconn_option_frame.grid(column=0,row=14,sticky='news',padx=10,pady=5,columnspan=2)
+                    nsgconn_option_frame.grid(column=0,row=14,sticky='news',padx=10,pady=5,columnspan=3)
                 elif(type_ == "ssh"):
                     nsgconn_option_frame.grid_forget()
-                    conn_option_frame.grid(column=0,row=15,sticky='news',padx=10,pady=5,columnspan=2)
+                    conn_option_frame.grid(column=0,row=15,sticky='news',padx=10,pady=5,columnspan=3)
                 else:
                     conn_option_frame.grid_forget()
                     nsgconn_option_frame.grid_forget()
@@ -99,6 +101,9 @@ class JobEntryBox:
             def change_dropdown_nsg_tool(*args):
                 return
             
+            def change_dropdown_ssh_tool(*args):
+                return
+            
             def validate(action, index, value_if_allowed,
                        prior_value, text, validation_type, trigger_type, widget_name):
                 if text in ' ':
@@ -110,41 +115,55 @@ class JobEntryBox:
             
             tk.Label(top, text='New Remote Job').grid(row=0,column=0,sticky="WE",pady=15, columnspan=3)
             
+            general_option_frame = tk.LabelFrame(top, text="General")
             
-            tk.Label(top, text='Sim Job Name',width=15, background='light gray', relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(top,width=25,textvariable=self.name,validate='key', validatecommand=vcmd)
+            tk.Label(general_option_frame, text='Sim Job Name',width=15, background='light gray', relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(general_option_frame,width=25,textvariable=self.name,validate='key', validatecommand=vcmd)
             self.name_e.grid(row=1,column=1,padx=5,columnspan=1)
-                                    
-            tk.Label(top, text='Batch File',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(top,width=25,textvariable=self.batch_file,state=tk.DISABLED)
-            self.name_e.grid(row=2,column=1,padx=5,columnspan=1)
-            b = tk.Button(top, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
             
-            tk.Label(top, text='Nodes',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(top,width=25,textvariable=self.server_nodes)
-            self.name_e.grid(row=3,column=1,padx=5,columnspan=1)
             
-            tk.Label(top, text='Cores',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(top,width=25,textvariable=self.server_cores)
-            self.name_e.grid(row=4,column=1,padx=5,columnspan=1)
-            
-            tk.Label(top, text='Server Connection',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(general_option_frame, text='Server Connection',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
             self.server_choices = self.get_connections()
-            popupMenu = OptionMenu(top, self.server_connector, *self.server_choices)
+            popupMenu = OptionMenu(general_option_frame, self.server_connector, *self.server_choices)
             popupMenu.grid(row = 5, column =1)
             self.server_connector.trace('w', change_dropdown)
-            b = tk.Button(top, text="New", command=new_server)
+            b = tk.Button(general_option_frame, text="New", command=new_server)
             b.grid(pady=5, padx=5, column=2, row=5, sticky="WE",columnspan=1)
             
+            general_option_frame.grid(column=0,row=2,sticky='news',padx=10,pady=5,columnspan=3)
             
             conn_option_frame = tk.LabelFrame(top, text="SSH Connection Parameters")
             nsgconn_option_frame = tk.LabelFrame(top, text="NSG Connection Parameters")
             
             ###SSH###
+            
+            tk.Label(conn_option_frame, text='Tool',width=15, background='light gray',relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5)
+            self.ssh_tool_choices = ServerInterface().get_ssh_tools()
+            popupMenu = OptionMenu(conn_option_frame, self.server_ssh_tool, *self.ssh_tool_choices)
+            popupMenu.grid(row = 1, column =1)
+            self.server_ssh_tool.trace('w', change_dropdown_ssh_tool)
                     
-            tk.Label(conn_option_frame, text='Partition',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
+            tk.Label(conn_option_frame, text='Batch File',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.batch_file,state=tk.DISABLED)
+            self.name_e.grid(row=2,column=1,padx=5,columnspan=1)
+            b = tk.Button(conn_option_frame, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
+            
+            tk.Label(conn_option_frame, text='Partition',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
             self.host_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_mpi_partition)
-            self.host_e.grid(row=2,column=1,padx=5)
+            self.host_e.grid(row=3,column=1,padx=5)
+            
+            tk.Label(conn_option_frame, text='Nodes',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_nodes)
+            self.name_e.grid(row=4,column=1,padx=5,columnspan=1)
+            
+            tk.Label(conn_option_frame, text='Cores',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_cores)
+            self.name_e.grid(row=5,column=1,padx=5,columnspan=1)
+            
+            tk.Label(conn_option_frame, text='Max Run (hours)',width=15, background='light gray',relief=tk.GROOVE).grid(row=6,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_max_runtime)
+            self.name_e.grid(row=6,column=1,padx=5,columnspan=1)
+            
                         
             ####NSG###
             
@@ -154,17 +173,33 @@ class JobEntryBox:
             popupMenu.grid(row = 2, column =1)
             self.server_nsg_tool.trace('w', change_dropdown_nsg_tool)
             
+            tk.Label(nsgconn_option_frame, text='Main Run File',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.batch_file,state=tk.DISABLED)
+            self.name_e.grid(row=3,column=1,padx=5,columnspan=1)
+            b = tk.Button(nsgconn_option_frame, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=3, sticky="WE",columnspan=1)
             
-            tk.Label(nsgconn_option_frame, text='Uses Python',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
-            tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_nsg_python).grid(row=3,column=1,padx=5, sticky='W')
+            tk.Label(nsgconn_option_frame, text='Nodes',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nodes)
+            self.name_e.grid(row=4,column=1,padx=5,columnspan=1)
             
-            tk.Label(nsgconn_option_frame, text='Send Status Emails',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5)
-            tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email).grid(row=4,column=1,padx=5, sticky='W')
+            tk.Label(nsgconn_option_frame, text='Cores',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_cores)
+            self.name_e.grid(row=5,column=1,padx=5,columnspan=1)
+            
+            tk.Label(nsgconn_option_frame, text='Max Run (hours)',width=15, background='light gray',relief=tk.GROOVE).grid(row=6,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_max_runtime)
+            self.name_e.grid(row=6,column=1,padx=5,columnspan=1)
+                        
+            tk.Label(nsgconn_option_frame, text='Uses Python',width=15, background='light gray',relief=tk.GROOVE).grid(row=7,column=0,pady=5,padx=5)
+            tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_nsg_python).grid(row=7,column=1,padx=5, sticky='W')
+            
+            tk.Label(nsgconn_option_frame, text='Send Status Emails',width=15, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
+            tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email).grid(row=8,column=1,padx=5, sticky='W')
              
             #Return
                         
             button_frame = tk.Frame(top)
-            button_frame.grid(row=20,column=0,columnspan=2)
+            button_frame.grid(row=20,column=0,columnspan=3)
             
             b = tk.Button(button_frame, text="Ok", command=self.ok)
             b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
@@ -202,6 +237,7 @@ class JobEntryBox:
             simjob.server_nodes = self.server_nodes.get()
             simjob.server_cores = self.server_cores.get()
             simjob.server_nsg_tool = self.server_nsg_tool.get()
+            simjob.server_ssh_tool = self.server_ssh_tool.get()
             simjob.server_nsg_python = str(self.server_nsg_python.get())
             simjob.server_mpi_partition = self.server_mpi_partition.get()
             simjob.server_max_runtime = self.server_max_runtime.get()

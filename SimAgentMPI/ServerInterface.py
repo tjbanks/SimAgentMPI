@@ -32,11 +32,11 @@ class ServerInterface(object):
         server = self.get_server(simjob)
         if server:#check to make sure we have a valid server
             if(server.type == "nsg"):
-                
+                simjob.append_log("Creating NSG parameter files: " + nsg_template_param_file + "," + nsg_template_input_file)
                 #generate new properties
-                with open(os.path.join(simjob.job_directory,nsg_template_input_file), 'w') as the_file:
+                with open(os.path.join(simjob.sim_directory_object.sim_results_dir,simjob.job_directory,nsg_template_input_file), 'w') as the_file:
                     the_file.write('{}={}\n'.format("infile_",os.path.join(simjob.job_directory, simjob.file_snapshotzip)))
-                with open(os.path.join(simjob.job_directory,nsg_template_param_file), 'w') as the_file:
+                with open(os.path.join(simjob.sim_directory_object.sim_results_dir, simjob.job_directory,nsg_template_param_file), 'w') as the_file:
                     the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
                     the_file.write('{}={}\n'.format("filename_",simjob.batch_file))
                     the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
@@ -47,23 +47,31 @@ class ServerInterface(object):
                     the_file.write('{}={}\n'.format("singlelayer_","0")) 
                     
                 #validate
+                
                 nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
-            
-                #status = nsg.validateJobTemplate(simjob.job_directory)
-                #if(validate_only):
-                #    return status
+                
+                simjob.append_log("Validating job build with NSG...")
+                status = nsg.validateJobTemplate(simjob.job_directory_absolute)
+                if status == "true":
+                    simjob.append_log("NSG Template validation failed. See debug.")
+                else:
+                    simjob.append_log("NSG Template validation success")
+                    
+                if(validate_only):
+                    return
                 
                 #status = nsg.submitJobTemplate(simjob.job_directory,metadata={"statusEmail" : simjob.server_status_email})
                 
-                #return status
                 
-                return "good"
             
             
             elif(server.type == "ssh"):
-                return
+                simjob.append_log("Starting SSH connection process")
+                simjob.append_log("ssh to be implemented")
+        else:
+            simjob.append_log("ERROR: not a valid server connector")
             
-        return "not a valid server connector"
+        return 
     
     
     def stop_simjob(self, simjob):
@@ -74,6 +82,11 @@ class ServerInterface(object):
         #implement in api sometime... see http://www.nsgportal.org/guide.html#ToolAPI --> /tool
         
         tools = ["NEURON75_TG","NEURON74_TG","NEURON73_TG"]
+        return tools
+    
+    def get_ssh_tools(self):
+        
+        tools = ["sbatch"]
         return tools
     
     """THREAD THIS TASK"""

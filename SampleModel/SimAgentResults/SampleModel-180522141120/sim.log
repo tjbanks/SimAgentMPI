@@ -1,0 +1,13 @@
+18-05-22 14:11:38 > Job created
+18-05-22 15:09:07 > Run initiated
+18-05-22 15:09:07 > Creating directory snapshot
+18-05-22 15:09:07 > SampleModel-180522141120-snap.zip created
+18-05-22 15:09:07 > Creating NSG parameter files: param.properties,input.properties
+18-05-22 15:09:07 > Validating job build with NSG...
+18-05-22 15:09:08 > NSG Template validation success
+18-05-22 15:15:51 > Run initiated
+18-05-22 15:15:51 > Creating directory snapshot
+18-05-22 15:15:51 > SampleModel-180522141120-snap.zip created
+18-05-22 15:15:51 > Creating NSG parameter files: param.properties,input.properties
+18-05-22 15:15:51 > Validating job build with NSG...
+18-05-22 15:15:52 > NSG Template validation success

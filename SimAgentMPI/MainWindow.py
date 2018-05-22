@@ -153,6 +153,9 @@ class MainWindow():
         self.notes_frame = tk.LabelFrame(root, text="Notes")
         self.log_frame = tk.LabelFrame(root, text="Log")
         button_width = 15
+        self.selected_job_name = None
+        self.log_refresh_time = 5
+        self.refresh_log_periodically()
         
         
         b = tk.Button(self.directory_frame, text="Select Directory", command=self.load_dir, width=button_width)
@@ -169,23 +172,23 @@ class MainWindow():
         
         
         
-        b = tk.Button(buttons_frame, text="New Job", command=self.new_job, width=button_width)
-        b.grid(pady=5, padx=5, column=1, row=0, sticky="WE")
+        self.b_new = tk.Button(buttons_frame, text="New Job", command=self.new_job, width=button_width,state=tk.DISABLED)
+        self.b_new.grid(pady=5, padx=5, column=1, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Clone to New Job", command=self.clone_job, width=button_width)
-        b.grid(pady=5, padx=5, column=2, row=0, sticky="WE")
+        self.b_clone = tk.Button(buttons_frame, text="Clone to New Job", command=self.clone_job, width=button_width,state=tk.DISABLED)
+        self.b_clone.grid(pady=5, padx=5, column=2, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Edit Job", command=self.edit_job, width=button_width)
-        b.grid(pady=5, padx=5, column=3, row=0, sticky="WE")
+        self.b_edit = tk.Button(buttons_frame, text="Edit Job", command=self.edit_job, width=button_width,state=tk.DISABLED)
+        self.b_edit.grid(pady=5, padx=5, column=3, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Start Job", command=self.start_job, width=button_width)
-        b.grid(pady=5, padx=5, column=4, row=0, sticky="WE")
+        self.b_start = tk.Button(buttons_frame, text="Start Job", command=self.start_job, width=button_width,state=tk.DISABLED)
+        self.b_start.grid(pady=5, padx=5, column=4, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Stop Job", command=self.stop_job, width=button_width)
-        b.grid(pady=5, padx=5, column=5, row=0, sticky="WE")
+        self.b_stop = tk.Button(buttons_frame, text="Stop Job", command=self.stop_job, width=button_width,state=tk.DISABLED)
+        self.b_stop.grid(pady=5, padx=5, column=5, row=0, sticky="WE")
         
-        b = tk.Button(buttons_frame, text="Open Job Folder", command=self.open_job_folder, width=button_width)
-        b.grid(pady=5, padx=5, column=6, row=0, sticky="WE")
+        self.b_open = tk.Button(buttons_frame, text="Open Job Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
+        self.b_open.grid(pady=5, padx=5, column=6, row=0, sticky="WE")
                 
         
             
@@ -203,16 +206,16 @@ class MainWindow():
         
         """=Note Frame======================================"""
         
-        console = tk.Text(self.notes_frame)
-        console.config(width= 60, height=12, bg='white',fg='black')
-        console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        self.notes_console = tk.Text(self.notes_frame)
+        self.notes_console.config(width= 60, height=12, bg='white',fg='black')
+        self.notes_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
         
         
         """=Logs Frame======================================"""
         
-        console = tk.Text(self.log_frame)
-        console.config(width= 60, height=12, bg='black',fg='light green')
-        console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        self.log_console = tk.Text(self.log_frame)
+        self.log_console.config(width= 60, height=12, bg='black',fg='light green',state=tk.DISABLED)
+        self.log_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
         
         
         """================================================="""
@@ -226,9 +229,66 @@ class MainWindow():
         return
 
     def select_row(self, row):
-        self.selected_job_name = str(self.table.row(row)[0])
+        name_of_selected = str(self.table.row(row)[0])
+        self.write_notes()
+        
+        if name_of_selected == "":
+            self.notes_console.delete('1.0', tk.END)
+            self.log_console.delete('1.0', tk.END)
+        
+        if name_of_selected == self.selected_job_name:
+            return
+                
+        if self.selected_job_name == None or (self.selected_job_name != name_of_selected and name_of_selected != ""): #selecting something different
+            job = self.sim_dir.get_job(name_of_selected)
+            self.display_job_notes_log(job)
+            
+        
+        self.selected_job_name = name_of_selected
+        if(self.selected_job_name != ""):
+            self.b_clone.config(state=tk.NORMAL)
+            self.b_edit.config(state=tk.NORMAL)
+            self.b_start.config(state=tk.NORMAL)
+            self.b_stop.config(state=tk.NORMAL)
+            self.b_open.config(state=tk.NORMAL)
+        else:
+            self.b_clone.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_stop.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.DISABLED)
+            
+        
         #print(str(self.table.row(row)))
             
+    def display_job_notes_log(self, job):
+        if job != None:
+            self.display_job_notes(job)
+            self.display_job_log(job)
+            
+    def display_job_notes(self, job):
+        if job != None:
+            notes = job.get_notes()
+            self.notes_console.delete('1.0', tk.END)
+            self.notes_console.insert(tk.END, notes)
+        return
+            
+    def display_job_log(self, job):
+        if job != None:
+            log = job.get_log()
+            self.log_console.delete('1.0', tk.END)
+            self.log_console.insert(tk.END, log) 
+        return
+    
+    def refresh_log_periodically(self):
+        #threading.Timer(self.log_refresh_time, self.refresh_log_periodically).start()
+        #print("Hello, World!") ##THIS WON"T STOP, probably a better way of doing this
+        return
+    
+    def write_notes(self):
+        if(self.selected_job_name != "" and self.selected_job_name != None):
+            self.sim_dir.get_job(self.selected_job_name).write_notes(self.notes_console.get("1.0",'end-1c'))
+                
     def add_server(self):
         ServerEntryBox(self.root)#,server_id="180521092555")
             
@@ -246,7 +306,7 @@ class MainWindow():
         
     def start_job(self):
         job = self.sim_dir.get_job(self.selected_job_name)
-        if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and ran.", icon='warning') == 'yes'):
+        if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run.", icon='warning') == 'yes'):
             job.run()
         return
         
@@ -269,7 +329,11 @@ class MainWindow():
                 if (not self.sim_dir) or (self.sim_dir and self.sim_dir.sim_directory != temp_sim_dir.sim_directory): #if sim dir is None or sim dir is different from currently loaded
                     self.sim_dir = temp_sim_dir
                     self.sim_dir_var.set(self.sim_dir.sim_directory)
-                    self.reload_table()                   
+                    self.reload_table()         
+                    
+                    
+                self.b_new.config(state=tk.NORMAL)
+                
                     
             except Exception as e:
                 print(e)
