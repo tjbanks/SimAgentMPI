@@ -58,6 +58,7 @@ class SimJob(object):
         self.propname_server_email = "email_addr"
         self.propname_server_status_email = "server_status_email"
         self.propname_server_remote_identifier = "server_remote_identifier"
+        self.propname_sim_start_time = "sim_start_time"
         
         self.file_snapshotzip = ""
         self.file_resultszip = ""
@@ -80,12 +81,19 @@ class SimJob(object):
         self.server_email = ""
         self.server_status_email = "false"
         self.server_remote_identifier = ""
+        self.sim_start_time = ""
         
         return
     
+    def create_sim_directory(self, dir_=None):
+        if not dir_:
+            dir_ = self.sim_directory_object.sim_results_dir
+        path = os.mkdir(os.path.join(dir_,self.sim_name))
+        print(path)
+        
     
     def read_properties(self):
-        with open(os.path.join(self.job_directory,self.file_properties)) as json_file:  
+        with open(os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties)) as json_file:  
             data = json.load(json_file)
             self.version = data[self.propname_version]
             self.log = data[self.propname_log]
@@ -103,7 +111,11 @@ class SimJob(object):
             self.server_nsg_python = data[self.propname_server_nsg_python]
             self.server_mpi_partition = data[self.propname_server_mpi_partition]
             self.server_max_runtime = data[self.propname_server_max_runtime]
+            self.server_email = data[self.propname_server_email]
+            self.server_status_email = data[self.propname_server_status_email]
             self.server_remote_identifier = data[self.propname_server_remote_identifier]
+            self.sim_start_time = data[self.propname_sim_start_time]
+            
         return
     
     def write_properties(self):
@@ -125,8 +137,12 @@ class SimJob(object):
         data[self.propname_server_mpi_partition] = self.server_mpi_partition
         data[self.propname_server_max_runtime] = self.server_max_runtime 
         data[self.propname_server_max_runtime] = self.server_remote_identifier
+        data[self.propname_server_email] = self.server_email
+        data[self.propname_server_status_email] = self.server_status_email
+        data[self.propname_server_remote_identifier] = self.server_remote_identifier
+        data[self.propname_sim_start_time] = self.sim_start_time
         
-        with open(os.path.join(self.job_directory,self.file_properties), 'w') as outfile:  
+        with open(os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties), 'w') as outfile:  
             json.dump(data, outfile)
         return
     

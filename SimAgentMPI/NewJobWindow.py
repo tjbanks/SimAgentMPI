@@ -4,13 +4,15 @@ Created on Sun May 20 16:46:40 2018
 
 @author: Tyler
 """
-
+import os
 import tkinter as tk
 from tkinter import IntVar,filedialog,OptionMenu
 import time, datetime
 
 from SimServer import SimServer,ServersFile
 from NewServerConfig import ServerEntryBox
+from ServerInterface import ServerInterface
+from SimJob import SimJob
 
 
 """
@@ -35,36 +37,51 @@ self.version = SimJob.version
 
 class JobEntryBox:
         
-        def __init__(self, parent, sim_directory, job_name=None):
+        def __init__(self, parent, sim_directory, job_name=None, sim_job_copy=None):
             self.window_title = "New Job"
             self.parent = parent
             self.sim_directory = sim_directory
+            
+            if(not job_name):
+                ts = time.time()
+                st = datetime.datetime.fromtimestamp(ts).strftime('%y%m%d%H%M%S')
+                job_name = sim_directory.sim_directory_relative + "-" + st
+            
             self.job_name = job_name
             self.simjob = None
-            self.display()
-            return
-        
-        def display(self):            
-            top = self.top = tk.Toplevel(self.parent)
-            top.geometry('375x375')
-            top.resizable(0,0)
-            top.title(self.window_title)
             
+            top = self.top = tk.Toplevel(self.parent)
             self.name = tk.StringVar(top)
+            self.name.set(self.job_name)
+            
             self.notes = tk.StringVar(top)
             self.status = tk.StringVar(top)
             self.batch_file = tk.StringVar(top)
-            #self.update_interval = tk.StringVar(top)
+            self.update_interval = tk.StringVar(top)
+            self.update_interval.set("60")
             self.server_connector = tk.StringVar(top)
             self.server_nodes = tk.StringVar(top)
             self.server_cores = tk.StringVar(top)
             self.server_nsg_tool = tk.StringVar(top)
-            self.server_nsg_python = tk.StringVar(top)
+            self.server_nsg_python = tk.IntVar(top)
             self.server_mpi_partition = tk.StringVar(top)
             self.server_max_runtime = tk.StringVar(top)
             #self.server_email = tk.StringVar(top)
-            self.server_status_email = tk.StringVar(top)
-            self.confirm = False
+            self.server_status_email = tk.IntVar(top)
+            self.confirm = tk.BooleanVar(top)
+            self.confirm.set(False)
+            
+            
+            self.display()
+            return
+        
+        def display(self):            
+            top = self.top
+            top.geometry('375x375')
+            top.resizable(0,0)
+            top.title(self.window_title)
+            
+            
             
             """
             self.servers_file = ServersFile()
@@ -103,7 +120,7 @@ class JobEntryBox:
                 return
             
             def select_batch():
-                self.batch_file.set(filedialog.askopenfilename())
+                self.batch_file.set(os.path.basename(filedialog.askopenfilename()))
                 self.top.lift()
                 return
                 
@@ -122,6 +139,9 @@ class JobEntryBox:
                 s = servers.get_server_byname(server_name)
                 #get the connection and check if it's a ssh / nsg
                 on_server_type_change(s.type)
+                
+            def change_dropdown_nsg_tool(*args):
+                return
             
             
             tk.Label(top, text='New Remote Job').grid(row=0,column=0,sticky="WE",pady=15, columnspan=3)
@@ -170,9 +190,9 @@ class JobEntryBox:
             
  
             # Dictionary with options
-            choices = self.get_connections()
+            self.server_choices = self.get_connections()
  
-            popupMenu = OptionMenu(top, self.server_connector, *choices)
+            popupMenu = OptionMenu(top, self.server_connector, *self.server_choices)
             popupMenu.grid(row = 5, column =1)
             self.server_connector.trace('w', change_dropdown)
             
@@ -210,22 +230,28 @@ class JobEntryBox:
             l.grid(row=2,column=0,pady=5,padx=5)
             l.config(relief=tk.GROOVE)
             
-            self.nsg_url_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nsg_tool)
-            self.nsg_url_e.grid(row=2,column=1,padx=5)
+            self.nsg_tool_choices = self.get_nsg_tools()
+            
+            popupMenu = OptionMenu(nsgconn_option_frame, self.server_nsg_tool, *self.nsg_tool_choices)
+            popupMenu.grid(row = 2, column =1)
+            self.server_nsg_tool.trace('w', change_dropdown_nsg_tool)
+            
             
             l = tk.Label(nsgconn_option_frame, text='Uses Python',width=15, background='light gray')
             l.grid(row=3,column=0,pady=5,padx=5)
             l.config(relief=tk.GROOVE)
+                        
+            tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_nsg_python).grid(row=3,column=1,padx=5, sticky='W')
+            #self.nsg_user_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nsg_python)
+            #self.nsg_user_e.grid(row=3,column=1,padx=5)
             
-            self.nsg_user_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nsg_python)
-            self.nsg_user_e.grid(row=3,column=1,padx=5)
-            
-            l = tk.Label(nsgconn_option_frame, text='Send Status Email on Complete',width=15, background='light gray')
+            l = tk.Label(nsgconn_option_frame, text='Send Status Emails',width=15, background='light gray')
             l.grid(row=4,column=0,pady=5,padx=5)
             l.config(relief=tk.GROOVE)
             
-            self.nsg_pass_e = tk.Entry(nsgconn_option_frame,width=25,show="*",textvariable=self.server_status_email)
-            self.nsg_pass_e.grid(row=4,column=1,padx=5)
+            tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email).grid(row=4,column=1,padx=5, sticky='W')
+            #self.nsg_pass_e = tk.Entry(nsgconn_option_frame,width=25,show="*",textvariable=self.server_status_email)
+            #self.nsg_pass_e.grid(row=4,column=1,padx=5)
              
             
             
@@ -279,14 +305,31 @@ class JobEntryBox:
                 names.append(s.name)
             return names
         
-        def is_valid():
+        def get_nsg_tools(self):
+            return ServerInterface().get_nsg_tools()
+        
+        def is_valid(self):
             return True
         
-        def to_simjob():
-            return 
+        def to_simjob(self):
+            simjob = SimJob(self.sim_directory, self.name.get())
+            
+            simjob.status = self.status.get()
+            simjob.batch_file = self.batch_file.get()
+            simjob.update_interval = self.update_interval.get()
+            simjob.server_connector = self.server_connector.get()
+            simjob.server_nodes = self.server_nodes.get()
+            simjob.server_cores = self.server_cores.get()
+            simjob.server_nsg_tool = self.server_nsg_tool.get()
+            simjob.server_nsg_python = str(self.server_nsg_python.get())
+            simjob.server_mpi_partition = self.server_mpi_partition.get()
+            simjob.server_max_runtime = self.server_max_runtime.get()
+                        
+            return simjob
         
         def ok(self):
-            self.confirm = True
+            self.confirm.set(True)
             self.top.destroy()
+            
         def cancel(self):
             self.top.destroy()

@@ -189,13 +189,16 @@ class MainWindow():
         def printrow(row):
             print(str(table.row(row)))
             
-        table = Table(jobs_frame, ["Name", "Server", "Status"], column_minwidths=[200, 200, 200],height=200, onselect_method=printrow)
+        columns = ["Name", "Status", "Server", "Tool/Partition", "Nodes", "Cores", "Runtime", "Start", "Remote ID"]
+        col_wid = [200, 75, 100, 100, 50, 50, 100, 100, 150]
+        table = Table(jobs_frame, columns, column_minwidths=col_wid,height=300, onselect_method=printrow)
         
         table.grid(row=1,column=0,padx=10,pady=10)
     
-        table.set_data([[1,2,3],[4,5,6], [10,11,12], [13,14,15],[15,16,18], [19,20,21]])
+        table.set_data([[""],[""],[""],[""],[""],[""],[""],[""],[""]])
         #table.cell(0,0, " a fdas fasd fasdf asdf asdfasdf asdf asdfa sdfas asd sadf ")
-        table.grid_propagate(False) #Is this really the only way to get it to a specific size?
+        #table.grid_propagate(False) #Is this really the only way to get it to a specific size?
+            
         table.insert_row([22,23,24])
         table.insert_row([25,26,27],index=0)
         
@@ -226,7 +229,10 @@ class MainWindow():
     def new_job(self):
         new_job = JobEntryBox(self.root, self.sim_dir)
         if(new_job.confirm and new_job.is_valid()):
-            self.sim_dir.add_new_job(new_job.to_simjob())
+            simjob = new_job.to_simjob()
+            simjob.create_sim_directory()
+            simjob.write_properties()
+            self.sim_dir.add_new_job(simjob)
             return
         return
     
@@ -234,6 +240,9 @@ class MainWindow():
             dir_ = filedialog.askdirectory()
             if not dir_:
                 return
-            self.sim_dir = SimDirectory(dir_,initialize=True)
-            self.sim_dir_var.set(self.sim_dir.sim_directory)
+            try:
+                self.sim_dir = SimDirectory(dir_,initialize=True)
+                self.sim_dir_var.set(self.sim_dir.sim_directory)
+            except Exception as e:
+                return
             return

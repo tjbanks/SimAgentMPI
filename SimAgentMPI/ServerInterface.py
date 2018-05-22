@@ -68,6 +68,12 @@ class ServerInterface(object):
         
         return
     
+    def get_nsg_tools(self):
+        #implement in api sometime... see http://www.nsgportal.org/guide.html#ToolAPI --> /tool
+        
+        tools = ["NEURON75_TG","NEURON74_TG","NEURON73_TG"]
+        return tools
+    
     """THREAD THIS TASK"""
     def wait_for_completion(self, simjob): 
         server = self.get_server(simjob)

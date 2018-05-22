@@ -26,6 +26,7 @@ Directory structure
 from SimJob import SimJob
 import os,errno
 import zipfile
+from tkinter import messagebox
 
 class SimDirectory(object):
     results_folder_name = "SimAgentResults"
@@ -45,7 +46,8 @@ class SimDirectory(object):
         if(not os.path.isdir(self.sim_results_dir)):
             self.is_valid_sim_directory = False
             if(initialize):
-                self.initialize()
+                if(messagebox.askquestion("", "SimAgent has not used this directory before. Do you want to initialize it?", icon='warning') == 'yes'):
+                    self.initialize()
             else:
                 return
         
