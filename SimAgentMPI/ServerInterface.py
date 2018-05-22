@@ -15,7 +15,7 @@ class ServerInterface(object):
     
     def get_server(self, simjob):
         servers = ServersFile()
-        server = servers.get_server(simjob.server_connector) #will return Mone if not found
+        server = servers.get_server_byname(simjob.server_connector) #will return Mone if not found
         
         return server
     
@@ -30,38 +30,40 @@ class ServerInterface(object):
         nsg_template_input_file = "input.properties"
         
         server = self.get_server(simjob)
-        
-        if(server.type == "nsg"):
-            
-            #generate new properties
-            with open(os.path.join(simjob.job_directory,nsg_template_input_file), 'w') as the_file:
-                the_file.write('{}={}\n'.format("infile_",os.path.join(simjob.job_directory, simjob.file_snapshotzip)))
-            with open(os.path.join(simjob.job_directory,nsg_template_param_file), 'w') as the_file:
-                the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
-                the_file.write('{}={}\n'.format("filename_",simjob.batch_file))
-                the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
-                the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
-                the_file.write('{}={}\n'.format("pythonoption_",simjob.server_nsg_python))
-                the_file.write('{}={}\n'.format("outputfilename_",simjob.sim_name+'-nsg-return'))
-                the_file.write('{}={}\n'.format("runtime_",simjob.server_max_runtime))
-                the_file.write('{}={}\n'.format("singlelayer_","0")) 
+        if server:#check to make sure we have a valid server
+            if(server.type == "nsg"):
                 
-            #validate
-            nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
-        
-            status = nsg.validateJobTemplate(simjob.job_directory)
-            if(validate_only):
-                return status
+                #generate new properties
+                with open(os.path.join(simjob.job_directory,nsg_template_input_file), 'w') as the_file:
+                    the_file.write('{}={}\n'.format("infile_",os.path.join(simjob.job_directory, simjob.file_snapshotzip)))
+                with open(os.path.join(simjob.job_directory,nsg_template_param_file), 'w') as the_file:
+                    the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
+                    the_file.write('{}={}\n'.format("filename_",simjob.batch_file))
+                    the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
+                    the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
+                    the_file.write('{}={}\n'.format("pythonoption_",simjob.server_nsg_python))
+                    the_file.write('{}={}\n'.format("outputfilename_",simjob.sim_name+'-nsg-return'))
+                    the_file.write('{}={}\n'.format("runtime_",simjob.server_max_runtime))
+                    the_file.write('{}={}\n'.format("singlelayer_","0")) 
+                    
+                #validate
+                nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
             
-            status = nsg.submitJobTemplate(simjob.job_directory,metadata={"statusEmail" : simjob.server_status_email})
+                #status = nsg.validateJobTemplate(simjob.job_directory)
+                #if(validate_only):
+                #    return status
+                
+                #status = nsg.submitJobTemplate(simjob.job_directory,metadata={"statusEmail" : simjob.server_status_email})
+                
+                #return status
+                
+                return "good"
             
-            return status
-        
-        
-        elif(server.type == "ssh"):
-            return
-        
-        return
+            
+            elif(server.type == "ssh"):
+                return
+            
+        return "not a valid server connector"
     
     
     def stop_simjob(self, simjob):

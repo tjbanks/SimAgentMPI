@@ -35,12 +35,13 @@ class ServerEntryBox:
         
         def display(self, server_id=None):            
             top = self.top = tk.Toplevel(self.parent)
-            top.geometry('315x375')
+            top.geometry('315x385')
             top.resizable(0,0)
             
             
             self.name = tk.StringVar(top)
             self.hostname = tk.StringVar(top)
+            self.port = tk.StringVar(top)
             self.user = tk.StringVar(top)
             self.password = tk.StringVar(top)
             self.keyfile = tk.StringVar(top)
@@ -71,6 +72,7 @@ class ServerEntryBox:
             self.server_type = IntVar()
             self.name.set(self.server.name)
             self.hostname.set(self.server.host)
+            self.port.set(self.server.port)
             self.user.set(self.server.user)
             self.password.set(self.server.password)
             self.keyfile.set(self.server.priv_key_location)
@@ -137,26 +139,33 @@ class ServerEntryBox:
             self.host_e = tk.Entry(conn_option_frame,width=25,textvariable=self.hostname)
             self.host_e.grid(row=2,column=1,padx=5)
             
-            l = tk.Label(conn_option_frame, text='Username',width=15, background='light gray')
+            l = tk.Label(conn_option_frame, text='Port',width=15, background='light gray')
             l.grid(row=3,column=0,pady=5,padx=5)
             l.config(relief=tk.GROOVE)
             
-            self.user_e = tk.Entry(conn_option_frame,width=25,textvariable=self.user)
-            self.user_e.grid(row=3,column=1,padx=5)
+            self.host_e = tk.Entry(conn_option_frame,width=25,textvariable=self.port)
+            self.host_e.grid(row=3,column=1,padx=5)
             
-            l = tk.Label(conn_option_frame, text='Password',width=15, background='light gray')
+            l = tk.Label(conn_option_frame, text='Username',width=15, background='light gray')
             l.grid(row=4,column=0,pady=5,padx=5)
             l.config(relief=tk.GROOVE)
             
-            self.pass_e = tk.Entry(conn_option_frame,width=25,show="*",textvariable=self.password)
-            self.pass_e.grid(row=4,column=1,padx=5)
+            self.user_e = tk.Entry(conn_option_frame,width=25,textvariable=self.user)
+            self.user_e.grid(row=4,column=1,padx=5)
             
-            l = tk.Label(conn_option_frame, text='Private Key',width=15, background='light gray')
+            l = tk.Label(conn_option_frame, text='Password',width=15, background='light gray')
             l.grid(row=5,column=0,pady=5,padx=5)
             l.config(relief=tk.GROOVE)
             
+            self.pass_e = tk.Entry(conn_option_frame,width=25,show="*",textvariable=self.password)
+            self.pass_e.grid(row=5,column=1,padx=5)
+            
+            l = tk.Label(conn_option_frame, text='Private Key',width=15, background='light gray')
+            l.grid(row=6,column=0,pady=5,padx=5)
+            l.config(relief=tk.GROOVE)
+            
             self.key_e = tk.Entry(conn_option_frame,width=25,textvariable=self.keyfile)
-            self.key_e.grid(row=5,column=1,padx=5)
+            self.key_e.grid(row=6,column=1,padx=5)
             self.key_e.config(state=tk.DISABLED)
             
             def open_key():
@@ -164,7 +173,7 @@ class ServerEntryBox:
                 self.top.lift()
                 
             b = tk.Button(conn_option_frame, text="Select", command=open_key)
-            b.grid(pady=5, padx=5, column=1, row=6, sticky="WE")
+            b.grid(pady=5, padx=5, column=1, row=7, sticky="WE")
             
             
             
@@ -239,6 +248,7 @@ class ServerEntryBox:
             else:#SSH
                 self.server.type = "ssh"
                 self.server.host = self.hostname.get()
+                self.server.port = self.port.get()
                 self.server.user = self.user.get()
                 self.server.password = self.password.get()
                 self.server.priv_key_location = self.keyfile.get()

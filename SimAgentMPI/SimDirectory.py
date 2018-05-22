@@ -46,7 +46,7 @@ class SimDirectory(object):
         if(not os.path.isdir(self.sim_results_dir)):
             self.is_valid_sim_directory = False
             if(initialize):
-                if(messagebox.askquestion("", "SimAgent has not used this directory before. Do you want to initialize it?", icon='warning') == 'yes'):
+                if(messagebox.askquestion("", "SimAgent has not used this directory before. Do you want to initialize it? This will create an empty folder named "+SimDirectory.results_folder_name+" to store results in.", icon='warning') == 'yes'):
                     self.initialize()
             else:
                 return
@@ -63,7 +63,6 @@ class SimDirectory(object):
         #Initialize all jobs
         for job_folder in results_dir_folder_names:
             self.add_new_job(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
-        
         
         return
     
@@ -102,6 +101,12 @@ class SimDirectory(object):
     def add_new_job(self,simjob):
         self.sim_jobs.append(simjob)
         return
+    
+    def get_job(self, job_name):
+        for job in self.sim_jobs:
+            if job.sim_name == job_name:
+                return job
+        return None
         
 """    
 def test():

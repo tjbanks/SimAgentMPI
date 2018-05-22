@@ -6,41 +6,21 @@ Created on Sun May 20 16:46:40 2018
 """
 import os
 import tkinter as tk
-from tkinter import IntVar,filedialog,OptionMenu
+from tkinter import filedialog,OptionMenu,messagebox
 import time, datetime
 
-from SimServer import SimServer,ServersFile
+from SimServer import ServersFile
 from NewServerConfig import ServerEntryBox
 from ServerInterface import ServerInterface
 from SimJob import SimJob
 
-
-"""
-self.version = SimJob.version
-        self.log = SimJob.log_file
-        self.notes = ""
-        self.status = ""
-        self.batch_file = ""
-        self.update_interval = "60"
-        self.server_connector = ""
-        self.server_nodes = ""
-        self.server_cores = ""
-        self.server_nsg_tool = "NONE"
-        self.server_nsg_python = "1"
-        self.server_mpi_partition = ""
-        self.server_max_runtime = ""
-        self.server_email = ""
-        self.server_status_email = "false"
-        self.server_remote_identifier = ""
-        
-"""
-
 class JobEntryBox:
         
-        def __init__(self, parent, sim_directory, job_name=None, sim_job_copy=None):
+        def __init__(self, parent, sim_directory, job_name=None, sim_job_copy=None, oncomplete_callback=None):
             self.window_title = "New Job"
             self.parent = parent
             self.sim_directory = sim_directory
+            self.oncomplete_callback = oncomplete_callback
             
             if(not job_name):
                 ts = time.time()
@@ -80,31 +60,7 @@ class JobEntryBox:
             top.geometry('375x375')
             top.resizable(0,0)
             top.title(self.window_title)
-            
-            
-            
-            """
-            self.servers_file = ServersFile()
-            self.server = None
-            
-            if server_id:
-                self.is_loaded_server = True
-                self.server = self.servers_file.get_server(server_id)
-            else:
-                self.is_loaded_server = False
-            
-            if not self.server:
-                self.server = SimServer()  
-            """
-                
-            
-            #if not self.simjob:#create a new one
-                
-            #else:
-            
-            
-            
-            """###############################################"""
+           
             
             def on_server_type_change(type_):
                 if(type_ == "nsg"):
@@ -143,59 +99,40 @@ class JobEntryBox:
             def change_dropdown_nsg_tool(*args):
                 return
             
+            def validate(action, index, value_if_allowed,
+                       prior_value, text, validation_type, trigger_type, widget_name):
+                if text in ' ':
+                    return False
+                else:
+                    return True
+            
+            vcmd = (top.register(validate),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
             
             tk.Label(top, text='New Remote Job').grid(row=0,column=0,sticky="WE",pady=15, columnspan=3)
             
-            l = tk.Label(top, text='Sim Job Name',width=15, background='light gray')
-            l.grid(row=1,column=0,pady=5,padx=5,columnspan=1)
-            l.config(relief=tk.GROOVE)
             
-            self.name_e = tk.Entry(top,width=25,textvariable=self.name)
+            tk.Label(top, text='Sim Job Name',width=15, background='light gray', relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(top,width=25,textvariable=self.name,validate='key', validatecommand=vcmd)
             self.name_e.grid(row=1,column=1,padx=5,columnspan=1)
-            
-            
-            
-            l = tk.Label(top, text='Batch File',width=15, background='light gray')
-            l.grid(row=2,column=0,pady=5,padx=5,columnspan=1)
-            l.config(relief=tk.GROOVE)
-            
-            self.name_e = tk.Entry(top,width=25,textvariable=self.batch_file)
+                                    
+            tk.Label(top, text='Batch File',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5,columnspan=1)
+            self.name_e = tk.Entry(top,width=25,textvariable=self.batch_file,state=tk.DISABLED)
             self.name_e.grid(row=2,column=1,padx=5,columnspan=1)
-            self.name_e.config(state=tk.DISABLED)
+            b = tk.Button(top, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
             
-            b = tk.Button(top, text="Select", command=select_batch)
-            b.grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
-            
-            
-            
-            l = tk.Label(top, text='Nodes',width=15, background='light gray')
-            l.grid(row=3,column=0,pady=5,padx=5,columnspan=1)
-            l.config(relief=tk.GROOVE)
-            
+            tk.Label(top, text='Nodes',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5,columnspan=1)
             self.name_e = tk.Entry(top,width=25,textvariable=self.server_nodes)
             self.name_e.grid(row=3,column=1,padx=5,columnspan=1)
             
-            
-            l = tk.Label(top, text='Cores',width=15, background='light gray')
-            l.grid(row=4,column=0,pady=5,padx=5,columnspan=1)
-            l.config(relief=tk.GROOVE)
-            
+            tk.Label(top, text='Cores',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
             self.name_e = tk.Entry(top,width=25,textvariable=self.server_cores)
             self.name_e.grid(row=4,column=1,padx=5,columnspan=1)
             
-            
-            l = tk.Label(top, text='Server Connection',width=15, background='light gray')
-            l.grid(row=5,column=0,pady=5,padx=5,columnspan=1)
-            l.config(relief=tk.GROOVE)
-            
- 
-            # Dictionary with options
+            tk.Label(top, text='Server Connection',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
             self.server_choices = self.get_connections()
- 
             popupMenu = OptionMenu(top, self.server_connector, *self.server_choices)
             popupMenu.grid(row = 5, column =1)
             self.server_connector.trace('w', change_dropdown)
-            
             b = tk.Button(top, text="New", command=new_server)
             b.grid(pady=5, padx=5, column=2, row=5, sticky="WE",columnspan=1)
             
@@ -203,59 +140,27 @@ class JobEntryBox:
             conn_option_frame = tk.LabelFrame(top, text="SSH Connection Parameters")
             nsgconn_option_frame = tk.LabelFrame(top, text="NSG Connection Parameters")
             
-        
-            """
-            if(self.use_ssh.get() is "0"):
-                nsgconn_option_frame.grid(column=0,row=14,sticky='news',padx=10,pady=5,columnspan=2)
-            else:
-                conn_option_frame.grid(column=0,row=15,sticky='news',padx=10,pady=5,columnspan=2)
-            
-            #run_option_frame = tk.LabelFrame(top, text="Runtime Parameters")
-            #run_option_frame.grid(column=0,row=4,sticky='news',padx=10,pady=5,columnspan=2)
-            """
-            ###GENERAL###
+            ###SSH###
                     
-            
-            l = tk.Label(conn_option_frame, text='Partition',width=15, background='light gray')
-            l.grid(row=2,column=0,pady=5,padx=5)
-            l.config(relief=tk.GROOVE)
-            
+            tk.Label(conn_option_frame, text='Partition',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
             self.host_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_mpi_partition)
             self.host_e.grid(row=2,column=1,padx=5)
-            
-            
+                        
             ####NSG###
             
-            l = tk.Label(nsgconn_option_frame, text='Tool',width=15, background='light gray')
-            l.grid(row=2,column=0,pady=5,padx=5)
-            l.config(relief=tk.GROOVE)
-            
+            tk.Label(nsgconn_option_frame, text='Tool',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
             self.nsg_tool_choices = self.get_nsg_tools()
-            
             popupMenu = OptionMenu(nsgconn_option_frame, self.server_nsg_tool, *self.nsg_tool_choices)
             popupMenu.grid(row = 2, column =1)
             self.server_nsg_tool.trace('w', change_dropdown_nsg_tool)
             
             
-            l = tk.Label(nsgconn_option_frame, text='Uses Python',width=15, background='light gray')
-            l.grid(row=3,column=0,pady=5,padx=5)
-            l.config(relief=tk.GROOVE)
-                        
+            tk.Label(nsgconn_option_frame, text='Uses Python',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
             tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_nsg_python).grid(row=3,column=1,padx=5, sticky='W')
-            #self.nsg_user_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nsg_python)
-            #self.nsg_user_e.grid(row=3,column=1,padx=5)
             
-            l = tk.Label(nsgconn_option_frame, text='Send Status Emails',width=15, background='light gray')
-            l.grid(row=4,column=0,pady=5,padx=5)
-            l.config(relief=tk.GROOVE)
-            
+            tk.Label(nsgconn_option_frame, text='Send Status Emails',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5)
             tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email).grid(row=4,column=1,padx=5, sticky='W')
-            #self.nsg_pass_e = tk.Entry(nsgconn_option_frame,width=25,show="*",textvariable=self.server_status_email)
-            #self.nsg_pass_e.grid(row=4,column=1,padx=5)
              
-            
-            
-            
             #Return
                         
             button_frame = tk.Frame(top)
@@ -270,33 +175,7 @@ class JobEntryBox:
             
         def verify_good(self):
             return True
-        """
-        def save_file(self):
-            
-            if(not self.is_loaded_server):
-                ts = time.time()
-                st = datetime.datetime.fromtimestamp(ts).strftime('%y%m%d%H%M%S')
-                self.server.id = st
-            
-            self.server.name = self.name.get()
-            if(self.use_ssh.get()=="0"):#NSG
-                self.server.type = "nsg"
-                self.server.user = self.nsg_user.get()
-                self.server.password = self.nsg_password.get()
-                self.server.nsg_api_url = self.nsg_url.get()
-                self.server.nsg_api_appname = self.nsg_app_name.get()
-                self.server.nsg_api_appid = self.nsg_app_id.get()
-                
-            else:#SSH
-                self.server.type = "ssh"
-                self.server.host = self.hostname.get()
-                self.server.user = self.user.get()
-                self.server.password = self.password.get()
-                self.server.priv_key_location = self.keyfile.get()
-                                
-            self.servers_file.update_server_details(self.server)
-            return
-        """    
+        
         
         def get_connections(self):            
             servers = ServersFile().servers
@@ -310,6 +189,8 @@ class JobEntryBox:
         
         def is_valid(self):
             return True
+            self.valid_message = ""
+            
         
         def to_simjob(self):
             simjob = SimJob(self.sim_directory, self.name.get())
@@ -324,12 +205,23 @@ class JobEntryBox:
             simjob.server_nsg_python = str(self.server_nsg_python.get())
             simjob.server_mpi_partition = self.server_mpi_partition.get()
             simjob.server_max_runtime = self.server_max_runtime.get()
-                        
+                                    
             return simjob
         
         def ok(self):
             self.confirm.set(True)
-            self.top.destroy()
+            if(self.confirm.get() and self.is_valid()):
+                simjob = self.to_simjob()
+                simjob.create_sim_directory()
+                simjob.write_properties()
+                simjob.append_notes("")
+                simjob.append_log("Job created")
+                self.sim_directory.add_new_job(simjob)
+                if(self.oncomplete_callback):
+                    self.oncomplete_callback()
+                self.top.destroy()
+            else:
+                messagebox.showinfo("Validation Error",self.valid_message)
             
         def cancel(self):
             self.top.destroy()

@@ -25,18 +25,21 @@ import os
 import json
 import time
 import datetime
+import subprocess
 
 from ServerInterface import ServerInterface
 
 class SimJob(object):
-    properties_file = ".properties"
+    properties_file = "sim.properties"
     log_file = ".log"
+    notes_file = "notes.txt"
     version = "1.0"
     
     def __init__(self, sim_directory_object, job_directory):
         self.sim_directory_object = sim_directory_object
         self.job_directory = job_directory
         self.sim_name = os.path.basename(self.job_directory)
+        
         
         #Names for the JSON file
         self.propname_version = "version"
@@ -67,7 +70,7 @@ class SimJob(object):
         
         self.version = SimJob.version
         self.log = SimJob.log_file
-        self.notes = ""
+        self.notes = SimJob.notes_file
         self.status = ""
         self.batch_file = ""
         self.update_interval = "60"
@@ -83,6 +86,11 @@ class SimJob(object):
         self.server_remote_identifier = ""
         self.sim_start_time = ""
         
+        self.full_properties_path = os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties)
+        
+        
+        self.read_properties()
+        
         return
     
     def create_sim_directory(self, dir_=None):
@@ -91,30 +99,66 @@ class SimJob(object):
         path = os.mkdir(os.path.join(dir_,self.sim_name))
         print(path)
         
+    def open_sim_directory(self):
+        subprocess.call("start \""+self.job_directory+"\"", shell=True)
+        
+    def append_notes(self, text):
+        full_notes_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.notes)
+        append_write = ''
+        if os.path.exists(full_notes_path):
+            append_write = 'a' # append if already exists
+        else:
+            append_write = 'w' # make a new file if not
+        
+        f = open(full_notes_path,append_write)
+        f.write(text+'\n')
+        f.close()
+        
+        return
+    
+    def append_log(self, text):
+        ts = time.time()
+        st = datetime.datetime.fromtimestamp(ts).strftime('%y-%m-%d %H:%M:%S')
+        
+        full_log_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.log)
+        append_write = ''
+        if os.path.exists(full_log_path):
+            append_write = 'a' # append if already exists
+        else:
+            append_write = 'w' # make a new file if not
+        
+        f = open(full_log_path,append_write)
+        f.write(st + ' > ' + text+'\n')
+        f.close()
+        
+        return
+        
+        return
     
     def read_properties(self):
-        with open(os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties)) as json_file:  
-            data = json.load(json_file)
-            self.version = data[self.propname_version]
-            self.log = data[self.propname_log]
-            self.notes = data[self.propname_notes]
-            self.status = data[self.propname_status]
-            self.file_snapshotzip = data[self.propname_snapshotzip]
-            self.file_resultszip = data[self.propname_resultzip]
-            self.dir_results = data[self.propname_resultdir]
-            self.batch_file = data[self.propname_batch_file]
-            self.update_interval = data[self.propname_update_interval]
-            self.server_connector = data[self.propname_server_connector]
-            self.server_nodes = data[self.propname_server_nodes]
-            self.server_cores = data[self.propname_server_cores]
-            self.server_nsg_tool = data[self.propname_server_nsg_tool]
-            self.server_nsg_python = data[self.propname_server_nsg_python]
-            self.server_mpi_partition = data[self.propname_server_mpi_partition]
-            self.server_max_runtime = data[self.propname_server_max_runtime]
-            self.server_email = data[self.propname_server_email]
-            self.server_status_email = data[self.propname_server_status_email]
-            self.server_remote_identifier = data[self.propname_server_remote_identifier]
-            self.sim_start_time = data[self.propname_sim_start_time]
+        if(os.path.isfile(self.full_properties_path)):
+            with open(self.full_properties_path) as json_file:  
+                data = json.load(json_file)
+                self.version = data[self.propname_version]
+                self.log = data[self.propname_log]
+                self.notes = data[self.propname_notes]
+                self.status = data[self.propname_status]
+                self.file_snapshotzip = data[self.propname_snapshotzip]
+                self.file_resultszip = data[self.propname_resultzip]
+                self.dir_results = data[self.propname_resultdir]
+                self.batch_file = data[self.propname_batch_file]
+                self.update_interval = data[self.propname_update_interval]
+                self.server_connector = data[self.propname_server_connector]
+                self.server_nodes = data[self.propname_server_nodes]
+                self.server_cores = data[self.propname_server_cores]
+                self.server_nsg_tool = data[self.propname_server_nsg_tool]
+                self.server_nsg_python = data[self.propname_server_nsg_python]
+                self.server_mpi_partition = data[self.propname_server_mpi_partition]
+                self.server_max_runtime = data[self.propname_server_max_runtime]
+                self.server_email = data[self.propname_server_email]
+                self.server_status_email = data[self.propname_server_status_email]
+                self.server_remote_identifier = data[self.propname_server_remote_identifier]
+                self.sim_start_time = data[self.propname_sim_start_time]
             
         return
     
@@ -151,9 +195,9 @@ class SimJob(object):
     
     def create_snapshot(self):
         #snapshot of project, put in this directory to be sent to server
-        ts = time.time()
-        st = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d-%H%M%S')
-        self.file_snapshotzip = self.sim_name + "-snap-" + st
+        #ts = time.time()
+        #st = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d-%H%M%S')
+        self.file_snapshotzip = self.sim_name + "-snap" #-" + st
         self.sim_directory_object.take_snapshotzip(os.path.join(self.job_directory,self.file_snapshotzip))
         self.file_snapshotzip = self.file_snapshotzip +".zip" #for later use
         
@@ -164,6 +208,7 @@ class SimJob(object):
         self.create_snapshot()
         status = ServerInterface().start_simjob(self)
         #search status for remote identifer and update the properties file
+        #set self start time here
         return
     
     def stop(self):
