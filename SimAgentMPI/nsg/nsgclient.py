@@ -215,11 +215,14 @@ class Client(object):
             raise CipresError(httpStatus, cipresCode, message, rawtext)
 
 
-    def __doGet__(self, url, stream=False ):
+    def __doGet__(self, url, stream=False ,isdownload=False):
         """ Returns xml text or throws a CipresError """
         r = requests.get(url, auth=(self.username, self.password), verify=False, headers = self.headers, stream=stream);
         if verbose:
-            print("GET %s\nStatus = %d\nText:%s\n" % (url, r.status_code, r.text))
+            if not isdownload:
+                print("GET %s\nStatus = %d\nText:%s\n" % (url, r.status_code, r.text))
+            else:
+                print("Verbose logging for downloaded files suppressed in the code")
         if r.status_code != 200:
             self.__raiseException__(r);
         return r
@@ -374,7 +377,7 @@ class ResultFile(object):
 
         if verbose:
             print("downloading from %s to %s" % (self.url, path))
-        r = self.client.__doGet__(self.url, stream=True)
+        r = self.client.__doGet__(self.url, stream=True, isdownload=True)
         with open(path, 'wb') as outfile:
             shutil.copyfileobj(r.raw, outfile)
     

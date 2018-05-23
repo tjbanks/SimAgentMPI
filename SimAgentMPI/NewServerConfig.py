@@ -26,8 +26,9 @@ from SimServer import SimServer,ServersFile
 
 class ServerEntryBox:
         
-        def __init__(self, parent, server_id=None, display=True):
+        def __init__(self, parent, server_id=None, display=True, confirm_callback=None):
             self.parent = parent
+            self.confirm_callback = confirm_callback
                         
             if display:
                 self.display(server_id=server_id)
@@ -259,6 +260,8 @@ class ServerEntryBox:
         def ok(self):
             self.confirm = True
             self.save_file()
+            if self.confirm_callback:
+                self.confirm_callback()
             self.top.destroy()
             
         def cancel(self):

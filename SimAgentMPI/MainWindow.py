@@ -195,7 +195,7 @@ class MainWindow():
                 
         
             
-        self.columns = ["Name", "Status", "Server", "Tool/Partition", "Nodes", "Cores", "Runtime", "Start", "Remote ID"]
+        self.columns = ["Name", "Status", "Server", "Tool/Partition", "Nodes", "Cores", "Start", "Runtime", "Remote ID"]
         self.col_wid = [200, 75, 100, 100, 50, 50, 100, 100, 150]
         
         self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=200, onselect_method=self.select_row)
@@ -363,5 +363,12 @@ class MainWindow():
         self.table.grid(row=1,column=0,padx=10,pady=10)
         self.table.set_data([[""],[""],[""],[""]])
         for job in self.sim_dir.sim_jobs:
-            self.table.insert_row([job.sim_name, job.status, job.server_connector, job.server_nsg_tool, job.server_nodes, job.server_cores, "", job.sim_start_time, job.server_remote_identifier],index=0)
+            part_tool = ""
+            jobtype = job.get_server().type
+            if jobtype == "ssh":
+                part_tool = job.server_mpi_partition
+            elif jobtype == "nsg":
+                part_tool = job.server_nsg_tool
+                
+            self.table.insert_row([job.sim_name, job.status, job.server_connector, part_tool , job.server_nodes, job.server_cores, job.sim_start_time, "",job.server_remote_identifier],index=0)
             

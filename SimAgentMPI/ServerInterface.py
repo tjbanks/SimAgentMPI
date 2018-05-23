@@ -6,13 +6,15 @@ Created on Sun May 20 16:46:40 2018
 """
 import os
 import paramiko
-import zipfile
+import zipfile,tarfile
+import time, datetime
 
 from nsg.nsgclient import Client
 from SimServer import ServersFile
 
 class ServerInterface(object):
     ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
+    nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED"]
     
     def __init__(self):
         self.remote_dir = "simagent_remote"#THIS IS THE DIRECTORY WHERE ALL CODE WILL BE EXECUTED FROM
@@ -30,6 +32,11 @@ class ServerInterface(object):
     
     def start_simjob(self, simjob, validate_nsg_only=False):
         server = self.get_server(simjob)
+        ts = time.time()
+        st = datetime.datetime.fromtimestamp(ts).strftime('%y%m%d-%H%M%S')
+        simjob.sim_start_time = st
+        simjob.write_properties()
+        
         if server:#check to make sure we have a valid server
             if(server.type == "nsg"):
                 self.submit_nsg(simjob, validate_nsg_only, server)
@@ -89,9 +96,12 @@ class ServerInterface(object):
             
         return 
     
+    
+    
     def submit_nsg(self, simjob, validate_only, server):
         nsg_template_param_file = "param.properties"
         nsg_template_input_file = "input.properties"
+        return_filename = simjob.sim_name+'-nsg-return'
         
         simjob.append_log("Creating NSG parameter files: " + nsg_template_param_file + "," + nsg_template_input_file)
         #generate new properties
@@ -103,26 +113,42 @@ class ServerInterface(object):
             the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
             the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
             the_file.write('{}={}\n'.format("pythonoption_",simjob.server_nsg_python))
-            the_file.write('{}={}\n'.format("outputfilename_",simjob.sim_name+'-nsg-return'))
+            the_file.write('{}={}\n'.format("outputfilename_",return_filename))
             the_file.write('{}={}\n'.format("runtime_",simjob.server_max_runtime))
             the_file.write('{}={}\n'.format("singlelayer_","0")) 
             
         #validate
+        simjob.file_resultszip = return_filename + "tar.gz"
+        simjob.dir_results = return_filename
+        simjob.write_properties()
         
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
         
         simjob.append_log("Validating job build with NSG...")
         status = nsg.validateJobTemplate(simjob.job_directory_absolute)
-        if status == "true":
-            simjob.append_log("NSG Template validation failed. See debug.")
+        if status.isError():
+            simjob.append_log("NSG template validation failed. See debug.")
         else:
-            simjob.append_log("NSG Template validation success")
+            simjob.append_log("NSG template validation success")
             
         if(validate_only):
             return
         
-        status = nsg.submitJobTemplate(simjob.job_directory,metadata={"statusEmail" : simjob.server_status_email})
+        status = nsg.submitJobTemplate(simjob.job_directory_absolute,metadata={"statusEmail" : simjob.server_status_email})
+        print("status url after submit: " + status.jobUrl)
+        simjob.server_remote_identifier = status.jobUrl
+        simjob.write_properties()
         
+        if status.isError():
+            simjob.append_log("NSG template submit failed. See debug.")
+            
+        else:
+            simjob.append_log("NSG template submit success")
+            simjob.status = ServerInterface.nsg_status[0]
+            simjob.write_properties()
+            
+        if(validate_only):
+            return
     
     def submit_ssh(self, simjob, validate_only, server):
         
@@ -170,13 +196,25 @@ class ServerInterface(object):
         return
     
     def update_nsg(self, simjob, server, nsg_job_list=None):
+        simjob.append_log("Updating NSG information on job...")
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
         
         if not nsg_job_list: #Just save a couple calls to their server
             nsg_job_list = nsg.listJobs()
             
-        for job in nsg_job_list:
-            print(job)
+        for job in nsg.listJobs():
+            if job.jobUrl == simjob.server_remote_identifier:
+                job.update()
+                for m in job.messages:
+                    simjob.append_log(m)
+                if(job.isError()):
+                    simjob.append_log("NSG Job found in error state")
+                    simjob.status = ServerInterface.nsg_status[3]
+                    simjob.write_properties()
+                elif(job.isDone()):
+                    simjob.append_log("NSG Job found in error state")
+                    simjob.status = ServerInterface.nsg_status[1]
+                    simjob.write_properties()
             
         return
     
@@ -200,6 +238,17 @@ class ServerInterface(object):
     
     def stop_nsg(self, simjob, server):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+        for job in nsg.listJobs():
+            if job.jobUrl == simjob.server_remote_identifier:
+                job.update()
+                for m in job.messages:
+                        simjob.append_log(m)
+                        
+                if not job.isDone():
+                    job.delete()
+                    simjob.append_log("NSG Job Canceled")
+                    simjob.status = ServerInterface.nsg_status[3]
+                    simjob.write_properties()
         
         return
     
@@ -226,6 +275,35 @@ class ServerInterface(object):
     def download_nsg(self, simjob, server):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
         
+        for job in nsg.listJobs():
+            if job.jobUrl == simjob.server_remote_identifier:
+                job.update()
+                if not job.isError():
+                    if job.isDone():
+                        results = job.listResults()
+                        for m in job.messages:
+                            simjob.append_log(m)
+                        for r in results:
+                            simjob.append_log("Downloading: " + r)                        
+                        job.downloadResults(simjob.job_directory_absolute)
+                        
+                        
+                        simjob.append_log("Extracting results")
+                        nsg_tar_returned = os.path.join(simjob.job_directory_absolute,simjob.file_resultszip)
+                        zip_dir_nsg_return = os.path.join(simjob.job_directory_absolute,simjob.dir_results)
+                        tar = tarfile.open(nsg_tar_returned,"r:gz")
+                        tar.extractall(zip_dir_nsg_return)
+                        tar.close()
+                        simjob.append_log("Extracted results to " + zip_dir_nsg_return)
+                        
+                        
+                        simjob.status = ServerInterface.nsg_status[2]
+                        simjob.write_properties()
+                    else:
+                        simjob.append_log("The job is not done can't download yet.")
+                else:
+                    simjob.append_log("There was an error running or downloading. See console output")
+       
         return
     
     def download_ssh(self, simjob, server):
@@ -258,8 +336,22 @@ class ServerInterface(object):
         client.close()
         return
         
+    def detete_all_nsg(self, server):
+        nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+        print("Deleting ALL NSG Jobs...")
+        for job in nsg.listJobs():
+            job.delete()
+            
+            
     def delete_nsg(self, simjob, server):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+        for job in nsg.listJobs():
+            if job.jobUrl == simjob.server_remote_identifier:
+                job.update()
+                job.delete()
+                simjob.append_log("NSG Job Deleted on remote server")
+                simjob.status = ServerInterface.nsg_status[3]
+                simjob.write_properties()
         
         return
     

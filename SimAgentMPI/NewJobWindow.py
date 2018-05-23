@@ -83,7 +83,7 @@ class JobEntryBox:
                 return
                 
             def new_server():
-                s = ServerEntryBox(self.top)
+                ServerEntryBox(self.top, confirm_callback=set_server_choices)
                 #Refresh options
                 
                 # on change dropdown value
@@ -110,6 +110,15 @@ class JobEntryBox:
                     return False
                 else:
                     return True
+                
+            self.server_choicedrop = None
+            def set_server_choices():
+                self.server_choices = self.get_connections()
+                if self.server_choicedrop is not None:
+                    self.server_choicedrop.grid_forget()
+                self.server_choicedrop = OptionMenu(general_option_frame, self.server_connector, *self.server_choices)
+                self.server_choicedrop.grid(row = 5, column =1)
+                
             
             vcmd = (top.register(validate),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
             
@@ -123,9 +132,8 @@ class JobEntryBox:
             
             
             tk.Label(general_option_frame, text='Server Connection',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
-            self.server_choices = self.get_connections()
-            popupMenu = OptionMenu(general_option_frame, self.server_connector, *self.server_choices)
-            popupMenu.grid(row = 5, column =1)
+            set_server_choices()
+            
             self.server_connector.trace('w', change_dropdown)
             b = tk.Button(general_option_frame, text="New", command=new_server)
             b.grid(pady=5, padx=5, column=2, row=5, sticky="WE",columnspan=1)

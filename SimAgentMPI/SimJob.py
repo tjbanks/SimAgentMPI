@@ -28,6 +28,7 @@ import datetime
 import subprocess
 
 from ServerInterface import ServerInterface
+from SimServer import ServersFile
 
 class SimJob(object):
     properties_file = "sim.properties"
@@ -209,7 +210,12 @@ class SimJob(object):
         self.write_notes(SimJob.default_log_text)
         return
     
-    
+    def get_server(self):
+        sf = ServersFile()
+        if self.server_connector != "":
+            return sf.get_server_byname(self.server_connector)
+        return None
+        
     def clone(self):
         return
     
@@ -228,20 +234,21 @@ class SimJob(object):
         self.append_log(self.file_snapshotzip + " created")
         
         ServerInterface().start_simjob(self)
-        #search status for remote identifer and update the properties file
-        #set self start time here
         return
     
     def stop(self):
-        self.append_log("Attempting to stop")
-        ServerInterface().stop_simjob(self)
+        if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]:
+            self.append_log("Attempting to stop")
+            ServerInterface().stop_simjob(self)
+        
+        
         return
     
     def update(self):
-        if self.status == ServerInterface.ssh_status[0]:
+        if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]:
             ServerInterface().update_for_completion(self)
             
-        if self.status == ServerInterface.ssh_status[1]:
+        if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1]:
             ServerInterface().download_results_simjob(self)
         
         
