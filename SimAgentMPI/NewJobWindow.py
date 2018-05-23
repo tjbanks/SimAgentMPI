@@ -250,7 +250,6 @@ class JobEntryBox:
                 simjob = self.to_simjob()
                 simjob.create_sim_directory()
                 simjob.write_properties()
-                simjob.append_notes("")
                 simjob.append_log("Job created")
                 self.sim_directory.add_new_job(simjob)
                 if(self.oncomplete_callback):

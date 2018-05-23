@@ -1,0 +1,43 @@
+18-05-23 00:04:36 > Job created
+18-05-23 00:04:49 > Run initiated
+18-05-23 00:04:49 > Creating directory snapshot
+18-05-23 00:04:49 > SampleModel-run1.zip created
+18-05-23 00:04:49 > Loading server localhost-vm
+18-05-23 00:04:49 > Connecting to 192.168.56.101:22 over SSH
+18-05-23 00:04:49 > Verifying/creating folder /home/user/simagent_remote on 192.168.56.101
+18-05-23 00:04:49 > 192.168.56.101> mkdir simagent_remote
+18-05-23 00:04:50 > mkdir: cannot create directory ‘simagent_remote’: File exists
+18-05-23 00:04:50 > Uploading code (SampleModel-run1.zip) to /home/user/simagent_remote on 192.168.56.101
+18-05-23 00:04:50 > Code uploaded successfully.
+18-05-23 00:04:50 > 192.168.56.101> Unzipping and running code
+18-05-23 00:04:50 > 192.168.56.101> unzip -o -d simagent_remote/SampleModel-run1 simagent_remote/SampleModel-run1.zip
+18-05-23 00:04:50 > Archive:  simagent_remote/SampleModel-run1.zip
+  inflating: simagent_remote/SampleModel-run1/SampleModel-run1/batch.sh  
+  inflating: simagent_remote/SampleModel-run1/SampleModel-run1/channel.c  
+  inflating: simagent_remote/SampleModel-run1/SampleModel-run1/channel.mod  
+  inflating: simagent_remote/SampleModel-run1/SampleModel-run1/channel.o  
+  inflating: simagent_remote/SampleModel-run1/SampleModel-run1/main.hoc  
+18-05-23 00:04:50 > 192.168.56.101> Deleting zip
+18-05-23 00:04:50 > 192.168.56.101> rm -rf simagent_remote/SampleModel-run1.zip
+18-05-23 00:04:50 > 192.168.56.101> Running sbatch
+18-05-23 00:04:50 > 192.168.56.101> cd simagent_remote/SampleModel-run1/SampleModel-run1 && ~/sbatch batch.sh && cd ~
+18-05-23 00:04:50 > Submitted batch job 18215
+18-05-23 00:04:50 > Logging remote id 18215
+18-05-23 00:04:59 > Loading server localhost-vm
+18-05-23 00:04:59 > Connecting to 192.168.56.101:22 over SSH
+18-05-23 00:05:00 > 192.168.56.101> ~/squeue
+18-05-23 00:05:00 >              JOBID PARTITION     NAME    USER ST     TIME  NODES  NODELIST(RESON)
+             12339       knl    uname    user PD     00:00     1  (PARTITIONTIME)
+18-05-23 00:05:00 > SSH Job Completed
+18-05-23 00:05:00 > Loading server localhost-vm
+18-05-23 00:05:00 > Connecting to 192.168.56.101:22 over SSH
+18-05-23 00:05:00 > 192.168.56.101> Zipping remote results...
+18-05-23 00:05:00 > 192.168.56.101> cd simagent_remote/SampleModel-run1 && zip -r ../SampleModel-run1.zip SampleModel-run1 && cd ~
+18-05-23 00:05:00 >   adding: SampleModel-run1/ (stored 0%)
+  adding: SampleModel-run1/batch.sh (stored 0%)
+  adding: SampleModel-run1/channel.c (stored 0%)
+  adding: SampleModel-run1/main.hoc (stored 0%)
+  adding: SampleModel-run1/channel.o (stored 0%)
+  adding: SampleModel-run1/channel.mod (stored 0%)
+18-05-23 00:05:00 > Downloading results
+18-05-23 00:05:00 > Results saved to: C:/Users/Tyler/Desktop/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-run1\SampleModel-run1-results

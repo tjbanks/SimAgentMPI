@@ -187,8 +187,11 @@ class MainWindow():
         self.b_stop = tk.Button(buttons_frame, text="Stop Job", command=self.stop_job, width=button_width,state=tk.DISABLED)
         self.b_stop.grid(pady=5, padx=5, column=5, row=0, sticky="WE")
         
+        self.b_update = tk.Button(buttons_frame, text="Update Status", command=self.update_job, width=button_width,state=tk.DISABLED)
+        self.b_update.grid(pady=5, padx=5, column=6, row=0, sticky="WE")
+        
         self.b_open = tk.Button(buttons_frame, text="Open Job Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
-        self.b_open.grid(pady=5, padx=5, column=6, row=0, sticky="WE")
+        self.b_open.grid(pady=5, padx=5, column=7, row=0, sticky="WE")
                 
         
             
@@ -234,7 +237,9 @@ class MainWindow():
         
         if name_of_selected == "":
             self.notes_console.delete('1.0', tk.END)
+            self.log_console.config(state=tk.NORMAL)
             self.log_console.delete('1.0', tk.END)
+            self.log_console.config(state=tk.DISABLED)
         
         if name_of_selected == self.selected_job_name:
             return
@@ -250,12 +255,14 @@ class MainWindow():
             self.b_edit.config(state=tk.NORMAL)
             self.b_start.config(state=tk.NORMAL)
             self.b_stop.config(state=tk.NORMAL)
+            self.b_update.config(state=tk.NORMAL)
             self.b_open.config(state=tk.NORMAL)
         else:
             self.b_clone.config(state=tk.DISABLED)
             self.b_edit.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_stop.config(state=tk.DISABLED)
+            self.b_update.config(state=tk.DISABLED)
             self.b_open.config(state=tk.DISABLED)
             
         
@@ -276,8 +283,10 @@ class MainWindow():
     def display_job_log(self, job):
         if job != None:
             log = job.get_log()
+            self.log_console.config(state=tk.NORMAL)
             self.log_console.delete('1.0', tk.END)
             self.log_console.insert(tk.END, log) 
+            self.log_console.config(state=tk.DISABLED)
         return
     
     def refresh_log_periodically(self):
@@ -309,8 +318,16 @@ class MainWindow():
         if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run.", icon='warning') == 'yes'):
             job.run()
         return
+    
+    def update_job(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        job.update()
+        return
         
     def stop_job(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        if(messagebox.askquestion("Stop Job", "Are you sure you want to stop this job?", icon='warning') == 'yes'):
+            job.stop()
         return
     
     def open_job_folder(self):

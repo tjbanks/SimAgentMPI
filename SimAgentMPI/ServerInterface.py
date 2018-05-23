@@ -5,113 +5,313 @@ Created on Sun May 20 16:46:40 2018
 @author: Tyler
 """
 import os
+import paramiko
+import zipfile
+
 from nsg.nsgclient import Client
 from SimServer import ServersFile
 
 class ServerInterface(object):
+    ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
     
     def __init__(self):
+        self.remote_dir = "simagent_remote"#THIS IS THE DIRECTORY WHERE ALL CODE WILL BE EXECUTED FROM
+        
         return
     
     def get_server(self, simjob):
+        simjob.append_log("Loading server " + simjob.server_connector)
         servers = ServersFile()
         server = servers.get_server_byname(simjob.server_connector) #will return Mone if not found
-        
+        if not server:
+            simjob.append_log("Server connection not found")        
         return server
     
-    def validate_simjob(self, simjob):
-        self.start_simjob(simjob, validate_only=True)
-        return
     
-    
-    def start_simjob(self, simjob, validate_only=False):
-        
-        nsg_template_param_file = "param.properties"
-        nsg_template_input_file = "input.properties"
-        
+    def start_simjob(self, simjob, validate_nsg_only=False):
         server = self.get_server(simjob)
         if server:#check to make sure we have a valid server
             if(server.type == "nsg"):
-                simjob.append_log("Creating NSG parameter files: " + nsg_template_param_file + "," + nsg_template_input_file)
-                #generate new properties
-                with open(os.path.join(simjob.sim_directory_object.sim_results_dir,simjob.job_directory,nsg_template_input_file), 'w') as the_file:
-                    the_file.write('{}={}\n'.format("infile_",os.path.join(simjob.job_directory, simjob.file_snapshotzip)))
-                with open(os.path.join(simjob.sim_directory_object.sim_results_dir, simjob.job_directory,nsg_template_param_file), 'w') as the_file:
-                    the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
-                    the_file.write('{}={}\n'.format("filename_",simjob.batch_file))
-                    the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
-                    the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
-                    the_file.write('{}={}\n'.format("pythonoption_",simjob.server_nsg_python))
-                    the_file.write('{}={}\n'.format("outputfilename_",simjob.sim_name+'-nsg-return'))
-                    the_file.write('{}={}\n'.format("runtime_",simjob.server_max_runtime))
-                    the_file.write('{}={}\n'.format("singlelayer_","0")) 
-                    
-                #validate
-                
-                nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
-                
-                simjob.append_log("Validating job build with NSG...")
-                status = nsg.validateJobTemplate(simjob.job_directory_absolute)
-                if status == "true":
-                    simjob.append_log("NSG Template validation failed. See debug.")
-                else:
-                    simjob.append_log("NSG Template validation success")
-                    
-                if(validate_only):
-                    return
-                
-                #status = nsg.submitJobTemplate(simjob.job_directory,metadata={"statusEmail" : simjob.server_status_email})
-                
-                
-            
-            
+                self.submit_nsg(simjob, validate_nsg_only, server)
             elif(server.type == "ssh"):
-                simjob.append_log("Starting SSH connection process")
-                simjob.append_log("ssh to be implemented")
+                self.submit_ssh(simjob, validate_nsg_only, server)
+                
         else:
-            simjob.append_log("ERROR: not a valid server connector")
+            simjob.append_log("ERROR: Can't start job... not a valid server connector")
             
         return 
     
+    def update_for_completion(self, simjob, nsg_job_list=None): 
+        server = self.get_server(simjob)
+        if server:#check to make sure we have a valid server
+            if(server.type == "nsg"):
+                self.update_nsg(simjob, server, nsg_job_list=nsg_job_list)
+            elif(server.type == "ssh"):
+                self.update_ssh(simjob, server)
+        else:
+            simjob.append_log("ERROR: Can't update... not a valid server connector")
+            
+        return 
     
     def stop_simjob(self, simjob):
+        server = self.get_server(simjob)
+        if server:#check to make sure we have a valid server
+            if(server.type == "nsg"):
+                self.stop_nsg(simjob, server)
+            elif(server.type == "ssh"):
+                self.stop_ssh(simjob, server)
+        else:
+            simjob.append_log("ERROR: Can't update... not a valid server connector")
+            
+        return
+    
+    def download_results_simjob(self, simjob):
+        server = self.get_server(simjob)
+        if server:#check to make sure we have a valid server
+            if(server.type == "nsg"):
+                self.download_nsg(simjob, server)
+            elif(server.type == "ssh"):
+                self.download_ssh(simjob, server)
+        else:
+            simjob.append_log("ERROR: Can't update... not a valid server connector")
+        
+        return
+        
+    def delete_remote_results(self, simjob):
+        server = self.get_server(simjob)
+        if server:#check to make sure we have a valid server
+            if(server.type == "nsg"):
+                self.delete_nsg(simjob, server)
+            elif(server.type == "ssh"):
+                self.delete_ssh(simjob, server)
+        else:
+            simjob.append_log("ERROR: Can't update... not a valid server connector")
+            
+        return 
+    
+    def submit_nsg(self, simjob, validate_only, server):
+        nsg_template_param_file = "param.properties"
+        nsg_template_input_file = "input.properties"
+        
+        simjob.append_log("Creating NSG parameter files: " + nsg_template_param_file + "," + nsg_template_input_file)
+        #generate new properties
+        with open(os.path.join(simjob.sim_directory_object.sim_results_dir,simjob.job_directory,nsg_template_input_file), 'w') as the_file:
+            the_file.write('{}={}\n'.format("infile_",os.path.join(simjob.job_directory, simjob.file_snapshotzip)))
+        with open(os.path.join(simjob.sim_directory_object.sim_results_dir, simjob.job_directory,nsg_template_param_file), 'w') as the_file:
+            the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
+            the_file.write('{}={}\n'.format("filename_",simjob.batch_file))
+            the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
+            the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
+            the_file.write('{}={}\n'.format("pythonoption_",simjob.server_nsg_python))
+            the_file.write('{}={}\n'.format("outputfilename_",simjob.sim_name+'-nsg-return'))
+            the_file.write('{}={}\n'.format("runtime_",simjob.server_max_runtime))
+            the_file.write('{}={}\n'.format("singlelayer_","0")) 
+            
+        #validate
+        
+        nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+        
+        simjob.append_log("Validating job build with NSG...")
+        status = nsg.validateJobTemplate(simjob.job_directory_absolute)
+        if status == "true":
+            simjob.append_log("NSG Template validation failed. See debug.")
+        else:
+            simjob.append_log("NSG Template validation success")
+            
+        if(validate_only):
+            return
+        
+        status = nsg.submitJobTemplate(simjob.job_directory,metadata={"statusEmail" : simjob.server_status_email})
+        
+    
+    def submit_ssh(self, simjob, validate_only, server):
+        
+        client = self.connect_ssh(server,simjob)
+        
+        simjob.append_log("Verifying/creating folder /home/{}/{} on {}".format(server.user,self.remote_dir,server.host))
+        command= 'mkdir '+ self.remote_dir
+        self.exec_ssh_command(client, command, simjob, server)
+                
+        rem_loc = "./"+self.remote_dir+"/"+simjob.file_snapshotzip
+        zip_file = os.path.join(simjob.job_directory_absolute,simjob.file_snapshotzip)
+        zip_dir = simjob.file_snapshotzip.split(".zip")[0]
+        
+        simjob.append_log("Uploading code ({}) to /home/{}/{} on {}".format(simjob.file_snapshotzip,server.user,self.remote_dir,server.host))
+        sftp_client=client.open_sftp()
+        sftp_client.put(zip_file,rem_loc)
+        sftp_client.close()
+        simjob.append_log("Code uploaded successfully.")
+               
+        
+        simjob.append_log("{}> Unzipping and running code".format(server.host))
+        command = 'unzip -o -d '+self.remote_dir+'/'+zip_dir +' '+self.remote_dir+'/'+simjob.file_snapshotzip
+        self.exec_ssh_command(client, command, simjob, server)
+        
+        simjob.append_log("{}> Deleting zip".format(server.host))
+        command = 'rm -rf '+self.remote_dir+'/'+simjob.file_snapshotzip
+        self.exec_ssh_command(client, command, simjob, server)
+            
+        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+            sbatch_command = "sbatch"
+            simjob.append_log("{}> Running sbatch".format(server.host))
+            command = 'cd ' + self.remote_dir+'/'+ zip_dir+'/'+zip_dir+' && ' + sbatch_command + ' ' + simjob.batch_file+ ' && cd ~' #We want to execute from that dir
+            batch_id = self.exec_ssh_command(client, command, simjob, server)
+            batch_id = batch_id[0]
+            batch_id = batch_id.replace("Submitted batch job ", "")
+            batch_id = batch_id.replace("\n", "")
+            simjob.append_log("Logging remote id {}".format(batch_id))
+            simjob.server_remote_identifier = batch_id
+            simjob.status = ServerInterface.ssh_status[0]
+            simjob.write_properties()
+            #Submitted batch job 18214
+            
+        client.close()
+                
+        return
+    
+    def update_nsg(self, simjob, server, nsg_job_list=None):
+        nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+        
+        if not nsg_job_list: #Just save a couple calls to their server
+            nsg_job_list = nsg.listJobs()
+            
+        for job in nsg_job_list:
+            print(job)
+            
+        return
+    
+    def update_ssh(self, simjob, server):
+        
+        client = self.connect_ssh(server,simjob)
+        
+        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+            command = 'squeue'
+            lines = self.exec_ssh_command(client, command, simjob, server)
+            done = True
+            for line in lines:
+                if(simjob.server_remote_identifier in line):
+                    done = False
+            if done:
+                simjob.append_log("SSH Job Completed")
+                simjob.status = ServerInterface.ssh_status[1]
+                simjob.write_properties()
+        return
+        client.close()
+    
+    def stop_nsg(self, simjob, server):
+        nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
         
         return
     
+    def stop_ssh(self, simjob, server):
+        
+        client = self.connect_ssh(server,simjob)
+        
+        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+            command = 'scancel ' + simjob.server_remote_identifier
+            lines = self.exec_ssh_command(client, command, simjob, server)
+            command = 'squeue'
+            done = True
+            for line in lines:
+                if(simjob.server_remote_identifier in line):
+                    done = False
+            if done:
+                simjob.append_log("SSH Job Canceled")
+                simjob.status = ServerInterface.ssh_status[3]
+                simjob.write_properties()
+        client.close()
+        return
+    
+    
+    def download_nsg(self, simjob, server):
+        nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+        
+        return
+    
+    def download_ssh(self, simjob, server):
+        client = self.connect_ssh(server,simjob)
+        
+        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+            zip_dir = simjob.file_snapshotzip.split(".zip")[0]
+            simjob.file_resultsdir = zip_dir + "-results"
+            simjob.file_resultszip = simjob.file_resultsdir + ".zip"
+            results_dir_absolute = os.path.join(simjob.job_directory_absolute,simjob.file_resultsdir)
+            results_zip_absolute = os.path.join(simjob.job_directory_absolute,simjob.file_resultszip)
+            
+            command = "cd " + self.remote_dir + '/' + zip_dir + " && zip -r ../" + simjob.file_snapshotzip +" "+ zip_dir + " && cd ~"
+            simjob.append_log("{}> Zipping remote results...".format(server.host))
+            self.exec_ssh_command(client,command,simjob,server)
+                    
+            simjob.append_log("Downloading results")
+            rem_loc = "./"+self.remote_dir+"/"+simjob.file_snapshotzip
+            ftp_client=client.open_sftp()
+            ftp_client.get(rem_loc,results_zip_absolute)
+            ftp_client.close()
+            
+            zip_ref = zipfile.ZipFile(results_zip_absolute, 'r')
+            zip_ref.extractall(results_dir_absolute)
+            zip_ref.close()
+            simjob.append_log("Results saved to: {}".format(results_dir_absolute))
+            simjob.status = ServerInterface.ssh_status[2]
+            simjob.write_properties()
+        
+        client.close()
+        return
+        
+    def delete_nsg(self, simjob, server):
+        nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+        
+        return
+    
+    def delete_ssh(self, simjob, server):
+        
+        client = self.connect_ssh(server,simjob)
+        
+        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+            simjob.append_log("Cleaning up files")
+            zip_dir = simjob.file_snapshotzip.split(".zip")[0]
+            command = 'rm -rf '+self.remote_dir+'/'+zip_dir+'*'
+            self.exec_ssh_command(client,command,simjob,server)
+            
+        client.close()
+        return
+    
+    
     def get_nsg_tools(self):
         #implement in api sometime... see http://www.nsgportal.org/guide.html#ToolAPI --> /tool
-        
         tools = ["NEURON75_TG","NEURON74_TG","NEURON73_TG"]
         return tools
     
     def get_ssh_tools(self):
-        
         tools = ["sbatch"]
         return tools
     
-    """THREAD THIS TASK"""
-    def wait_for_completion(self, simjob): 
-        server = self.get_server(simjob)
+    def connect_ssh(self,server,simjob):
+        #simjob.append_log("Starting SSH connection process")
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
-        if(server.type == "nsg"):
-            nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+        simjob.append_log("Connecting to {}:{} over SSH".format(server.host,server.port))
                 
-            #must get all tasks and lookup the task id from the job, make sure it's submitted
-                
-        return
+        if(server.priv_key_location == ""):
+            #simjob.append_log("No private keyfile used")
+            client.connect(server.host, port=server.port, username=server.user, password=server.password)
+        else:
+            #simjob.append_log("Using private key authentication. Private key location: " + server.priv_key_location)
+            k = paramiko.RSAKey.from_private_key_file(server.priv_key_location, server.password)
+            client.connect(server.host, port=server.port, username=server.user, pkey=k)
+        return client
     
-    def download_results_simjob(self, simjob):
-        
-        return
-    
-    
-    def update_status(self, simjob):
-        
-        return
-    
-    
-    def delete_remote_results(self, simjob):
-        
-        return
-    
+    def exec_ssh_command(self,client, command, simjob, server):
+        simjob.append_log("{}> {}".format(server.host, command))
+        stdin , stdout, stderr = client.exec_command(command)
+        exit_status = stdout.channel.recv_exit_status()
+        lines = [""]
+        if exit_status == 0:
+            lines = stdout.readlines()
+            simjob.append_log(lines)            
+        else:
+            lines = stderr.readlines()
+            simjob.append_log(lines)
+        return lines
     

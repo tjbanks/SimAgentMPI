@@ -34,6 +34,7 @@ class SimJob(object):
     log_file = "sim.log"
     notes_file = "sim_notes.txt"
     version = "1.0"
+    default_log_text = "Write notes about this job here..."
     
     def __init__(self, sim_directory_object, job_directory):
         self.sim_directory_object = sim_directory_object
@@ -92,7 +93,6 @@ class SimJob(object):
         
         
         self.read_properties()
-        
         return
     
     def create_sim_directory(self, dir_=None):
@@ -102,7 +102,7 @@ class SimJob(object):
         print(path)
         
     def open_sim_directory(self):
-        subprocess.call("start \""+self.job_directory+"\"", shell=True)
+        subprocess.call("start "+self.job_directory, shell=True)
         
     def write_notes(self, text):
         full_notes_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.notes)
@@ -126,7 +126,14 @@ class SimJob(object):
             append_write = 'w' # make a new file if not
         
         f = open(full_log_path,append_write)
-        f.write(st + ' > ' + text+'\n')
+        if isinstance(text,list):
+            for i,line in enumerate(text):
+                if i == 0:
+                    f.write(st + ' > ' + line)
+                else:
+                    f.write(line)
+        else:
+            f.write(st + ' > ' + text+'\n')
         f.close()
         
         return
@@ -190,8 +197,7 @@ class SimJob(object):
         data[self.propname_server_ssh_tool] = self.server_ssh_tool
         data[self.propname_server_nsg_python] = self.server_nsg_python
         data[self.propname_server_mpi_partition] = self.server_mpi_partition
-        data[self.propname_server_max_runtime] = self.server_max_runtime 
-        data[self.propname_server_remote_identifier] = self.server_remote_identifier
+        data[self.propname_server_max_runtime] = self.server_max_runtime
         data[self.propname_server_email] = self.server_email
         data[self.propname_server_status_email] = self.server_status_email
         data[self.propname_server_remote_identifier] = self.server_remote_identifier
@@ -199,7 +205,10 @@ class SimJob(object):
         
         with open(os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties), 'w') as outfile:  
             json.dump(data, outfile)
+            
+        self.write_notes(SimJob.default_log_text)
         return
+    
     
     def clone(self):
         return
@@ -208,29 +217,32 @@ class SimJob(object):
         #snapshot of project, put in this directory to be sent to server
         #ts = time.time()
         #st = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d-%H%M%S')
-        self.file_snapshotzip = self.sim_name + "-snap" #-" + st
+        self.file_snapshotzip = self.sim_name #-" + st
         self.sim_directory_object.take_snapshotzip(os.path.join(self.sim_directory_object.sim_results_dir,self.job_directory,self.file_snapshotzip))
         self.file_snapshotzip = self.file_snapshotzip +".zip" #for later use
-        
-    def validate():
-        return
-    
+            
     def run(self):
         self.append_log("Run initiated")
         self.append_log("Creating directory snapshot")
         self.create_snapshot()
         self.append_log(self.file_snapshotzip + " created")
         
-        status = ServerInterface().start_simjob(self)
-        print(status)
+        ServerInterface().start_simjob(self)
         #search status for remote identifer and update the properties file
         #set self start time here
         return
     
     def stop(self):
-        
+        self.append_log("Attempting to stop")
+        ServerInterface().stop_simjob(self)
         return
     
-    def watch(self):
+    def update(self):
+        if self.status == ServerInterface.ssh_status[0]:
+            ServerInterface().update_for_completion(self)
+            
+        if self.status == ServerInterface.ssh_status[1]:
+            ServerInterface().download_results_simjob(self)
+        
         
         return
