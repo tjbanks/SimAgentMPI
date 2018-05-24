@@ -105,6 +105,9 @@ class SimJob(object):
     def open_sim_directory(self):
         subprocess.call("start "+self.job_directory, shell=True)
         
+    def open_sim_results_directory(self):
+        subprocess.call("start "+os.path.join(self.job_directory,self.dir_results,self.sim_name), shell=True)
+        
     def write_notes(self, text):
         full_notes_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.notes)
         append_write = 'w'
@@ -215,8 +218,15 @@ class SimJob(object):
         if self.server_connector != "":
             return sf.get_server_byname(self.server_connector)
         return None
-        
-    def clone(self):
+    
+    def delete_remote(self):
+        self.append_log("Delete remote initiated")        
+        ServerInterface().delete_remote_results(self)
+        return
+    
+    def download_remote(self):
+        self.append_log("Download remote results initiated")        
+        ServerInterface().download_results_simjob(self)
         return
     
     def create_snapshot(self):

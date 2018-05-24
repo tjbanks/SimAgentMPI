@@ -16,11 +16,19 @@ from SimJob import SimJob
 
 class JobEntryBox:
         
-        def __init__(self, parent, sim_directory, job_name=None, sim_job_copy=None, oncomplete_callback=None):
+        def __init__(self, parent, sim_directory, job_name=None, sim_job_copy=None, oncomplete_callback=None, edit_job=None, clone_mode=False):
             self.window_title = "New Job"
+            if edit_job:
+                self.window_title = "Edit Job"
+            if clone_mode:
+                self.window_title = "Clone Job"
+                
             self.parent = parent
             self.sim_directory = sim_directory
             self.oncomplete_callback = oncomplete_callback
+            self.edit_job = edit_job
+            self.clone_mode = clone_mode
+            
             
             if(not job_name):
                 ts = time.time()
@@ -52,6 +60,23 @@ class JobEntryBox:
             self.server_status_email = tk.IntVar(top)
             self.confirm = tk.BooleanVar(top)
             self.confirm.set(False)
+            
+            
+            if edit_job:
+                self.name.set(edit_job.sim_name)
+                self.batch_file.set(edit_job.batch_file)
+                self.update_interval.set(edit_job.update_interval)
+                self.server_connector.set(edit_job.server_connector)
+                self.server_nodes.set(edit_job.server_nodes)
+                self.server_cores.set(edit_job.server_cores)
+                self.server_nsg_tool.set(edit_job.server_nsg_tool)
+                self.server_ssh_tool.set(edit_job.server_ssh_tool)
+                self.server_nsg_python.set(edit_job.server_nsg_python)
+                self.server_mpi_partition.set(edit_job.server_mpi_partition)
+                self.server_max_runtime.set(edit_job.server_max_runtime)
+                
+                if clone_mode:
+                    self.name.set(edit_job.sim_name+"_clone")
             
             
             self.display()
@@ -122,7 +147,13 @@ class JobEntryBox:
             
             vcmd = (top.register(validate),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
             
-            tk.Label(top, text='New Remote Job').grid(row=0,column=0,sticky="WE",pady=15, columnspan=3)
+            toptext = "New Remote Job"
+            if self.edit_job:
+                toptext = "Edit Job"
+            if self.clone_mode:
+                toptext = "Clone Job"
+            
+            tk.Label(top, text=toptext).grid(row=0,column=0,sticky="WE",pady=15, columnspan=3)
             
             general_option_frame = tk.LabelFrame(top, text="General")
             
@@ -130,6 +161,10 @@ class JobEntryBox:
             self.name_e = tk.Entry(general_option_frame,width=25,textvariable=self.name,validate='key', validatecommand=vcmd)
             self.name_e.grid(row=1,column=1,padx=5,columnspan=1)
             
+            if self.edit_job:
+                self.name_e.config(state=tk.DISABLED)
+            if self.clone_mode:
+                self.name_e.config(state=tk.NORMAL)
             
             tk.Label(general_option_frame, text='Server Connection',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
             set_server_choices()
@@ -143,6 +178,8 @@ class JobEntryBox:
             conn_option_frame = tk.LabelFrame(top, text="SSH Connection Parameters")
             nsgconn_option_frame = tk.LabelFrame(top, text="NSG Connection Parameters")
             
+            if self.edit_job:
+                change_dropdown()#In case we're editing
             ###SSH###
             
             tk.Label(conn_option_frame, text='Tool',width=15, background='light gray',relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5)
@@ -217,6 +254,9 @@ class JobEntryBox:
             
             
         def verify_good(self):
+            if (' ' in self.name.get()) == True:
+                self.valid_message = "Name cannot contain spaces. (Issues with paths)"
+                return False
             return True
         
         
@@ -231,12 +271,16 @@ class JobEntryBox:
             return ServerInterface().get_nsg_tools()
         
         def is_valid(self):
-            return True
-            self.valid_message = ""
+            return self.verify_good()
+            
             
         
-        def to_simjob(self):
-            simjob = SimJob(self.sim_directory, self.name.get())
+        def to_simjob(self, edit=False):
+            simjob = None
+            if edit and not self.clone_mode:
+                simjob = self.edit_job
+            else:
+                simjob = SimJob(self.sim_directory, self.name.get())
             
             simjob.status = self.status.get()
             simjob.batch_file = self.batch_file.get()
@@ -255,16 +299,22 @@ class JobEntryBox:
         def ok(self):
             self.confirm.set(True)
             if(self.confirm.get() and self.is_valid()):
-                simjob = self.to_simjob()
-                simjob.create_sim_directory()
-                simjob.write_properties()
-                simjob.append_log("Job created")
-                self.sim_directory.add_new_job(simjob)
+                if self.edit_job and not self.clone_mode:
+                    simjob = self.to_simjob()
+                    simjob.write_properties()
+                    simjob.append_log("Job edited")
+                else:
+                    simjob = self.to_simjob()
+                    simjob.create_sim_directory()
+                    simjob.write_properties()
+                    simjob.append_log("Job created")
+                    self.sim_directory.add_new_job(simjob)
                 if(self.oncomplete_callback):
                     self.oncomplete_callback()
                 self.top.destroy()
             else:
                 messagebox.showinfo("Validation Error",self.valid_message)
+                self.top.lift()
             
         def cancel(self):
             self.top.destroy()

@@ -215,10 +215,10 @@ class Cell(Frame):
     """Base class for cells"""
 
 class Data_Cell(Cell):
-    def __init__(self, master, variable, anchor=W, bordercolor=None, borderwidth=1, padx=0, pady=0, background=None, foreground=None, font=None, row_num=0, table=None):
+    def __init__(self, master, variable, anchor=W, bordercolor=None, borderwidth=1, padx=0, pady=0, background=None, foreground=None, font=None, row_num=0, table=None, width=100):
         Cell.__init__(self, master, background=background, highlightbackground=bordercolor, highlightcolor=bordercolor, highlightthickness=borderwidth, bd= 0)
-
-        self._message_widget = Message(self, textvariable=variable, font=font, background=background, foreground=foreground)
+        self.background = background
+        self._message_widget = Message(self, width=width,textvariable=variable, font=font, background=background, foreground=foreground)
         self._message_widget.pack(expand=True, padx=padx, pady=pady, anchor=anchor)
         
         self.bind('<Button-1>', lambda event, row=row_num, table=table: cell_selected(event, table, row))
@@ -243,7 +243,7 @@ class Header_Cell(Cell):
         self.configure(height=height, width=width)
         
 class Table(Frame):
-    def __init__(self, master, columns, column_weights=None, column_minwidths=None, height=500, minwidth=20, minheight=20, padx=5, pady=5, cell_font=None, cell_foreground="black", cell_background="white", cell_anchor=W, header_font=None, header_background="white", header_foreground="black", header_anchor=CENTER, bordercolor = "#999999", innerborder=True, outerborder=True, stripped_rows=("#EEEEEE", "white"), on_change_data=None, mousewheel_speed = 2, scroll_horizontally=False, scroll_vertically=True,onselect_method=None):
+    def __init__(self, master, columns, column_weights=None, column_minwidths=None, height=500, minwidth=20, minheight=20, padx=5, pady=5, cell_font=None, cell_foreground="black", cell_background="white", cell_anchor=W, header_font=None, header_background="white", header_foreground="black", header_anchor=CENTER, bordercolor = "#999999", innerborder=True, outerborder=True, stripped_rows=("#EEEEEE", "white"), on_change_data=None, mousewheel_speed = 2, scroll_horizontally=False, scroll_vertically=True,onselect_method=None,onselect_color="#C0C0E0"):
         outerborder_width = 1 if outerborder else 0
 
         Frame.__init__(self,master, bd= 0)
@@ -270,6 +270,9 @@ class Table(Frame):
         
         self._number_of_rows = 0
         self._number_of_columns = len(columns)
+        
+        self._column_minwidths = column_minwidths
+        self.onselect_color = onselect_color
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -346,9 +349,9 @@ class Table(Frame):
                 list_of_vars.append(var)
 
                 if self._stripped_rows:
-                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._stripped_rows[i%2], foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor, row_num=i, table=self)
+                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._stripped_rows[i%2], foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor, row_num=i, table=self, width=self._column_minwidths[j])
                 else:
-                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._cell_background, foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor,row_num=i, table=self)
+                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._cell_background, foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor,row_num=i, table=self, width=self._column_minwidths[j])
 
                 cell.grid(row=i, column=j, sticky=N+E+W+S)
                 #cell.config(bg="blue")
@@ -539,6 +542,17 @@ class Table(Frame):
         
     def select_row(self, row):
         self.selected_row = row
+        
+        for child in self._body.children.values():
+            if child.grid_info()['row'] == row:
+                child.config(bg=self.onselect_color)
+                for grandchild in child.children.values():
+                    grandchild.config(bg=self.onselect_color)
+            else:
+                child.config(background = child.background)
+                for grandchild in child.children.values():
+                    grandchild.config(bg=child.background)
+        
         if(self.onselect_method):
             self.onselect_method(self.selected_row)
 

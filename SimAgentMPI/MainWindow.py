@@ -13,6 +13,7 @@ from tktable import Table
 from NewJobWindow import JobEntryBox
 from NewServerConfig import ServerEntryBox
 from SimDirectory import SimDirectory
+from ServerInterface import ServerInterface
 
 import threading
 
@@ -158,7 +159,7 @@ class MainWindow():
         self.refresh_log_periodically()
         
         
-        b = tk.Button(self.directory_frame, text="Select Directory", command=self.load_dir, width=button_width)
+        b = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=button_width)
         b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
         
         self.sim_dir_var = tk.StringVar(root)
@@ -190,7 +191,7 @@ class MainWindow():
         self.b_update = tk.Button(buttons_frame, text="Update Status", command=self.update_job, width=button_width,state=tk.DISABLED)
         self.b_update.grid(pady=5, padx=5, column=6, row=0, sticky="WE")
         
-        self.b_open = tk.Button(buttons_frame, text="Open Job Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
+        self.b_open = tk.Button(buttons_frame, text="Open Results Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
         self.b_open.grid(pady=5, padx=5, column=7, row=0, sticky="WE")
                 
         
@@ -234,6 +235,7 @@ class MainWindow():
     def select_row(self, row):
         name_of_selected = str(self.table.row(row)[0])
         self.write_notes()
+        job = None
         
         if name_of_selected == "":
             self.notes_console.delete('1.0', tk.END)
@@ -244,19 +246,38 @@ class MainWindow():
         if name_of_selected == self.selected_job_name:
             return
                 
-        if self.selected_job_name == None or (self.selected_job_name != name_of_selected and name_of_selected != ""): #selecting something different
+        if self.selected_job_name != None or (self.selected_job_name != name_of_selected and name_of_selected != ""): #selecting something different
             job = self.sim_dir.get_job(name_of_selected)
             self.display_job_notes_log(job)
             
-        
+        """
+        ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
+        nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED"]
+        """
         self.selected_job_name = name_of_selected
         if(self.selected_job_name != ""):
             self.b_clone.config(state=tk.NORMAL)
-            self.b_edit.config(state=tk.NORMAL)
-            self.b_start.config(state=tk.NORMAL)
-            self.b_stop.config(state=tk.NORMAL)
-            self.b_update.config(state=tk.NORMAL)
-            self.b_open.config(state=tk.NORMAL)
+                        
+            if(job.status=="" or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
+                self.b_start.config(state=tk.NORMAL)
+                self.b_edit.config(state=tk.NORMAL)
+            else:
+                self.b_start.config(state=tk.DISABLED)
+                self.b_edit.config(state=tk.DISABLED)
+                
+            if(job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2]):
+                self.b_open.config(state=tk.NORMAL)
+            else:
+                self.b_open.config(state=tk.DISABLED)
+            
+            if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
+                self.b_stop.config(state=tk.NORMAL)
+                self.b_update.config(state=tk.NORMAL)
+            else:
+                self.b_stop.config(state=tk.DISABLED)
+                self.b_update.config(state=tk.DISABLED)
+            
+            
         else:
             self.b_clone.config(state=tk.DISABLED)
             self.b_edit.config(state=tk.DISABLED)
@@ -286,6 +307,7 @@ class MainWindow():
             self.log_console.config(state=tk.NORMAL)
             self.log_console.delete('1.0', tk.END)
             self.log_console.insert(tk.END, log) 
+            self.log_console.see("end")
             self.log_console.config(state=tk.DISABLED)
         return
     
@@ -308,9 +330,13 @@ class MainWindow():
         JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.reload_table)
     
     def clone_job(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.load_dir, edit_job=job, clone_mode=True)
         return
     
     def edit_job(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.load_dir, edit_job=job)
         return
         
     def start_job(self):
@@ -330,32 +356,45 @@ class MainWindow():
             job.stop()
         return
     
-    def open_job_folder(self):
+    def delete_remote_files(self):
         job = self.sim_dir.get_job(self.selected_job_name)
-        job.open_sim_directory()
+        if(messagebox.askquestion("Delete Remote Job Files", "Are you sure you want to delete the files on the remote server?", icon='warning') == 'yes'):
+            job.delete_remote()
         return
     
-    def load_dir(self):
+    def download_remote_files(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        if(messagebox.askquestion("Download Remote Job Files", "Are you sure you want to download the files on the remote server? This will overwrite {} and files in the folder {} ".format(job.file_resultszip, job.dir_results), icon='warning') == 'yes'):
+            job.delete_remote()
+        return
+    
+    
+    def open_job_folder(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        job.open_sim_results_directory()
+        return
+    
+    def load_dir(self, btn=False, dir_=None):
+        dir_ = None
+        if self.sim_dir and not btn:
+            dir_ = self.sim_dir.sim_directory
+        else:
             dir_ = filedialog.askdirectory()
-            if not dir_:
-                return
-            try:
-                
-                temp_sim_dir = SimDirectory(dir_,initialize=True)
-                
-                if (not self.sim_dir) or (self.sim_dir and self.sim_dir.sim_directory != temp_sim_dir.sim_directory): #if sim dir is None or sim dir is different from currently loaded
-                    self.sim_dir = temp_sim_dir
-                    self.sim_dir_var.set(self.sim_dir.sim_directory)
-                    self.reload_table()         
-                    
-                    
-                self.b_new.config(state=tk.NORMAL)
-                
-                    
-            except Exception as e:
-                print(e)
-            
+        if not dir_:
             return
+        try:
+            
+            self.sim_dir = SimDirectory(dir_,initialize=True)
+            self.sim_dir_var.set(self.sim_dir.sim_directory)
+            self.reload_table()         
+                
+            self.b_new.config(state=tk.NORMAL)
+            
+                
+        except Exception as e:
+            print(e)
+        
+        return
 
     def reload_table(self):
         self.table.grid_forget()
@@ -371,4 +410,4 @@ class MainWindow():
                 part_tool = job.server_nsg_tool
                 
             self.table.insert_row([job.sim_name, job.status, job.server_connector, part_tool , job.server_nodes, job.server_cores, job.sim_start_time, "",job.server_remote_identifier],index=0)
-            
+        

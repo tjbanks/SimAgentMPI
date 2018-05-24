@@ -80,4 +80,64 @@
 18-05-23 15:21:14 > 2018-05-23T13:02:05-07:00: Output files retrieved.  Task is finished.
 18-05-23 15:21:14 > Downloading: STDOUT
 18-05-23 15:21:14 > Downloading: STDERR
-18-05-23 15:21:14 > Downloading: SampleModel-nsg1-nsg-return.tar.gz
+18-05-23 15:21:14 > Downloading: SampleModel-nsg1-nsg-return.tar.gz18-05-23 19:50:19 > Loading server nsg-tbg28
+18-05-23 19:51:12 > Loading server nsg-tbg28
+18-05-23 19:51:35 > Loading server nsg-tbg28
+18-05-23 19:52:08 > Loading server nsg-tbg28
+18-05-23 19:52:09 > 2018-05-23T12:48:16-07:00: Added to NSG run queue.
+18-05-23 19:52:09 > 2018-05-23T12:48:23-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-05-23 19:52:09 > 2018-05-23T12:48:23-07:00: Staging input files to comet
+18-05-23 19:52:09 > 2018-05-23T12:48:27-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-3AA6B1CE83AC46BA89DC0AFC94BE380B/
+18-05-23 19:52:09 > 2018-05-23T12:48:33-07:00: Submitted to comet as job '16476098'.
+18-05-23 19:52:09 > 2018-05-23T13:01:32-07:00: Trying to transfer results.
+18-05-23 19:52:09 > 2018-05-23T13:02:05-07:00: Output files retrieved.  Task is finished.
+18-05-23 19:52:09 > 2018-05-23T12:48:16-07:00: Added to NSG run queue.
+18-05-23 19:52:09 > 2018-05-23T12:48:23-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-05-23 19:52:09 > 2018-05-23T12:48:23-07:00: Staging input files to comet
+18-05-23 19:52:09 > 2018-05-23T12:48:27-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-3AA6B1CE83AC46BA89DC0AFC94BE380B/
+18-05-23 19:52:09 > 2018-05-23T12:48:33-07:00: Submitted to comet as job '16476098'.
+18-05-23 19:52:09 > 2018-05-23T13:01:32-07:00: Trying to transfer results.
+18-05-23 19:52:09 > 2018-05-23T13:02:05-07:00: Output files retrieved.  Task is finished.
+18-05-23 19:52:09 > Downloading: STDOUT
+18-05-23 19:52:10 > Downloading: STDERR
+18-05-23 19:52:10 > Downloading: SampleModel-nsg1-nsg-return.tar.gz
+18-05-23 19:52:11 > Extracting results
+18-05-23 19:55:10 > Loading server nsg-tbg28
+18-05-23 19:55:12 > 2018-05-23T12:48:16-07:00: Added to NSG run queue.
+18-05-23 19:55:12 > 2018-05-23T12:48:23-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-05-23 19:55:12 > 2018-05-23T12:48:23-07:00: Staging input files to comet
+18-05-23 19:55:12 > 2018-05-23T12:48:27-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-3AA6B1CE83AC46BA89DC0AFC94BE380B/
+18-05-23 19:55:12 > 2018-05-23T12:48:33-07:00: Submitted to comet as job '16476098'.
+18-05-23 19:55:12 > 2018-05-23T13:01:32-07:00: Trying to transfer results.
+18-05-23 19:55:12 > 2018-05-23T13:02:05-07:00: Output files retrieved.  Task is finished.
+18-05-23 19:55:12 > 2018-05-23T12:48:16-07:00: Added to NSG run queue.
+18-05-23 19:55:12 > 2018-05-23T12:48:23-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-05-23 19:55:12 > 2018-05-23T12:48:23-07:00: Staging input files to comet
+18-05-23 19:55:12 > 2018-05-23T12:48:27-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-3AA6B1CE83AC46BA89DC0AFC94BE380B/
+18-05-23 19:55:12 > 2018-05-23T12:48:33-07:00: Submitted to comet as job '16476098'.
+18-05-23 19:55:12 > 2018-05-23T13:01:32-07:00: Trying to transfer results.
+18-05-23 19:55:12 > 2018-05-23T13:02:05-07:00: Output files retrieved.  Task is finished.
+18-05-23 19:55:12 > Downloading: STDOUT
+18-05-23 19:55:12 > Downloading: STDERR
+18-05-23 19:55:12 > Downloading: SampleModel-nsg1-nsg-return.tar.gz
+18-05-23 19:55:13 > Extracting results
+18-05-23 19:55:39 > Loading server nsg-tbg28
+18-05-23 19:55:40 > 2018-05-23T12:48:16-07:00: Added to NSG run queue.
+18-05-23 19:55:40 > 2018-05-23T12:48:23-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-05-23 19:55:40 > 2018-05-23T12:48:23-07:00: Staging input files to comet
+18-05-23 19:55:40 > 2018-05-23T12:48:27-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-3AA6B1CE83AC46BA89DC0AFC94BE380B/
+18-05-23 19:55:40 > 2018-05-23T12:48:33-07:00: Submitted to comet as job '16476098'.
+18-05-23 19:55:40 > 2018-05-23T13:01:32-07:00: Trying to transfer results.
+18-05-23 19:55:40 > 2018-05-23T13:02:05-07:00: Output files retrieved.  Task is finished.
+18-05-23 19:55:40 > 2018-05-23T12:48:16-07:00: Added to NSG run queue.
+18-05-23 19:55:40 > 2018-05-23T12:48:23-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-05-23 19:55:40 > 2018-05-23T12:48:23-07:00: Staging input files to comet
+18-05-23 19:55:40 > 2018-05-23T12:48:27-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-3AA6B1CE83AC46BA89DC0AFC94BE380B/
+18-05-23 19:55:40 > 2018-05-23T12:48:33-07:00: Submitted to comet as job '16476098'.
+18-05-23 19:55:40 > 2018-05-23T13:01:32-07:00: Trying to transfer results.
+18-05-23 19:55:40 > 2018-05-23T13:02:05-07:00: Output files retrieved.  Task is finished.
+18-05-23 19:55:40 > Downloading: STDOUT
+18-05-23 19:55:40 > Downloading: STDERR
+18-05-23 19:55:40 > Downloading: SampleModel-nsg1-nsg-return.tar.gz
+18-05-23 19:55:42 > Extracting results
+18-05-23 19:55:42 > Extracted results to C:/Users/Tyler/Desktop/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-nsg1\SampleModel-nsg1-nsg-return
