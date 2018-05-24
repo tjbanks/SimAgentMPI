@@ -1,0 +1,3 @@
+#SBATCH -p Lewis
+#SBATCH -N 2
+#SBATCH -n 4

@@ -168,9 +168,13 @@ class MainWindow():
         b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
         
         self.sim_dir_var = tk.StringVar(root)
-        self.sim_dir_label = tk.Label(self.directory_frame, fg="blue",textvariable=self.sim_dir_var)
+        self.sim_dir_label = tk.Label(self.directory_frame, fg="blue",textvariable=self.sim_dir_var,anchor=tk.W,width=95)
         self.sim_dir_label.grid(column=1,row=0,sticky='news',padx=10,pady=5)
-            
+        
+        self.b_tool_edit = tk.Button(self.directory_frame, text="Edit Custom Tool", command=self.edit_dir_tool, width=button_width,anchor=tk.W)
+        self.b_tool_edit.grid(pady=5, padx=5, column=2, row=0, sticky="E")
+        self.b_tool_edit.config(state=tk.DISABLED)
+        
         """=Jobs Frame======================================"""
         
         buttons_frame = tk.LabelFrame(self.jobs_frame, text="")        
@@ -199,14 +203,18 @@ class MainWindow():
         self.b_open = tk.Button(buttons_frame, text="Open Results Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
         self.b_open.grid(pady=5, padx=5, column=7, row=0, sticky="WE")
         
+        self.b_run_cust = tk.Button(buttons_frame, text="Run Custom Tool", command=self.run_custom, width=button_width,state=tk.DISABLED)
+        self.b_run_cust.grid(pady=5, padx=5, column=8, row=0, sticky="WE")
+        
+        
         #Row 2
         
         #self.b_down_remote = tk.Button(buttons_frame, text="Re-Download Files", command=self.download_remote_files, width=button_width,state=tk.DISABLED)
         #self.b_down_remote.grid(pady=5, padx=5, column=5, row=1, sticky="WE")
            
         #self.b_del_remote = tk.Button(buttons_frame, text="Delete Remote Files", command=self.delete_remote_files, width=button_width,state=tk.DISABLED)
-        #self.b_del_remote.grid(pady=5, padx=5, column=6, row=1, sticky="WE")             
-        
+        #self.b_del_remote.grid(pady=5, padx=5, column=6, row=1, sticky="WE")           
+                
             
         self.columns = ["Name", "Status", "Server", "Tool/Partition", "Nodes", "Cores", "Start", "Runtime", "Remote ID"]
         self.col_wid = [200, 75, 100, 100, 50, 50, 100, 100, 150]
@@ -282,8 +290,10 @@ class MainWindow():
                 
             if(job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2]):
                 self.b_open.config(state=tk.NORMAL)
+                self.b_run_cust.config(state=tk.NORMAL)
             else:
                 self.b_open.config(state=tk.DISABLED)
+                self.b_run_cust.config(state=tk.DISABLED)
             
             if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
                 self.b_stop.config(state=tk.NORMAL)
@@ -345,6 +355,14 @@ class MainWindow():
             
     def edit_server(self):
         SelectServerEditBox(self.root, callback=self.edit_server_callback)
+        
+    def edit_dir_tool(self):
+        if self.sim_dir and self.sim_dir != "":
+            Edit_dir_tool(self.root, self.sim_dir)
+            
+    def run_custom(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        job.run_custom()
         
             
     def about(self):
@@ -412,6 +430,7 @@ class MainWindow():
             self.reload_table()         
                 
             self.b_new.config(state=tk.NORMAL)
+            self.b_tool_edit.config(state=tk.NORMAL)
             
                 
         except Exception as e:
@@ -438,3 +457,57 @@ class MainWindow():
                 self.table.insert_row([job.sim_name, job.status, job.server_connector, part_tool , job.server_nodes, job.server_cores, job.sim_start_time, "",job.server_remote_identifier])#,index=0)
         else:
             self.table.set_data([[""],[""],[""],[""]])
+            
+            
+class Edit_dir_tool(object):
+    
+    def __init__(self, parent, dir_):
+        self.parent = parent
+        self.dir_ = dir_
+                 
+        self.display()
+        return
+    
+    def display(self, server_id=None):            
+        top = self.top = tk.Toplevel(self.parent)
+        top.geometry('300x140')
+        top.resizable(0,0)
+        
+        self.tool = tk.StringVar(top)
+        self.confirm = tk.BooleanVar(top)
+        self.confirm.set(False)
+        
+        self.tool.set(self.dir_.custom_tool)
+        
+        l = tk.Label(top, text='Write the command as if you were executing\nfrom the project directory on your local machine.\nJobs will execute the command from their results\n directory.',width=40)
+        l.grid(row=0,column=0,pady=5,padx=5,columnspan=2,rowspan=2)
+        
+        l = tk.Label(top, text='Custom command',width=15, background='light gray')
+        l.grid(row=2,column=0,pady=5,padx=5)
+        l.config(relief=tk.GROOVE)
+        
+        self.name_e = tk.Entry(top,width=25,textvariable=self.tool)
+        self.name_e.grid(row=2,column=1,padx=5)
+        
+        b = tk.Button(top, text="Ok", command=self.ok)
+        b.grid(pady=5, padx=5, column=0, row=3, sticky="WE")
+        
+        b = tk.Button(top, text="Cancel", command=self.cancel)
+        b.grid(pady=5, padx=5, column=1, row=3, sticky="WE")
+        
+        
+    def is_valid(self):
+        return True
+    
+    def ok(self):
+            self.confirm.set(True)
+            if(self.confirm.get() and self.is_valid()):
+                self.dir_.custom_tool = self.tool.get()
+                self.dir_.write_properties()
+                self.top.destroy()
+            else:
+                messagebox.showinfo("Validation Error",self.valid_message)
+                self.top.lift()
+            
+    def cancel(self):
+        self.top.destroy()

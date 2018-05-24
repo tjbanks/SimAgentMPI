@@ -26,10 +26,13 @@ Directory structure
 from SimJob import SimJob
 import os,errno
 import zipfile
+import json
 from tkinter import messagebox
 
 class SimDirectory(object):
     results_folder_name = "SimAgentResults"
+    properties_file = "dir.properties"
+    version = "1.0"
      
     def __init__(self, directory, initialize=False):
         self.sim_directory = directory
@@ -38,6 +41,13 @@ class SimDirectory(object):
         
         self.sim_results_dir = os.path.join(self.sim_directory, SimDirectory.results_folder_name)
         
+        self.propname_version = "version"
+        self.propname_custom_tool = "custom_tool"
+        
+        self.version_num = SimDirectory.version
+        self.custom_tool = ""     
+        
+        self.full_properties_path = os.path.join(self.sim_results_dir,SimDirectory.properties_file)
         
         """ DETECTION """
         #Determine what files are present in the directory
@@ -64,6 +74,8 @@ class SimDirectory(object):
         for job_folder in results_dir_folder_names:
             self.add_new_job(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
         
+        self.read_properties()
+        
         return
     
     def initialize(self):
@@ -72,7 +84,7 @@ class SimDirectory(object):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-                
+        self.write_properties()
         self.is_valid_sim_directory = True
         
         return
@@ -108,6 +120,23 @@ class SimDirectory(object):
                 return job
         return None
         
+    def read_properties(self):
+        if(os.path.isfile(self.full_properties_path)):
+            with open(self.full_properties_path) as json_file:  
+                data = json.load(json_file)
+                self.custom_tool = data[self.propname_custom_tool] 
+                self.version_num = data[self.propname_version]
+        return
+
+    def write_properties(self):
+        data = {}
+        data[self.propname_custom_tool] = self.custom_tool      
+        data[self.propname_version] = self.version_num
+        with open(self.full_properties_path, 'w') as outfile:  
+            json.dump(data, outfile)
+            
+        return
+    
 """    
 def test():
     directory = "C:\\Users\\Tyler\\Desktop\\git_stage\\Sample_Model"

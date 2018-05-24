@@ -143,6 +143,23 @@ class SimJob(object):
         f.close()
         
         return
+    
+    def run_custom(self):
+        tool = self.sim_directory_object.custom_tool
+        
+        if ("../" in tool)==True or ("..\\" in tool)==True:
+            parts = tool.split(" ")
+            for i, part in enumerate(parts):
+                if ("../" in tool)==True or ("..\\" in tool)==True:
+                    parts[i] = os.path.join(self.sim_directory_object.sim_directory,part)
+            tool = ' '.join(parts)
+        #os.path.abspath("mydir/myfile.txt")
+        
+        res_dir = os.path.join(self.job_directory_absolute,self.dir_results,self.sim_name)
+        
+        cmd = "cd "+ res_dir + " && " + tool + ""
+        self.append_log("Executed " + cmd)
+        subprocess.call(cmd, shell=True)
         
     def get_notes(self):
         f = open(os.path.join(self.job_directory_absolute,self.notes_file),"r")
@@ -246,7 +263,7 @@ class SimJob(object):
         self.append_log("Creating directory snapshot")
         self.create_snapshot()
         self.append_log(self.file_snapshotzip + " created")
-        
+                
         ServerInterface().start_simjob(self)
         return
     

@@ -8,6 +8,32 @@ Created on Sun May 20 16:48:45 2018
 import tkinter as tk
 from tkinter import ttk
 
+import re
+from tempfile import mkstemp
+from shutil import move, copyfile
+from os import fdopen, remove
+
+def replace(file_path, pattern, subst,unix_end=False):
+    #Create temp file
+    #print("searching for: {}".format(pattern))
+    fh, abs_path = mkstemp()
+    with fdopen(fh,'w',newline="\n") as new_file:
+        with open(file_path) as old_file:
+            for line in old_file:
+                line = re.sub(r"{}".format(pattern), subst, line)
+                line.replace("\n", "")
+                new_file.write(line)
+    #Remove original file
+    remove(file_path)
+    #Move new file
+    move(abs_path, file_path)
+    
+def get_line_with(file_path, text):
+    with open(file_path) as file:
+        for line in file:
+            if (text in line)==True:
+                return line
+
 class Autoresized_Notebook(ttk.Notebook):
     def __init__(self, master=None, **kw):
         ttk.Notebook.__init__(self, master, **kw)

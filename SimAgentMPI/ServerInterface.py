@@ -11,6 +11,7 @@ import time, datetime
 
 from nsg.nsgclient import Client
 from SimServer import ServersFile
+import Utils
 
 class ServerInterface(object):
     ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
@@ -151,6 +152,13 @@ class ServerInterface(object):
             return
     
     def submit_ssh(self, simjob, validate_only, server):
+        
+        ##Edit batch file
+        batch_file = os.path.join(simjob.job_directory_absolute, simjob.batch_file)
+        Utils.replace(batch_file, "#SBATCH -p " + "(.*)", "{}{}".format("#SBATCH -p ", simjob.server_mpi_partition),unix_end=True)
+        Utils.replace(batch_file, "#SBATCH -N " + "(.*)", "{}{}".format("#SBATCH -N ", simjob.server_nodes),unix_end=True)
+        Utils.replace(batch_file, "#SBATCH -n " + "(.*)", "{}{}".format("#SBATCH -n ", simjob.server_cores),unix_end=True)
+        ##
         
         client = self.connect_ssh(server,simjob)
         
