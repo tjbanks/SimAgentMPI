@@ -11,10 +11,12 @@ base = None
 
 executables = [Executable("SimAgentMPI/main.py", base=base)]
 
-packages = ["idna","time","re","subprocess","threading","tempfile","shutil","os","random","numpy","pandas","paramiko","zipfile","tkinter","tarfile"]
+packages = ["idna","time","re","subprocess","threading","tempfile","shutil","os","random","numpy","pandas","paramiko","zipfile","tkinter","tarfile","SimAgentMPI.MainWindow","SimAgentMPI.NewJobWindow","SimAgentMPI.NewServerConfig","SimAgentMPI.SimDirectory","SimAgentMPI.SimJob","SimAgentMPI.SimServer","SimAgentMPI.tktable","SimAgentMPI.Utils","SimAgentMPI.nsg.nsgclient","SimAgentMPI.nsg.pyjavaproperties"]
+folders = ['SimAgentMPI/']
 options = {
     'build_exe': {    
         'packages':packages,
+        'include_files':folders
     },    
 }
 
