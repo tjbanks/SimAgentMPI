@@ -45,6 +45,7 @@ class SimJob(object):
         
         #Names for the JSON file
         self.propname_version = "version"
+        self.propname_created = "created"
         self.propname_log = "log"
         self.propname_notes = "notes"
         self.propname_status = "status"
@@ -72,6 +73,7 @@ class SimJob(object):
         self.dir_results = ""
         
         self.version = SimJob.version
+        self.created = time.time()
         self.log = SimJob.log_file
         self.notes = SimJob.notes_file
         self.status = ""
@@ -160,6 +162,7 @@ class SimJob(object):
             with open(self.full_properties_path) as json_file:  
                 data = json.load(json_file)
                 self.version = data[self.propname_version]
+                self.created = data[self.propname_created]
                 self.log = data[self.propname_log]
                 self.notes = data[self.propname_notes]
                 self.status = data[self.propname_status]
@@ -186,6 +189,7 @@ class SimJob(object):
     def write_properties(self):
         data = {}
         data[self.propname_version] = self.version
+        data[self.propname_created] = self.created
         data[self.propname_log] = self.log
         data[self.propname_notes] = self.notes
         data[self.propname_status] = self.status

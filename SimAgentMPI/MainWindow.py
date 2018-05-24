@@ -11,7 +11,7 @@ from tkinter import messagebox,ttk,filedialog
 from tktable import Table
 
 from NewJobWindow import JobEntryBox
-from NewServerConfig import ServerEntryBox
+from NewServerConfig import ServerEntryBox,SelectServerEditBox
 from SimDirectory import SimDirectory
 from ServerInterface import ServerInterface
 
@@ -23,10 +23,10 @@ class MainWindow():
         self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - Banks)"
         self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri\n\nWritten by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
         self.sim_dir = None
-        self.window_size = '1080x725'
+        self.window_size = '1580x725'
         self.default_status = "Status: Ready"
         self.status_timer = 4.0
-        self.root.resizable(0,0)
+        self.root.resizable(1,1)
         
         self.root.columnconfigure(0,weight=1)
         self.root.rowconfigure(0,weight=1)
@@ -134,9 +134,9 @@ class MainWindow():
         # create a pulldown menu, and add it to the menu bar
         filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label="Add Server", command=self.add_server)
-        #filemenu.add_command(label="Save", command=hello)
-        filemenu.add_separator()
-        filemenu.add_command(label="Add Results Folder to .gitignore", command=self.add_server)
+        filemenu.add_command(label="Edit Server", command=self.edit_server)
+        #filemenu.add_separator()
+        #filemenu.add_command(label="Add Results Folder to .gitignore", command=self.add_server)
         menubar.add_cascade(label="File", menu=filemenu)
         
         helpmenu = tk.Menu(menubar, tearoff=0)
@@ -149,10 +149,15 @@ class MainWindow():
         
         #open project dir
         #print(filedialog.askdirectory())
-        self.directory_frame = tk.LabelFrame(root, text="Directory")
-        self.jobs_frame = tk.LabelFrame(root, text="Jobs")
-        self.notes_frame = tk.LabelFrame(root, text="Notes")
-        self.log_frame = tk.LabelFrame(root, text="Log")
+        
+        self.left_frame = tk.Frame(root)
+        self.right_frame = tk.Frame(root)
+        
+        self.directory_frame = tk.LabelFrame(self.left_frame, text="Directory")
+        self.jobs_frame = tk.LabelFrame(self.left_frame, text="Jobs")
+        self.notes_frame = tk.LabelFrame(self.right_frame, text="Notes")
+        self.log_frame = tk.LabelFrame(self.right_frame, text="Log")
+        
         button_width = 15
         self.selected_job_name = None
         self.log_refresh_time = 5
@@ -193,15 +198,22 @@ class MainWindow():
         
         self.b_open = tk.Button(buttons_frame, text="Open Results Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
         self.b_open.grid(pady=5, padx=5, column=7, row=0, sticky="WE")
-                
+        
+        #Row 2
+        
+        #self.b_down_remote = tk.Button(buttons_frame, text="Re-Download Files", command=self.download_remote_files, width=button_width,state=tk.DISABLED)
+        #self.b_down_remote.grid(pady=5, padx=5, column=5, row=1, sticky="WE")
+           
+        #self.b_del_remote = tk.Button(buttons_frame, text="Delete Remote Files", command=self.delete_remote_files, width=button_width,state=tk.DISABLED)
+        #self.b_del_remote.grid(pady=5, padx=5, column=6, row=1, sticky="WE")             
         
             
         self.columns = ["Name", "Status", "Server", "Tool/Partition", "Nodes", "Cores", "Start", "Runtime", "Remote ID"]
         self.col_wid = [200, 75, 100, 100, 50, 50, 100, 100, 150]
         
-        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=200, onselect_method=self.select_row)
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=425, onselect_method=self.select_row)
         self.table.grid(row=1,column=0,padx=10,pady=10)
-        self.table.set_data([[""],[""],[""],[""]])
+        self.table.set_data([[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""]])
         #table.cell(0,0, " a fdas fasd fasdf asdf asdfasdf asdf asdfa sdfas asd sadf ")
         #table.grid_propagate(False) #Is this really the only way to get it to a specific size?
             
@@ -211,24 +223,27 @@ class MainWindow():
         """=Note Frame======================================"""
         
         self.notes_console = tk.Text(self.notes_frame)
-        self.notes_console.config(width= 60, height=12, bg='white',fg='black')
+        self.notes_console.config(width= 50, height=18, bg='white',fg='black')
         self.notes_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
         
         
         """=Logs Frame======================================"""
         
         self.log_console = tk.Text(self.log_frame)
-        self.log_console.config(width= 60, height=12, bg='black',fg='light green',state=tk.DISABLED)
+        self.log_console.config(width= 50, height=18, bg='black',fg='light green',state=tk.DISABLED)
         self.log_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
         
         
         """================================================="""
         
         
+        self.left_frame.grid(column=0,row=0,sticky='news')
+        self.right_frame.grid(column=1,row=0,sticky='news')
+        
         self.directory_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5,columnspan=2)
         self.jobs_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5,columnspan=2)
-        self.notes_frame.grid(column=0,row=2,sticky='news',padx=10,pady=5)
-        self.log_frame.grid(column=1,row=2,sticky='news',padx=10,pady=5)
+        self.notes_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5)
+        self.log_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
         
         return
 
@@ -322,6 +337,15 @@ class MainWindow():
                 
     def add_server(self):
         ServerEntryBox(self.root)#,server_id="180521092555")
+        
+    def edit_server_callback(self, s):
+        print(s.server_selected.get())
+        if s.confirm and s.server_selected.get() != "":
+            ServerEntryBox(self.root,server_id=s.server_selected.get())
+            
+    def edit_server(self):
+        SelectServerEditBox(self.root, callback=self.edit_server_callback)
+        
             
     def about(self):
         messagebox.showinfo("About", self.about_text, icon='info')
@@ -366,8 +390,7 @@ class MainWindow():
         job = self.sim_dir.get_job(self.selected_job_name)
         if(messagebox.askquestion("Download Remote Job Files", "Are you sure you want to download the files on the remote server? This will overwrite {} and files in the folder {} ".format(job.file_resultszip, job.dir_results), icon='warning') == 'yes'):
             job.delete_remote()
-        return
-    
+        return    
     
     def open_job_folder(self):
         job = self.sim_dir.get_job(self.selected_job_name)
@@ -398,16 +421,20 @@ class MainWindow():
 
     def reload_table(self):
         self.table.grid_forget()
-        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=200, onselect_method=self.select_row)
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=600, onselect_method=self.select_row)
         self.table.grid(row=1,column=0,padx=10,pady=10)
-        self.table.set_data([[""],[""],[""],[""]])
-        for job in self.sim_dir.sim_jobs:
-            part_tool = ""
-            jobtype = job.get_server().type
-            if jobtype == "ssh":
-                part_tool = job.server_mpi_partition
-            elif jobtype == "nsg":
-                part_tool = job.server_nsg_tool
+        #self.table.set_data([[""],[""],[""],[""]])
+        self.sim_dir.sim_jobs.sort(key=lambda x: float(x.created), reverse=True)
+        if len(self.sim_dir.sim_jobs):
                 
-            self.table.insert_row([job.sim_name, job.status, job.server_connector, part_tool , job.server_nodes, job.server_cores, job.sim_start_time, "",job.server_remote_identifier],index=0)
-        
+            for job in self.sim_dir.sim_jobs:
+                part_tool = ""
+                jobtype = job.get_server().type
+                if jobtype == "ssh":
+                    part_tool = job.server_mpi_partition
+                elif jobtype == "nsg":
+                    part_tool = job.server_nsg_tool
+                    
+                self.table.insert_row([job.sim_name, job.status, job.server_connector, part_tool , job.server_nodes, job.server_cores, job.sim_start_time, "",job.server_remote_identifier])#,index=0)
+        else:
+            self.table.set_data([[""],[""],[""],[""]])
