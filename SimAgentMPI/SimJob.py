@@ -26,7 +26,6 @@ import json
 import time
 import datetime
 import subprocess
-import threading
 
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimServer import ServersFile
@@ -160,7 +159,7 @@ class SimJob(object):
         #os.path.abspath("mydir/myfile.txt")
         
         res_dir = os.path.join(self.job_directory_absolute,self.dir_results,self.sim_name)
-        self.cmd = "cd "+ res_dir + " && start " + tool + ""
+        self.cmd = "cd "+ res_dir + " && start " + tool + " && exit"
         #threading.Thread(target=self.start_cmd)
         self.append_log("Executed " + self.cmd)
         subprocess.call(self.cmd, shell=True)

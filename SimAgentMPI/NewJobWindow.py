@@ -13,7 +13,7 @@ from SimAgentMPI.SimServer import ServersFile
 from SimAgentMPI.NewServerConfig import ServerEntryBox
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
-import SimAgentMPI.Utils
+import SimAgentMPI
 
 class JobEntryBox:
         
@@ -139,9 +139,9 @@ class JobEntryBox:
                 nodes = "#SBATCH -N "
                 cores = "#SBATCH -n "
                 
-                batch_part = Utils.get_line_with(batch_f,part)
-                batch_nodes = Utils.get_line_with(batch_f,nodes)
-                batch_cores = Utils.get_line_with(batch_f,cores)
+                batch_part = SimAgentMPI.Utils.get_line_with(batch_f,part)
+                batch_nodes = SimAgentMPI.Utils.get_line_with(batch_f,nodes)
+                batch_cores = SimAgentMPI.Utils.get_line_with(batch_f,cores)
                                 
                 if batch_part:
                     batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n")

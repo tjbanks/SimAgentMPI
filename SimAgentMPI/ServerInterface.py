@@ -11,7 +11,7 @@ import time, datetime
 
 from SimAgentMPI.nsg.nsgclient import Client,CipresError
 from SimAgentMPI.SimServer import ServersFile
-import SimAgentMPI.Utils
+import SimAgentMPI
 
 class ServerInterface(object):
     ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
@@ -166,9 +166,9 @@ class ServerInterface(object):
         
         ##Edit batch file
         batch_file = os.path.join(simjob.job_directory_absolute, simjob.batch_file)
-        Utils.replace(batch_file, "#SBATCH -p " + "(.*)", "{}{}".format("#SBATCH -p ", simjob.server_mpi_partition),unix_end=True)
-        Utils.replace(batch_file, "#SBATCH -N " + "(.*)", "{}{}".format("#SBATCH -N ", simjob.server_nodes),unix_end=True)
-        Utils.replace(batch_file, "#SBATCH -n " + "(.*)", "{}{}".format("#SBATCH -n ", simjob.server_cores),unix_end=True)
+        SimAgentMPI.Utils.replace(batch_file, "#SBATCH -p " + "(.*)", "{}{}".format("#SBATCH -p ", simjob.server_mpi_partition),unix_end=True)
+        SimAgentMPI.Utils.replace(batch_file, "#SBATCH -N " + "(.*)", "{}{}".format("#SBATCH -N ", simjob.server_nodes),unix_end=True)
+        SimAgentMPI.Utils.replace(batch_file, "#SBATCH -n " + "(.*)", "{}{}".format("#SBATCH -n ", simjob.server_cores),unix_end=True)
         ##
         
         try:
