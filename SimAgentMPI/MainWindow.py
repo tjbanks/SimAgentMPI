@@ -290,7 +290,7 @@ class MainWindow():
         self.log_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
         
         return
-
+    
     def select_row(self, row):
         self.selected_row_num = row
         name_of_selected = str(self.table.row(row)[1])
@@ -303,8 +303,8 @@ class MainWindow():
             self.log_console.delete('1.0', tk.END)
             self.log_console.config(state=tk.DISABLED)
         
-        if name_of_selected == self.selected_job_name:
-            return
+        #if name_of_selected == self.selected_job_name:
+        #    return
                 
         if self.selected_job_name != None or (self.selected_job_name != name_of_selected and name_of_selected != ""): #selecting something different
             job = self.sim_dir.get_job(name_of_selected)
@@ -397,7 +397,7 @@ class MainWindow():
                 for i in range(self.table.number_of_rows):
                     name_of_selected = str(self.table.row(i)[1])#If you move around the index of the name it will mess up
                     job = self.sim_dir.get_job(name_of_selected)
-                    if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
+                    if job and (job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
                         job.update()
                         job.read_properties()
                         self.update_row_info(row=i)
@@ -557,8 +557,8 @@ class MainWindow():
             self.table.set_data([[""],[""],[""],[""]])
             
     def update_row_info(self, row=None):
-        print("update_row_info row: {}".format(row))
-        print("update_row_info self.selected_row_num: {}".format(self.selected_row_num))
+        #print("update_row_info row: {}".format(row))
+        #print("update_row_info self.selected_row_num: {}".format(self.selected_row_num))
         if not row:
             if self.selected_row_num is not None:
                 row = self.selected_row_num
@@ -573,6 +573,7 @@ class MainWindow():
             self.table.cell(row,i,c)
         
         self.display_job_notes_log(job) #refresh log too
+        self.select_row(self.selected_row_num) #just to refresh the buttons
                 
         return
     

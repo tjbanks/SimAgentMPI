@@ -49,7 +49,7 @@ class SimDirectory(object):
         
         self.version_num = SimDirectory.version
         self.custom_tool = ""     
-        self.update_enabled = "0"
+        self.update_enabled = "1"
         self.update_interval_seconds = 60
         
         
