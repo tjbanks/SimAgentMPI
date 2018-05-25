@@ -1,0 +1,6 @@
+Unloading compiler-dependent module mkl/11.1.2.144
+Unloading compiler-dependent module gsl/2.1
+Unloading compiler-dependent module openmpi_ib/1.8.4
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100    21    0    21    0     0    278      0 --:--:-- --:--:-- --:--:--   287

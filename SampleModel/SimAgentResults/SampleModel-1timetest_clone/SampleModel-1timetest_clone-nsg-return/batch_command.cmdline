@@ -1,0 +1,2 @@
+#!/bin/sh
+ibrun --npernode=1  /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv -mpi main.hoc 
