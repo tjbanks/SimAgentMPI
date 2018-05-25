@@ -45,10 +45,12 @@ class SimDirectory(object):
         self.propname_version = "version"
         self.propname_custom_tool = "custom_tool"
         self.propname_update_enabled = "update_enabled"
+        self.propname_update_interval = "update_interval_seconds"
         
         self.version_num = SimDirectory.version
         self.custom_tool = ""     
         self.update_enabled = "0"
+        self.update_interval_seconds = 60
         
         
         self.full_properties_path = os.path.join(self.sim_results_dir,SimDirectory.properties_file)
@@ -131,6 +133,7 @@ class SimDirectory(object):
                 self.custom_tool = data[self.propname_custom_tool] 
                 self.version_num = data[self.propname_version]
                 self.update_enabled = data[self.propname_update_enabled]
+                self.update_interval_seconds = data[self.propname_update_interval]
         return
 
     def write_properties(self):
@@ -138,6 +141,7 @@ class SimDirectory(object):
         data[self.propname_custom_tool] = self.custom_tool      
         data[self.propname_version] = self.version_num
         data[self.propname_update_enabled] = self.update_enabled
+        data[self.propname_update_interval] = self.update_interval_seconds
         with open(self.full_properties_path, 'w') as outfile:  
             json.dump(data, outfile)
             

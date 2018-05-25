@@ -8,7 +8,16 @@ Created on Sun May 20 16:46:40 2018
 from MainWindow import MainWindow
 
 def main():
-    main_window = MainWindow()
-    main_window.show()
+    try:
+        main_window = MainWindow()
+        main_window.show()
+    except KeyboardInterrupt:
+        main_window.exitapp = True
+        raise
+    except Exception:
+        main_window.exitapp = True
+        raise
+        
+    
     
 main()

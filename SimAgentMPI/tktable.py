@@ -226,8 +226,13 @@ class Data_Cell(Cell):
             try:
                 if self.text_to_img[self.variable.get()]:
                     #print(self.variable.get())
+                    bg = background
+                    fg = foreground
+                    if self._message_widget:
+                        bg = self._message_widget.cget('background')
+                        fg = self._message_widget.cget('foreground')                        
                     self._message_widget.pack_forget()
-                    self._message_widget = Label(self,width=width, background=background, foreground=foreground,image = self.text_to_img[self.variable.get()])
+                    self._message_widget = Label(self,width=width, background=bg, foreground=fg,image = self.text_to_img[self.variable.get()])
                     self._message_widget.pack(expand=True, padx=padx, pady=pady, anchor=anchor)
                     self._message_widget.bind('<Button-1>', lambda event, row=self.row_num, table=self.table: cell_selected(event, table, row))
             except KeyError as e:

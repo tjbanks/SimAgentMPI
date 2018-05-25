@@ -119,7 +119,7 @@ class ServerInterface(object):
             the_file.write('{}={}\n'.format("singlelayer_","0")) 
             
         #validate
-        simjob.file_resultszip = return_filename + "tar.gz"
+        simjob.file_resultszip = return_filename + ".tar.gz"
         simjob.dir_results = return_filename
         simjob.write_properties()
         

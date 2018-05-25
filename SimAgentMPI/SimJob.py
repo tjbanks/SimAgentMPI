@@ -26,6 +26,7 @@ import json
 import time
 import datetime
 import subprocess
+import threading
 
 from ServerInterface import ServerInterface
 from SimServer import ServersFile
@@ -67,6 +68,7 @@ class SimJob(object):
         self.propname_server_status_email = "server_status_email"
         self.propname_server_remote_identifier = "server_remote_identifier"
         self.propname_sim_start_time = "sim_start_time"
+        self.propname_sim_last_update_time = "sim_last_update_time"
         
         self.file_snapshotzip = ""
         self.file_resultszip = ""
@@ -77,7 +79,7 @@ class SimJob(object):
         self.created = time.time()
         self.log = SimJob.log_file
         self.notes = SimJob.notes_file
-        self.status = ""
+        self.status = SimJob.created_status
         self.batch_file = ""
         self.update_interval = "60"
         self.server_connector = ""
@@ -92,6 +94,7 @@ class SimJob(object):
         self.server_status_email = "false"
         self.server_remote_identifier = ""
         self.sim_start_time = ""
+        self.sim_last_update_time = ""
         
         self.full_properties_path = os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties)
         
@@ -148,7 +151,7 @@ class SimJob(object):
     def run_custom(self):
         tool = self.sim_directory_object.custom_tool
         
-        if ("../" in tool)==True or ("..\\" in tool)==True:
+        if ("../" in tool)==True or ("..\\" in tool)==True or ("./" in tool)==True or (".\\" in tool)==True :
             parts = tool.split(" ")
             for i, part in enumerate(parts):
                 if ("../" in tool)==True or ("..\\" in tool)==True:
@@ -157,9 +160,14 @@ class SimJob(object):
         #os.path.abspath("mydir/myfile.txt")
         
         res_dir = os.path.join(self.job_directory_absolute,self.dir_results,self.sim_name)
-        cmd = "cd "+ res_dir + " && " + tool + ""
-        #self.append_log("Executed " + cmd)
-        subprocess.call(cmd, shell=True)
+        self.cmd = "cd "+ res_dir + " && start " + tool + ""
+        #threading.Thread(target=self.start_cmd)
+        self.append_log("Executed " + self.cmd)
+        subprocess.call(self.cmd, shell=True)
+        
+    def start_cmd(self):
+        if self.cmd:
+            subprocess.call(self.cmd, shell=True)
         
     def get_notes(self):
         f = open(os.path.join(self.job_directory_absolute,self.notes_file),"r")
@@ -200,6 +208,7 @@ class SimJob(object):
                 self.server_status_email = data[self.propname_server_status_email]
                 self.server_remote_identifier = data[self.propname_server_remote_identifier]
                 self.sim_start_time = data[self.propname_sim_start_time]
+                self.sim_last_update_time = data[self.propname_sim_last_update_time]
             
         return
     
@@ -227,6 +236,7 @@ class SimJob(object):
         data[self.propname_server_status_email] = self.server_status_email
         data[self.propname_server_remote_identifier] = self.server_remote_identifier
         data[self.propname_sim_start_time] = self.sim_start_time
+        data[self.propname_sim_last_update_time] = self.sim_last_update_time
         
         with open(os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties), 'w') as outfile:  
             json.dump(data, outfile)
@@ -277,9 +287,13 @@ class SimJob(object):
     def update(self):
         if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]:
             ServerInterface().update_for_completion(self)
+            self.sim_last_update_time = time.time()
+            self.write_properties()
             
         if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1]:
             ServerInterface().download_results_simjob(self)
+            self.sim_last_update_time = time.time()
+            self.write_properties()
         
         
         return

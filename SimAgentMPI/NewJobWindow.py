@@ -310,7 +310,7 @@ class JobEntryBox:
             else:
                 simjob = SimJob(self.sim_directory, self.name.get())
             
-            simjob.status = self.status.get()
+            
             simjob.batch_file = self.batch_file.get()
             simjob.update_interval = self.update_interval.get()
             simjob.server_connector = self.server_connector.get()

@@ -11,7 +11,7 @@ from tkinter import messagebox,ttk,filedialog
 from tktable import Table
 import datetime
 from PIL import ImageTk, Image
-import os
+import os, time
 
 from NewJobWindow import JobEntryBox
 from NewServerConfig import ServerEntryBox,SelectServerEditBox
@@ -26,6 +26,7 @@ class MainWindow():
         self.root = tk.Tk()
         self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - Banks)"
         self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
+        self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of accidental data deletion, always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
         self.sim_dir = None
         self.window_size = '1580x725'
         self.default_status = "Status: Ready"
@@ -42,6 +43,9 @@ class MainWindow():
         
         self.app_status = tk.StringVar(self.root,'')
         self.reset_app_status()
+        
+        self.exitapp = False
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         print('Starting. Please wait...')
         self.style = ttk.Style()
@@ -161,13 +165,16 @@ class MainWindow():
         menubar.add_cascade(label="File", menu=filemenu)
         
         helpmenu = tk.Menu(menubar, tearoff=0)
+        helpmenu.add_command(label="Warnings", command=self.warning)
         helpmenu.add_command(label="About", command=self.about)
         menubar.add_cascade(label="Help", menu=helpmenu)
         return menubar
     
     
     def jobs_page(self, root):
-        self.date_format = '%y%m%d-%H%M%S'
+        #self.date_format = '%y%m%d-%H%M%S'
+        #https://timestamp.online/article/how-to-convert-timestamp-to-datetime-in-python
+        self.date_format = '%b %d %y\n%I:%M %p'
         #open project dir
         #print(filedialog.askdirectory())
         
@@ -181,8 +188,10 @@ class MainWindow():
         
         button_width = 15
         self.selected_job_name = None
-        self.refresh_time = 60
-        #self.refresh_thread = threading.Timer(self.refresh_time, self.refresh_periodically).start()
+        self.refresh_time = 5
+        self.refresh_thread = threading.Timer(self.refresh_time, self.refresh_periodically)
+        self.refresh_thread.setDaemon(True)
+        self.refresh_thread.start()
         ###!!!self.refresh_periodically()
         
         
@@ -341,7 +350,12 @@ class MainWindow():
             
         
         #print(str(self.table.row(row)))
-        
+    
+    def on_closing(self):
+            if not self.sim_dir or messagebox.askokcancel("Quit", "Do you want to quit? All running remote jobs will continue to run."):
+                self.exitapp = True
+                self.root.destroy()
+                
     def update_button_enabled(self, *args):
         self.sim_dir.set_update_enabled(self.update_status.get())
         return
@@ -377,16 +391,18 @@ class MainWindow():
         return
     
     def refresh_periodically(self):
-        if(self.sim_dir and self.sim_dir.is_update_enabled()):
-            for i in range(self.table.number_of_columns()):
-                name_of_selected = str(self.table.row(i)[1])#If you move around the index of the name it will mess up
-                job = self.sim_dir.get_job(name_of_selected)
-                if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
-                    job.update()
-                    job.read_properties()
-                    self.update_row_info(row=i)
-                    
-        #sleep? call again?
+        while not self.exitapp:
+            #print("Update status thread running")
+            if(self.sim_dir and self.sim_dir.is_update_enabled()):
+                for i in range(self.table.number_of_rows):
+                    name_of_selected = str(self.table.row(i)[1])#If you move around the index of the name it will mess up
+                    job = self.sim_dir.get_job(name_of_selected)
+                    if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
+                        job.update()
+                        job.read_properties()
+                        self.update_row_info(row=i)
+            #print("sleeping for {} seconds".format(self.refresh_time))
+            time.sleep(self.refresh_time)
         return
     
     def write_notes(self):
@@ -411,10 +427,14 @@ class MainWindow():
     def run_custom(self):
         job = self.sim_dir.get_job(self.selected_job_name)
         job.run_custom()
+        self.update_row_info()
         
             
     def about(self):
         messagebox.showinfo("About", self.about_text, icon='info')
+        
+    def warning(self):
+        messagebox.showinfo("Warning", self.warnings_text, icon='info')
             
     def new_job(self):
         JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.reload_table)
@@ -485,6 +505,7 @@ class MainWindow():
             self.b_tool_edit.config(state=tk.NORMAL)
             self.b_update_check.config(state=tk.NORMAL)
             
+            self.refresh_time = self.sim_dir.update_interval_seconds            
                 
         except Exception as e:
             print(e)
@@ -504,7 +525,21 @@ class MainWindow():
         timeofstart = ""
         if job.sim_start_time != "":
            timeofstart = datetime.datetime.fromtimestamp(float(job.sim_start_time)).strftime(self.date_format)
-        data = [job.status, job.sim_name, job.server_connector, part_tool , job.server_nodes, job.server_cores, timeofstart, "",job.server_remote_identifier]
+           
+        timedif = ""
+        try:
+            if job.sim_last_update_time != "" and job.sim_start_time != "":
+                _start = datetime.datetime.fromtimestamp(float(job.sim_start_time))
+                _update = datetime.datetime.fromtimestamp(float(job.sim_last_update_time))
+                elapse = _update - _start
+                (m, s) = divmod(elapse.total_seconds(),60)
+                (h, m) = divmod(m,60)
+                (d, h) = divmod(h,24)
+                timedif = "{}d {}h {}m {}s".format(int(d),int(h),int(m),int(s))
+                
+        except Exception:
+            pass #just blank timedif
+        data = [job.status, job.sim_name, job.server_connector, part_tool , job.server_nodes, job.server_cores, timeofstart, timedif,job.server_remote_identifier]
         return data
     
     def reload_table(self):
@@ -522,8 +557,12 @@ class MainWindow():
             self.table.set_data([[""],[""],[""],[""]])
             
     def update_row_info(self, row=None):
+        print("update_row_info row: {}".format(row))
+        print("update_row_info self.selected_row_num: {}".format(self.selected_row_num))
         if not row:
-            row = self.selected_row_num
+            if self.selected_row_num is not None:
+                row = self.selected_row_num
+            
         name_of_selected = str(self.table.row(row)[1])#If you move around the index of the name it will mess up
         job = self.sim_dir.get_job(name_of_selected)
         job.read_properties()
@@ -565,7 +604,7 @@ class Edit_dir_tool(object):
         
         self.tool.set(self.dir_.custom_tool)
         
-        l = tk.Label(top, text='Write the command as if you were executing\nfrom the project directory on your local machine.\nJobs will execute the command from their results\n directory.',width=40)
+        l = tk.Label(top, text='Write the command as if you were executing\nfrom the project directory on your local machine.\nJobs will execute the command from their results\n directory. Threads are NOT joined back.',width=40)
         l.grid(row=0,column=0,pady=5,padx=5,columnspan=2,rowspan=2)
         
         l = tk.Label(top, text='Custom command',width=15, background='light gray')

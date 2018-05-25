@@ -141,5 +141,4 @@
 18-05-23 19:55:40 > Downloading: SampleModel-nsg1-nsg-return.tar.gz
 18-05-23 19:55:42 > Extracting results
 18-05-23 19:55:42 > Extracted results to C:/Users/Tyler/Desktop/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-nsg1\SampleModel-nsg1-nsg-return
-18-05-24 14:55:01 > Executed cd C:/Users/tjbanks/Desktop/personal/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-nsg1\SampleModel-nsg1-nsg-return\SampleModel-nsg1 && mkdir testing
-18-05-24 15:42:52 > Executed cd C:/Users/tjbanks/Desktop/personal/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-nsg1\SampleModel-nsg1-nsg-return\SampleModel-nsg1 && mkdir testing
+18-05-25 10:19:31 > Executed cd C:/Users/tjbanks/Desktop/personal/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-nsg1\SampleModel-nsg1-nsg-return\SampleModel-nsg1 && start graph.png
