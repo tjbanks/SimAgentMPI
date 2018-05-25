@@ -9,7 +9,7 @@ import paramiko
 import zipfile,tarfile
 import time, datetime
 
-from nsg.nsgclient import Client
+from nsg.nsgclient import Client,CipresError
 from SimServer import ServersFile
 import Utils
 
@@ -34,8 +34,8 @@ class ServerInterface(object):
     def start_simjob(self, simjob, validate_nsg_only=False):
         server = self.get_server(simjob)
         ts = time.time()
-        st = datetime.datetime.fromtimestamp(ts).strftime('%y%m%d-%H%M%S')
-        simjob.sim_start_time = st
+        #st = datetime.datetime.fromtimestamp(ts).strftime('%y%m%d-%H%M%S')
+        simjob.sim_start_time = ts
         simjob.write_properties()
         
         if server:#check to make sure we have a valid server
@@ -126,30 +126,41 @@ class ServerInterface(object):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
         
         simjob.append_log("Validating job build with NSG...")
-        status = nsg.validateJobTemplate(simjob.job_directory_absolute)
-        if status.isError():
-            simjob.append_log("NSG template validation failed. See debug.")
-        else:
-            simjob.append_log("NSG template validation success")
+        
+        try:
+            status = nsg.validateJobTemplate(simjob.job_directory_absolute)
+            if status.isError():
+                simjob.append_log("NSG template validation failed. See debug.")
+            else:
+                simjob.append_log("NSG template validation success")
+        except CipresError as e:
+            simjob.append_log("Error validating NSG template: " + e.message)
+            simjob.append_log("Job stopped")
+            simjob.status = ServerInterface.nsg_status[3]
+            simjob.write_properties()
+            return
             
         if(validate_only):
             return
+        try:
+            status = nsg.submitJobTemplate(simjob.job_directory_absolute,metadata={"statusEmail" : simjob.server_status_email})
         
-        status = nsg.submitJobTemplate(simjob.job_directory_absolute,metadata={"statusEmail" : simjob.server_status_email})
-        print("status url after submit: " + status.jobUrl)
-        simjob.server_remote_identifier = status.jobUrl
-        simjob.write_properties()
-        
-        if status.isError():
-            simjob.append_log("NSG template submit failed. See debug.")
-            
-        else:
-            simjob.append_log("NSG template submit success")
-            simjob.status = ServerInterface.nsg_status[0]
+            simjob.server_remote_identifier = status.jobUrl
             simjob.write_properties()
             
-        if(validate_only):
-            return
+            if status.isError():
+                simjob.append_log("NSG template submit failed. See debug.")
+                
+            else:
+                simjob.append_log("NSG template submit success")
+                simjob.status = ServerInterface.nsg_status[0]
+                simjob.write_properties()
+        except CipresError as e:
+            simjob.append_log("Error submitting NSG template: " + e.message)
+            simjob.append_log("Job stopped")
+            
+        return
+    
     
     def submit_ssh(self, simjob, validate_only, server):
         
@@ -160,46 +171,56 @@ class ServerInterface(object):
         Utils.replace(batch_file, "#SBATCH -n " + "(.*)", "{}{}".format("#SBATCH -n ", simjob.server_cores),unix_end=True)
         ##
         
-        client = self.connect_ssh(server,simjob)
-        
-        simjob.append_log("Verifying/creating folder /home/{}/{} on {}".format(server.user,self.remote_dir,server.host))
-        command= 'mkdir '+ self.remote_dir
-        self.exec_ssh_command(client, command, simjob, server)
+        try:
+            client = self.connect_ssh(server,simjob)
+            
+            simjob.append_log("Verifying/creating folder /home/{}/{} on {}".format(server.user,self.remote_dir,server.host))
+            command= 'mkdir '+ self.remote_dir
+            self.exec_ssh_command(client, command, simjob, server)
+                    
+            rem_loc = "./"+self.remote_dir+"/"+simjob.file_snapshotzip
+            zip_file = os.path.join(simjob.job_directory_absolute,simjob.file_snapshotzip)
+            zip_dir = simjob.file_snapshotzip.split(".zip")[0]
+            
+            simjob.append_log("Uploading code ({}) to /home/{}/{} on {}".format(simjob.file_snapshotzip,server.user,self.remote_dir,server.host))
+            sftp_client=client.open_sftp()
+            sftp_client.put(zip_file,rem_loc)
+            sftp_client.close()
+            simjob.append_log("Code uploaded successfully.")
+                   
+            
+            simjob.append_log("{}> Unzipping and running code".format(server.host))
+            command = 'unzip -o -d '+self.remote_dir+'/'+zip_dir +' '+self.remote_dir+'/'+simjob.file_snapshotzip
+            self.exec_ssh_command(client, command, simjob, server)
+            
+            simjob.append_log("{}> Deleting zip".format(server.host))
+            command = 'rm -rf '+self.remote_dir+'/'+simjob.file_snapshotzip
+            self.exec_ssh_command(client, command, simjob, server)
                 
-        rem_loc = "./"+self.remote_dir+"/"+simjob.file_snapshotzip
-        zip_file = os.path.join(simjob.job_directory_absolute,simjob.file_snapshotzip)
-        zip_dir = simjob.file_snapshotzip.split(".zip")[0]
-        
-        simjob.append_log("Uploading code ({}) to /home/{}/{} on {}".format(simjob.file_snapshotzip,server.user,self.remote_dir,server.host))
-        sftp_client=client.open_sftp()
-        sftp_client.put(zip_file,rem_loc)
-        sftp_client.close()
-        simjob.append_log("Code uploaded successfully.")
-               
-        
-        simjob.append_log("{}> Unzipping and running code".format(server.host))
-        command = 'unzip -o -d '+self.remote_dir+'/'+zip_dir +' '+self.remote_dir+'/'+simjob.file_snapshotzip
-        self.exec_ssh_command(client, command, simjob, server)
-        
-        simjob.append_log("{}> Deleting zip".format(server.host))
-        command = 'rm -rf '+self.remote_dir+'/'+simjob.file_snapshotzip
-        self.exec_ssh_command(client, command, simjob, server)
-            
-        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
-            sbatch_command = "sbatch"
-            simjob.append_log("{}> Running sbatch".format(server.host))
-            command = 'cd ' + self.remote_dir+'/'+ zip_dir+'/'+zip_dir+' && ' + sbatch_command + ' ' + simjob.batch_file+ ' && cd ~' #We want to execute from that dir
-            batch_id = self.exec_ssh_command(client, command, simjob, server)
-            batch_id = batch_id[0]
-            batch_id = batch_id.replace("Submitted batch job ", "")
-            batch_id = batch_id.replace("\n", "")
-            simjob.append_log("Logging remote id {}".format(batch_id))
-            simjob.server_remote_identifier = batch_id
-            simjob.status = ServerInterface.ssh_status[0]
-            simjob.write_properties()
-            #Submitted batch job 18214
-            
-        client.close()
+            if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+                sbatch_command = "sbatch"
+                simjob.append_log("{}> Running sbatch".format(server.host))
+                command = 'cd ' + self.remote_dir+'/'+ zip_dir+'/'+zip_dir+' && ' + sbatch_command + ' ' + simjob.batch_file+ ' && cd ~' #We want to execute from that dir
+                batch_id = self.exec_ssh_command(client, command, simjob, server)
+                batch_id = batch_id[0]
+                batch_id = batch_id.replace("Submitted batch job ", "")
+                batch_id = batch_id.replace("\n", "")
+                simjob.append_log("Logging remote id {}".format(batch_id))
+                simjob.server_remote_identifier = batch_id
+                simjob.status = ServerInterface.ssh_status[0]
+                simjob.write_properties()
+                #Submitted batch job 18214
+                
+            client.close()
+        except Exception as e:
+                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                #traceback.print_exc()
+                simjob.status = ServerInterface.ssh_status[3]
+                simjob.write_properties()
+                try:
+                    client.close()
+                except:
+                    pass
                 
         return
     
@@ -228,21 +249,28 @@ class ServerInterface(object):
     
     def update_ssh(self, simjob, server):
         
-        client = self.connect_ssh(server,simjob)
-        
-        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
-            command = 'squeue'
-            lines = self.exec_ssh_command(client, command, simjob, server)
-            done = True
-            for line in lines:
-                if(simjob.server_remote_identifier in line):
-                    done = False
-            if done:
-                simjob.append_log("SSH Job Completed")
-                simjob.status = ServerInterface.ssh_status[1]
-                simjob.write_properties()
-        return
-        client.close()
+        try:
+            client = self.connect_ssh(server,simjob)
+            
+            if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+                command = 'squeue -u ' + server.user
+                lines = self.exec_ssh_command(client, command, simjob, server)
+                done = True
+                for line in lines:
+                    if(simjob.server_remote_identifier in line):
+                        done = False
+                if done:
+                    simjob.append_log("SSH Job Completed")
+                    simjob.status = ServerInterface.ssh_status[1]
+                    simjob.write_properties()
+            client.close()
+        except Exception as e:
+                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                #traceback.print_exc()
+                try:
+                    client.close()
+                except:
+                    pass
     
     def stop_nsg(self, simjob, server):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
@@ -262,21 +290,30 @@ class ServerInterface(object):
     
     def stop_ssh(self, simjob, server):
         
-        client = self.connect_ssh(server,simjob)
-        
-        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
-            command = 'scancel ' + simjob.server_remote_identifier
-            lines = self.exec_ssh_command(client, command, simjob, server)
-            command = 'squeue'
-            done = True
-            for line in lines:
-                if(simjob.server_remote_identifier in line):
-                    done = False
-            if done:
-                simjob.append_log("SSH Job Canceled")
-                simjob.status = ServerInterface.ssh_status[3]
-                simjob.write_properties()
-        client.close()
+        try:
+            client = self.connect_ssh(server,simjob)
+            
+            if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+                command = 'scancel ' + simjob.server_remote_identifier
+                lines = self.exec_ssh_command(client, command, simjob, server)
+                command = 'squeue -u ' + server.user
+                done = True
+                for line in lines:
+                    if(simjob.server_remote_identifier in line):
+                        done = False
+                if done:
+                    simjob.append_log("SSH Job Canceled")
+                    simjob.status = ServerInterface.ssh_status[3]
+                    simjob.write_properties()
+            client.close()
+        except Exception as e:
+                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                #traceback.print_exc()
+                try:
+                    client.close()
+                except:
+                    pass
+                
         return
     
     
@@ -315,33 +352,41 @@ class ServerInterface(object):
         return
     
     def download_ssh(self, simjob, server):
-        client = self.connect_ssh(server,simjob)
-        
-        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
-            zip_dir = simjob.file_snapshotzip.split(".zip")[0]
-            simjob.file_resultsdir = zip_dir + "-results"
-            simjob.file_resultszip = simjob.file_resultsdir + ".zip"
-            results_dir_absolute = os.path.join(simjob.job_directory_absolute,simjob.file_resultsdir)
-            results_zip_absolute = os.path.join(simjob.job_directory_absolute,simjob.file_resultszip)
+        try:
+            client = self.connect_ssh(server,simjob)
             
-            command = "cd " + self.remote_dir + '/' + zip_dir + " && zip -r ../" + simjob.file_snapshotzip +" "+ zip_dir + " && cd ~"
-            simjob.append_log("{}> Zipping remote results...".format(server.host))
-            self.exec_ssh_command(client,command,simjob,server)
-                    
-            simjob.append_log("Downloading results")
-            rem_loc = "./"+self.remote_dir+"/"+simjob.file_snapshotzip
-            ftp_client=client.open_sftp()
-            ftp_client.get(rem_loc,results_zip_absolute)
-            ftp_client.close()
+            if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+                zip_dir = simjob.file_snapshotzip.split(".zip")[0]
+                simjob.file_resultsdir = zip_dir + "-results"
+                simjob.file_resultszip = simjob.file_resultsdir + ".zip"
+                results_dir_absolute = os.path.join(simjob.job_directory_absolute,simjob.file_resultsdir)
+                results_zip_absolute = os.path.join(simjob.job_directory_absolute,simjob.file_resultszip)
+                
+                command = "cd " + self.remote_dir + '/' + zip_dir + " && zip -r ../" + simjob.file_snapshotzip +" "+ zip_dir + " && cd ~"
+                simjob.append_log("{}> Zipping remote results...".format(server.host))
+                self.exec_ssh_command(client,command,simjob,server)
+                        
+                simjob.append_log("Downloading results")
+                rem_loc = "./"+self.remote_dir+"/"+simjob.file_snapshotzip
+                ftp_client=client.open_sftp()
+                ftp_client.get(rem_loc,results_zip_absolute)
+                ftp_client.close()
+                
+                zip_ref = zipfile.ZipFile(results_zip_absolute, 'r')
+                zip_ref.extractall(results_dir_absolute)
+                zip_ref.close()
+                simjob.append_log("Results saved to: {}".format(results_dir_absolute))
+                simjob.status = ServerInterface.ssh_status[2]
+                simjob.write_properties()
             
-            zip_ref = zipfile.ZipFile(results_zip_absolute, 'r')
-            zip_ref.extractall(results_dir_absolute)
-            zip_ref.close()
-            simjob.append_log("Results saved to: {}".format(results_dir_absolute))
-            simjob.status = ServerInterface.ssh_status[2]
-            simjob.write_properties()
-        
-        client.close()
+            client.close()
+        except Exception as e:
+                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                #traceback.print_exc()
+                try:
+                    client.close()
+                except:
+                    pass
         return
         
     def detete_all_nsg(self, server):
@@ -365,15 +410,23 @@ class ServerInterface(object):
     
     def delete_ssh(self, simjob, server):
         
-        client = self.connect_ssh(server,simjob)
-        
-        if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
-            simjob.append_log("Cleaning up files")
-            zip_dir = simjob.file_snapshotzip.split(".zip")[0]
-            command = 'rm -rf '+self.remote_dir+'/'+zip_dir+'*'
-            self.exec_ssh_command(client,command,simjob,server)
+        try:
+            client = self.connect_ssh(server,simjob)
             
-        client.close()
+            if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
+                simjob.append_log("Cleaning up files")
+                zip_dir = simjob.file_snapshotzip.split(".zip")[0]
+                command = 'rm -rf '+self.remote_dir+'/'+zip_dir+'*'
+                self.exec_ssh_command(client,command,simjob,server)
+                
+            client.close()
+        except Exception as e:
+                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                #traceback.print_exc()
+                try:
+                    client.close()
+                except:
+                    pass
         return
     
     

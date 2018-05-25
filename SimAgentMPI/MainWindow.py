@@ -9,11 +9,15 @@ from Utils import CreateToolTip, Autoresized_Notebook
 import tkinter as tk
 from tkinter import messagebox,ttk,filedialog
 from tktable import Table
+import datetime
+from PIL import ImageTk, Image
+import os
 
 from NewJobWindow import JobEntryBox
 from NewServerConfig import ServerEntryBox,SelectServerEditBox
 from SimDirectory import SimDirectory
 from ServerInterface import ServerInterface
+from SimJob import SimJob
 
 import threading
 
@@ -21,7 +25,7 @@ class MainWindow():
     def __init__(self):
         self.root = tk.Tk()
         self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - Banks)"
-        self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri\n\nWritten by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
+        self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
         self.sim_dir = None
         self.window_size = '1580x725'
         self.default_status = "Status: Ready"
@@ -58,6 +62,23 @@ class MainWindow():
             self.style.theme_use("colored")
         except Exception:
             print('Style loaded previously. Continuing.')
+            
+        try:
+            #http://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/sign-error-icon.html
+            icon_dir = "icons"
+            new = os.path.join(icon_dir,"sun-icon.png")
+            check = os.path.join(icon_dir,"sign-check-icon.png")
+            error = os.path.join(icon_dir,"sign-error-icon.png")
+            sync = os.path.join(icon_dir,"sign-sync-icon.png")
+    
+            #Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
+            self.new_img = ImageTk.PhotoImage(Image.open(new))
+            self.check_img = ImageTk.PhotoImage(Image.open(check))
+            self.error_img = ImageTk.PhotoImage(Image.open(error))
+            self.sync_img  = ImageTk.PhotoImage(Image.open(sync))
+            
+        except Exception as e:
+            print('Difficulty loading icons\n' + e)
         
         frame1 = tk.Frame(self.root)
         frame1.grid(row=0,column=0,sticky='news')
@@ -135,8 +156,8 @@ class MainWindow():
         filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label="Add Server", command=self.add_server)
         filemenu.add_command(label="Edit Server", command=self.edit_server)
-        #filemenu.add_separator()
-        #filemenu.add_command(label="Add Results Folder to .gitignore", command=self.add_server)
+        filemenu.add_separator()
+        filemenu.add_command(label="Add Results Folder to .gitignore", command=self.add_to_git_ignore)
         menubar.add_cascade(label="File", menu=filemenu)
         
         helpmenu = tk.Menu(menubar, tearoff=0)
@@ -146,7 +167,7 @@ class MainWindow():
     
     
     def jobs_page(self, root):
-        
+        self.date_format = '%y%m%d-%H%M%S'
         #open project dir
         #print(filedialog.askdirectory())
         
@@ -160,8 +181,9 @@ class MainWindow():
         
         button_width = 15
         self.selected_job_name = None
-        self.log_refresh_time = 5
-        self.refresh_log_periodically()
+        self.refresh_time = 60
+        #self.refresh_thread = threading.Timer(self.refresh_time, self.refresh_periodically).start()
+        ###!!!self.refresh_periodically()
         
         
         b = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=button_width)
@@ -175,6 +197,11 @@ class MainWindow():
         self.b_tool_edit.grid(pady=5, padx=5, column=2, row=0, sticky="E")
         self.b_tool_edit.config(state=tk.DISABLED)
         
+        self.update_status = tk.BooleanVar()
+        self.b_update_check = tk.Checkbutton(self.directory_frame, text="Auto-Update", variable=self.update_status)
+        self.b_update_check.grid(row=0,column=3, sticky="we")
+        self.update_status.trace("w",self.update_button_enabled)
+        self.b_update_check.config(state=tk.DISABLED)
         """=Jobs Frame======================================"""
         
         buttons_frame = tk.LabelFrame(self.jobs_frame, text="")        
@@ -216,10 +243,10 @@ class MainWindow():
         #self.b_del_remote.grid(pady=5, padx=5, column=6, row=1, sticky="WE")           
                 
             
-        self.columns = ["Name", "Status", "Server", "Tool/Partition", "Nodes", "Cores", "Start", "Runtime", "Remote ID"]
-        self.col_wid = [200, 75, 100, 100, 50, 50, 100, 100, 150]
+        self.columns = ["Status","Name", "Server", "Tool/Partition", "Nodes", "Cores", "Start", "Runtime", "Remote ID"]
+        self.col_wid = [45, 200, 100, 100, 50, 50, 100, 100, 150]
         
-        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=425, onselect_method=self.select_row)
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=425, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
         self.table.grid(row=1,column=0,padx=10,pady=10)
         self.table.set_data([[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""]])
         #table.cell(0,0, " a fdas fasd fasdf asdf asdfasdf asdf asdfa sdfas asd sadf ")
@@ -256,7 +283,8 @@ class MainWindow():
         return
 
     def select_row(self, row):
-        name_of_selected = str(self.table.row(row)[0])
+        self.selected_row_num = row
+        name_of_selected = str(self.table.row(row)[1])
         self.write_notes()
         job = None
         
@@ -281,7 +309,7 @@ class MainWindow():
         if(self.selected_job_name != ""):
             self.b_clone.config(state=tk.NORMAL)
                         
-            if(job.status=="" or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
+            if(job.status==SimJob.created_status or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
                 self.b_start.config(state=tk.NORMAL)
                 self.b_edit.config(state=tk.NORMAL)
             else:
@@ -313,6 +341,18 @@ class MainWindow():
             
         
         #print(str(self.table.row(row)))
+        
+    def update_button_enabled(self, *args):
+        self.sim_dir.set_update_enabled(self.update_status.get())
+        return
+    
+    def add_to_git_ignore(self):
+        if not self.sim_dir:
+            messagebox.showinfo("Add to .gitignore", "No directory selected")
+            return
+        if(messagebox.askquestion("Add to .gitignore", "Do you want to add \"" + SimDirectory.results_folder_name +"/\" to the .gitignore file in " + self.sim_dir.sim_directory + "? If a .gitignore does not exist one will be created.", icon='warning') == 'yes'):
+            self.sim_dir.add_results_to_gitignore()
+        return
             
     def display_job_notes_log(self, job):
         if job != None:
@@ -336,9 +376,17 @@ class MainWindow():
             self.log_console.config(state=tk.DISABLED)
         return
     
-    def refresh_log_periodically(self):
-        #threading.Timer(self.log_refresh_time, self.refresh_log_periodically).start()
-        #print("Hello, World!") ##THIS WON"T STOP, probably a better way of doing this
+    def refresh_periodically(self):
+        if(self.sim_dir and self.sim_dir.is_update_enabled()):
+            for i in range(self.table.number_of_columns()):
+                name_of_selected = str(self.table.row(i)[1])#If you move around the index of the name it will mess up
+                job = self.sim_dir.get_job(name_of_selected)
+                if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
+                    job.update()
+                    job.read_properties()
+                    self.update_row_info(row=i)
+                    
+        #sleep? call again?
         return
     
     def write_notes(self):
@@ -378,24 +426,27 @@ class MainWindow():
     
     def edit_job(self):
         job = self.sim_dir.get_job(self.selected_job_name)
-        JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.load_dir, edit_job=job)
+        JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.update_row_info, edit_job=job)
         return
         
     def start_job(self):
         job = self.sim_dir.get_job(self.selected_job_name)
         if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run.", icon='warning') == 'yes'):
             job.run()
+            self.update_row_info()
         return
     
     def update_job(self):
         job = self.sim_dir.get_job(self.selected_job_name)
         job.update()
+        self.update_row_info()
         return
         
     def stop_job(self):
         job = self.sim_dir.get_job(self.selected_job_name)
         if(messagebox.askquestion("Stop Job", "Are you sure you want to stop this job?", icon='warning') == 'yes'):
             job.stop()
+            self.update_row_info()
         return
     
     def delete_remote_files(self):
@@ -427,10 +478,12 @@ class MainWindow():
             
             self.sim_dir = SimDirectory(dir_,initialize=True)
             self.sim_dir_var.set(self.sim_dir.sim_directory)
+            self.update_status.set(self.sim_dir.is_update_enabled())
             self.reload_table()         
                 
             self.b_new.config(state=tk.NORMAL)
             self.b_tool_edit.config(state=tk.NORMAL)
+            self.b_update_check.config(state=tk.NORMAL)
             
                 
         except Exception as e:
@@ -438,26 +491,59 @@ class MainWindow():
         
         return
 
+    def row_of_data(self,job):
+        part_tool = ""
+        jobtype = job.get_server().type
+        if jobtype == "ssh":
+            part_tool = job.server_mpi_partition
+        elif jobtype == "nsg":
+            part_tool = job.server_nsg_tool
+            
+        #datetime.datetime.fromtimestamp(float(str(time.time()))).strftime('%y%m%d-%H%M%S')
+        #Out[22]: '180524-203332'
+        timeofstart = ""
+        if job.sim_start_time != "":
+           timeofstart = datetime.datetime.fromtimestamp(float(job.sim_start_time)).strftime(self.date_format)
+        data = [job.status, job.sim_name, job.server_connector, part_tool , job.server_nodes, job.server_cores, timeofstart, "",job.server_remote_identifier]
+        return data
+    
     def reload_table(self):
         self.table.grid_forget()
-        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=600, onselect_method=self.select_row)
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=600, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
         self.table.grid(row=1,column=0,padx=10,pady=10)
         #self.table.set_data([[""],[""],[""],[""]])
         self.sim_dir.sim_jobs.sort(key=lambda x: float(x.created), reverse=True)
+        
         if len(self.sim_dir.sim_jobs):
-                
             for job in self.sim_dir.sim_jobs:
-                part_tool = ""
-                jobtype = job.get_server().type
-                if jobtype == "ssh":
-                    part_tool = job.server_mpi_partition
-                elif jobtype == "nsg":
-                    part_tool = job.server_nsg_tool
-                    
-                self.table.insert_row([job.sim_name, job.status, job.server_connector, part_tool , job.server_nodes, job.server_cores, job.sim_start_time, "",job.server_remote_identifier])#,index=0)
+                data = self.row_of_data(job)
+                self.table.insert_row(data)#,index=0)
         else:
             self.table.set_data([[""],[""],[""],[""]])
             
+    def update_row_info(self, row=None):
+        if not row:
+            row = self.selected_row_num
+        name_of_selected = str(self.table.row(row)[1])#If you move around the index of the name it will mess up
+        job = self.sim_dir.get_job(name_of_selected)
+        job.read_properties()
+        
+        data = self.row_of_data(job)
+        for i, c in enumerate(data):
+            #print("updating row {} column {} with {}".format(row,i,c))
+            self.table.cell(row,i,c)
+        
+        self.display_job_notes_log(job) #refresh log too
+                
+        return
+    
+    def get_status_image_dict(self):
+        return {SimJob.created_status:self.new_img,
+                ServerInterface.nsg_status[0]:self.sync_img,ServerInterface.nsg_status[2]:self.check_img,ServerInterface.nsg_status[3]:self.error_img,
+                ServerInterface.ssh_status[0]:self.sync_img,ServerInterface.ssh_status[2]:self.check_img,ServerInterface.ssh_status[3]:self.error_img}        
+        #The Label widget is a standard Tkinter widget used to display a text or image on the screen.
+        #panel = tk.Label(window, image = img)
+        return
             
 class Edit_dir_tool(object):
     

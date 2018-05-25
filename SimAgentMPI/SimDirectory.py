@@ -28,6 +28,7 @@ import os,errno
 import zipfile
 import json
 from tkinter import messagebox
+from pathlib import Path
 
 class SimDirectory(object):
     results_folder_name = "SimAgentResults"
@@ -43,9 +44,12 @@ class SimDirectory(object):
         
         self.propname_version = "version"
         self.propname_custom_tool = "custom_tool"
+        self.propname_update_enabled = "update_enabled"
         
         self.version_num = SimDirectory.version
         self.custom_tool = ""     
+        self.update_enabled = "0"
+        
         
         self.full_properties_path = os.path.join(self.sim_results_dir,SimDirectory.properties_file)
         
@@ -126,14 +130,44 @@ class SimDirectory(object):
                 data = json.load(json_file)
                 self.custom_tool = data[self.propname_custom_tool] 
                 self.version_num = data[self.propname_version]
+                self.update_enabled = data[self.propname_update_enabled]
         return
 
     def write_properties(self):
         data = {}
         data[self.propname_custom_tool] = self.custom_tool      
         data[self.propname_version] = self.version_num
+        data[self.propname_update_enabled] = self.update_enabled
         with open(self.full_properties_path, 'w') as outfile:  
             json.dump(data, outfile)
+            
+        return
+    
+    def is_update_enabled(self):
+        self.read_properties()
+        if self.update_enabled == "1":
+            return True
+        else:
+            return False
+        
+    def set_update_enabled(self, val):
+        if val:
+            self.update_enabled = "1"
+        else:
+            self.update_enabled = "0"
+        self.write_properties()
+    
+    def add_results_to_gitignore(self):
+        gitignore = ".gitignore"
+        gitignore_file = os.path.join(self.sim_directory,gitignore)
+        gi = Path(gitignore_file)
+        if not gi.is_file():
+            open(gitignore_file, 'a').close()
+            
+        if not SimDirectory.results_folder_name in open(gitignore_file).read():
+            f = open(gitignore_file, 'a')
+            f.write("\n" + SimDirectory.results_folder_name + "/\n")
+            f.close()
             
         return
     

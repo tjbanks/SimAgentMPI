@@ -330,7 +330,7 @@ class JobEntryBox:
                 if self.edit_job and not self.clone_mode:
                     simjob = self.to_simjob()
                     simjob.write_properties()
-                    simjob.append_log("Job edited")
+                    #simjob.append_log("Job edited")
                 else:
                     simjob = self.to_simjob()
                     simjob.create_sim_directory()

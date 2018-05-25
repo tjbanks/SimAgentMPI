@@ -215,9 +215,27 @@ class Cell(Frame):
     """Base class for cells"""
 
 class Data_Cell(Cell):
-    def __init__(self, master, variable, anchor=W, bordercolor=None, borderwidth=1, padx=0, pady=0, background=None, foreground=None, font=None, row_num=0, table=None, width=100):
+    def __init__(self, master, variable, anchor=W, bordercolor=None, borderwidth=1, padx=0, pady=0, background=None, foreground=None, font=None, row_num=0, col_num=0, table=None, width=100,text_to_img=None):
         Cell.__init__(self, master, background=background, highlightbackground=bordercolor, highlightcolor=bordercolor, highlightthickness=borderwidth, bd= 0)
         self.background = background
+        self.text_to_img = text_to_img
+        self.variable = variable
+        self.row_num = row_num
+        self.table = table
+        def change_var(*args):
+            try:
+                if self.text_to_img[self.variable.get()]:
+                    #print(self.variable.get())
+                    self._message_widget.pack_forget()
+                    self._message_widget = Label(self,width=width, background=background, foreground=foreground,image = self.text_to_img[self.variable.get()])
+                    self._message_widget.pack(expand=True, padx=padx, pady=pady, anchor=anchor)
+                    self._message_widget.bind('<Button-1>', lambda event, row=self.row_num, table=self.table: cell_selected(event, table, row))
+            except KeyError as e:
+                pass
+            return
+        if text_to_img:
+            variable.trace('w', change_var)
+            
         self._message_widget = Message(self, width=width,textvariable=variable, font=font, background=background, foreground=foreground)
         self._message_widget.pack(expand=True, padx=padx, pady=pady, anchor=anchor)
         
@@ -243,7 +261,7 @@ class Header_Cell(Cell):
         self.configure(height=height, width=width)
         
 class Table(Frame):
-    def __init__(self, master, columns, column_weights=None, column_minwidths=None, height=500, minwidth=20, minheight=20, padx=5, pady=5, cell_font=None, cell_foreground="black", cell_background="white", cell_anchor=W, header_font=None, header_background="white", header_foreground="black", header_anchor=CENTER, bordercolor = "#999999", innerborder=True, outerborder=True, stripped_rows=("#EEEEEE", "white"), on_change_data=None, mousewheel_speed = 2, scroll_horizontally=False, scroll_vertically=True,onselect_method=None,onselect_color="#C0C0E0"):
+    def __init__(self, master, columns, column_weights=None, column_minwidths=None, height=500, minwidth=20, minheight=20, padx=5, pady=5, cell_font=None, cell_foreground="black", cell_background="white", cell_anchor=W, header_font=None, header_background="white", header_foreground="black", header_anchor=CENTER, bordercolor = "#999999", innerborder=True, outerborder=True, stripped_rows=("#EEEEEE", "white"), on_change_data=None, mousewheel_speed = 2, scroll_horizontally=False, scroll_vertically=True,onselect_method=None,onselect_color="#C0C0E0",text_to_img=None):
         outerborder_width = 1 if outerborder else 0
 
         Frame.__init__(self,master, bd= 0)
@@ -273,6 +291,7 @@ class Table(Frame):
         
         self._column_minwidths = column_minwidths
         self.onselect_color = onselect_color
+        self.text_to_img = text_to_img
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -349,9 +368,9 @@ class Table(Frame):
                 list_of_vars.append(var)
 
                 if self._stripped_rows:
-                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._stripped_rows[i%2], foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor, row_num=i, table=self, width=self._column_minwidths[j])
+                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._stripped_rows[i%2], foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor, row_num=i,col_num=j, table=self, width=self._column_minwidths[j], text_to_img=self.text_to_img)
                 else:
-                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._cell_background, foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor,row_num=i, table=self, width=self._column_minwidths[j])
+                    cell = Data_Cell(self._body, borderwidth=self._innerborder_width, variable=var, bordercolor=self._bordercolor, padx=self._padx, pady=self._pady, background=self._cell_background, foreground=self._cell_foreground, font=self._cell_font, anchor=self._cell_anchor,row_num=i,col_num=j, table=self, width=self._column_minwidths[j], text_to_img=self.text_to_img)
 
                 cell.grid(row=i, column=j, sticky=N+E+W+S)
                 #cell.config(bg="blue")

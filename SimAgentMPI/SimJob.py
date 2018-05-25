@@ -36,6 +36,7 @@ class SimJob(object):
     notes_file = "sim_notes.txt"
     version = "1.0"
     default_log_text = "Write notes about this job here..."
+    created_status = "SIMJOB_CREATED"
     
     def __init__(self, sim_directory_object, job_directory):
         self.sim_directory_object = sim_directory_object
@@ -156,9 +157,8 @@ class SimJob(object):
         #os.path.abspath("mydir/myfile.txt")
         
         res_dir = os.path.join(self.job_directory_absolute,self.dir_results,self.sim_name)
-        
         cmd = "cd "+ res_dir + " && " + tool + ""
-        self.append_log("Executed " + cmd)
+        #self.append_log("Executed " + cmd)
         subprocess.call(cmd, shell=True)
         
     def get_notes(self):
@@ -271,7 +271,6 @@ class SimJob(object):
         if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]:
             self.append_log("Attempting to stop")
             ServerInterface().stop_simjob(self)
-        
         
         return
     
