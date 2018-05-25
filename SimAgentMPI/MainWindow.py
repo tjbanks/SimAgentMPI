@@ -4,20 +4,20 @@ Created on Sun May 20 16:46:40 2018
 
 @author: Tyler
 """
-from Utils import CreateToolTip, Autoresized_Notebook
+from SimAgentMPI.Utils import CreateToolTip, Autoresized_Notebook
 
 import tkinter as tk
 from tkinter import messagebox,ttk,filedialog
-from tktable import Table
+from SimAgentMPI.tktable import Table
 import datetime
 from PIL import ImageTk, Image
 import os, time
 
-from NewJobWindow import JobEntryBox
-from NewServerConfig import ServerEntryBox,SelectServerEditBox
-from SimDirectory import SimDirectory
-from ServerInterface import ServerInterface
-from SimJob import SimJob
+from SimAgentMPI.NewJobWindow import JobEntryBox
+from SimAgentMPI.NewServerConfig import ServerEntryBox,SelectServerEditBox
+from SimAgentMPI.SimDirectory import SimDirectory
+from SimAgentMPI.ServerInterface import ServerInterface
+from SimAgentMPI.SimJob import SimJob
 
 import threading
 
@@ -69,7 +69,7 @@ class MainWindow():
             
         try:
             #http://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/sign-error-icon.html
-            icon_dir = "icons"
+            icon_dir = "./SimAgentMPI/icons"
             new = os.path.join(icon_dir,"sun-icon.png")
             check = os.path.join(icon_dir,"sign-check-icon.png")
             error = os.path.join(icon_dir,"sign-error-icon.png")
@@ -147,6 +147,7 @@ class MainWindow():
     
     def reset_app_status(self):
         self.app_status.set(self.default_status)
+        #pass
 
     def display_app_status(self,str):
         self.app_status.set("Status: "+str)
@@ -535,7 +536,16 @@ class MainWindow():
                 (m, s) = divmod(elapse.total_seconds(),60)
                 (h, m) = divmod(m,60)
                 (d, h) = divmod(h,24)
-                timedif = "{}d {}h {}m {}s".format(int(d),int(h),int(m),int(s))
+                if int(d) > 0:
+                    timedif = timedif+"{}d ".format(int(d))
+                if int(h) > 0:
+                    timedif = timedif+"{}h ".format(int(h))
+                if int(m) > 0:
+                    timedif = timedif+"{}m ".format(int(m))
+                if int(s) > 0:
+                    timedif = timedif+"{}s".format(int(s))
+                    
+                #timedif = "{}d {}h {}m {}s".format(int(d),int(h),int(m),int(s))
                 
         except Exception:
             pass #just blank timedif

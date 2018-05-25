@@ -9,9 +9,9 @@ import paramiko
 import zipfile,tarfile
 import time, datetime
 
-from nsg.nsgclient import Client,CipresError
-from SimServer import ServersFile
-import Utils
+from SimAgentMPI.nsg.nsgclient import Client,CipresError
+from SimAgentMPI.SimServer import ServersFile
+import SimAgentMPI.Utils
 
 class ServerInterface(object):
     ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]

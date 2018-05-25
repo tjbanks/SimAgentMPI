@@ -23,7 +23,7 @@ Directory structure
                  
 """
 
-from SimJob import SimJob
+from SimAgentMPI.SimJob import SimJob
 import os,errno
 import zipfile
 import json

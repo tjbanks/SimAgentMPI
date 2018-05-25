@@ -5,7 +5,7 @@ import time
 import shutil
 import requests
 import xml.etree.ElementTree as ET
-import nsg.pyjavaproperties as Props
+import SimAgentMPI.nsg.pyjavaproperties as Props
 
 # Flush stdout for debugging
 sys.stdout.flush()

@@ -5,9 +5,10 @@ Created on Sun May 20 16:46:40 2018
 @author: Tyler
 """
 
-from MainWindow import MainWindow
+from SimAgentMPI.MainWindow import MainWindow
 
 def main():
+    
     try:
         main_window = MainWindow()
         main_window.show()

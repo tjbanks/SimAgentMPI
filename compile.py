@@ -9,7 +9,7 @@ from cx_Freeze import setup, Executable
 
 base = None    
 
-executables = [Executable("SimAgentMPI/main.py", base=base)]
+executables = [Executable("main.py", base=base)]
 
 packages = ["idna","time","re","subprocess","threading","tempfile","shutil","os","random","numpy","pandas","paramiko","zipfile","tkinter","tarfile","SimAgentMPI.MainWindow","SimAgentMPI.NewJobWindow","SimAgentMPI.NewServerConfig","SimAgentMPI.SimDirectory","SimAgentMPI.SimJob","SimAgentMPI.SimServer","SimAgentMPI.tktable","SimAgentMPI.Utils","SimAgentMPI.nsg.nsgclient","SimAgentMPI.nsg.pyjavaproperties"]
 folders = ['SimAgentMPI/']
@@ -24,6 +24,6 @@ setup(
     name = "SimAgentMPI",
     options = options,
     version = "1",
-    description = 'SimAgentMPI Nair Lab (Banks)',
+    description = 'SimAgentMPI Nair Lab (Tyler Banks)',
     executables = executables
 )

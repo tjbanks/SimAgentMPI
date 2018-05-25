@@ -9,11 +9,11 @@ import tkinter as tk
 from tkinter import filedialog,OptionMenu,messagebox
 import time, datetime
 
-from SimServer import ServersFile
-from NewServerConfig import ServerEntryBox
-from ServerInterface import ServerInterface
-from SimJob import SimJob
-import Utils
+from SimAgentMPI.SimServer import ServersFile
+from SimAgentMPI.NewServerConfig import ServerEntryBox
+from SimAgentMPI.ServerInterface import ServerInterface
+from SimAgentMPI.SimJob import SimJob
+import SimAgentMPI.Utils
 
 class JobEntryBox:
         

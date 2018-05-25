@@ -28,8 +28,8 @@ import datetime
 import subprocess
 import threading
 
-from ServerInterface import ServerInterface
-from SimServer import ServersFile
+from SimAgentMPI.ServerInterface import ServerInterface
+from SimAgentMPI.SimServer import ServersFile
 
 class SimJob(object):
     properties_file = "sim.properties"

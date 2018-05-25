@@ -22,7 +22,7 @@ import tkinter as tk
 from tkinter import IntVar,filedialog,OptionMenu
 import time, datetime
 
-from SimServer import SimServer,ServersFile
+from SimAgentMPI.SimServer import SimServer,ServersFile
 
 class SelectServerEditBox:
     
