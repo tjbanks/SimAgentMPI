@@ -108,10 +108,10 @@ class SimJob(object):
         print(path)
         
     def open_sim_directory(self):
-        subprocess.call("start "+self.job_directory, shell=True)
+        subprocess.call("start \"\" \""+self.job_directory+"\"", shell=True)
         
     def open_sim_results_directory(self):
-        subprocess.call("start "+os.path.join(self.job_directory,self.dir_results,self.sim_name), shell=True)
+        subprocess.call("start \"\" \""+os.path.join(self.job_directory,self.dir_results,self.sim_name)+"\"", shell=True)
         
     def write_notes(self, text):
         full_notes_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.notes)
@@ -159,7 +159,8 @@ class SimJob(object):
         #os.path.abspath("mydir/myfile.txt")
         
         res_dir = os.path.join(self.job_directory_absolute,self.dir_results,self.sim_name)
-        self.cmd = "cd "+ res_dir + " && start " + tool + " && exit"
+        self.cmd = "cd \""+ res_dir + "\"" + " && start " + tool + " && exit"
+        #print(self.cmd)
         #threading.Thread(target=self.start_cmd)
         self.append_log("Executed " + self.cmd)
         subprocess.call(self.cmd, shell=True)

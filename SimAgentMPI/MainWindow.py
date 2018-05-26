@@ -74,12 +74,14 @@ class MainWindow():
             check = os.path.join(icon_dir,"sign-check-icon.png")
             error = os.path.join(icon_dir,"sign-error-icon.png")
             sync = os.path.join(icon_dir,"sign-sync-icon.png")
+            cloud_down = os.path.join(icon_dir, "cloud-down-icon.png")
     
             #Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
             self.new_img = ImageTk.PhotoImage(Image.open(new))
             self.check_img = ImageTk.PhotoImage(Image.open(check))
             self.error_img = ImageTk.PhotoImage(Image.open(error))
             self.sync_img  = ImageTk.PhotoImage(Image.open(sync))
+            self.cloud_img = ImageTk.PhotoImage(Image.open(cloud_down))
             
         except Exception as e:
             print('Difficulty loading icons\n' + e)
@@ -589,8 +591,8 @@ class MainWindow():
     
     def get_status_image_dict(self):
         return {SimJob.created_status:self.new_img,
-                ServerInterface.nsg_status[0]:self.sync_img,ServerInterface.nsg_status[2]:self.check_img,ServerInterface.nsg_status[3]:self.error_img,
-                ServerInterface.ssh_status[0]:self.sync_img,ServerInterface.ssh_status[2]:self.check_img,ServerInterface.ssh_status[3]:self.error_img}        
+                ServerInterface.nsg_status[0]:self.sync_img,ServerInterface.nsg_status[1]:self.cloud_img,ServerInterface.nsg_status[2]:self.check_img,ServerInterface.nsg_status[3]:self.error_img,
+                ServerInterface.ssh_status[0]:self.sync_img,ServerInterface.ssh_status[1]:self.cloud_img,ServerInterface.ssh_status[2]:self.check_img,ServerInterface.ssh_status[3]:self.error_img}        
         #The Label widget is a standard Tkinter widget used to display a text or image on the screen.
         #panel = tk.Label(window, image = img)
         return

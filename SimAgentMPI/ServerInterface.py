@@ -169,6 +169,8 @@ class ServerInterface(object):
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -p " + "(.*)", "{}{}".format("#SBATCH -p ", simjob.server_mpi_partition),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -N " + "(.*)", "{}{}".format("#SBATCH -N ", simjob.server_nodes),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -n " + "(.*)", "{}{}".format("#SBATCH -n ", simjob.server_cores),unix_end=True)
+        #SBATCH --time 0-23:00
+        SimAgentMPI.Utils.replace(batch_file, "#SBATCH --time " + "(.*)", "{}0-{}:00".format("#SBATCH --time ", simjob.server_max_runtime),unix_end=True)
         ##
         
         try:
