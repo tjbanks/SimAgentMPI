@@ -28,7 +28,7 @@ class SelectServerEditBox:
     
     def __init__(self, parent, callback=None):
         self.parent = parent
-        self.window_title = "Select Server to Edit"
+        self.window_title = "Select Server"
         self.confirm = False
         self.callback = callback
         self.display()
@@ -133,8 +133,10 @@ class ServerEntryBox:
         
         if self.server.type == "nsg":
             self.server_type.set(0) #0 for nsg 1 for ssh
+            self.use_ssh.set("0")
         else:
             self.server_type.set(1) #0 for nsg 1 for ssh
+            self.use_ssh.set("1")
                               
         
         def on_server_type_change():
@@ -165,7 +167,7 @@ class ServerEntryBox:
         
         conn_option_frame = tk.LabelFrame(top, text="SSH Connection Parameters")
         nsgconn_option_frame = tk.LabelFrame(top, text="NSG Connection Parameters")
-        if(self.use_ssh.get() is "0"):
+        if(self.use_ssh.get() == "0"):
             nsgconn_option_frame.grid(column=0,row=14,sticky='news',padx=10,pady=5,columnspan=2)
         else:
             conn_option_frame.grid(column=0,row=15,sticky='news',padx=10,pady=5,columnspan=2)

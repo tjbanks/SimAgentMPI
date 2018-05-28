@@ -27,8 +27,10 @@ from SimAgentMPI.SimJob import SimJob
 import os,errno
 import zipfile
 import json
+import shutil
 from tkinter import messagebox
 from pathlib import Path
+
 
 class SimDirectory(object):
     results_folder_name = "SimAgentResults"
@@ -78,7 +80,11 @@ class SimDirectory(object):
         
         #Initialize all jobs
         for job_folder in results_dir_folder_names:
-            self.add_new_job(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
+            try:
+                self.add_new_job(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
+            except Exception as e:
+                messagebox.showinfo("Load Error","Could not load simjob " + job_folder + ". See the console for info. Continuing...")
+                print(e)
         
         self.read_properties()
         
@@ -106,6 +112,11 @@ class SimDirectory(object):
                     continue
                 #print(os.path.join(self.sim_directory_relative,dir_,file))
                 ziph.write(os.path.join(root, file), arcname=os.path.join(foldername,dir_,file))
+        return
+    
+    def delete_job(self, job):
+        shutil.rmtree(job.job_directory_absolute)
+        self.sim_jobs.remove(job)
         return
     
     def take_snapshotzip(self, save_to_file):

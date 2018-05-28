@@ -33,6 +33,8 @@ from SimAgentMPI.SimServer import ServersFile
 class SimJob(object):
     properties_file = "sim.properties"
     log_file = "sim.log"
+    stdout_file = "STDOUT"
+    stderr_file = "STDERR"
     notes_file = "sim_notes.txt"
     version = "1.0"
     default_log_text = "Write notes about this job here..."
@@ -43,6 +45,11 @@ class SimJob(object):
         self.job_directory = job_directory
         self.sim_name = os.path.basename(self.job_directory)
         self.job_directory_absolute = os.path.join(sim_directory_object.sim_results_dir,self.sim_name)
+        
+        try:
+            self.create_sim_directory()
+        except:
+            pass
         
         #Names for the JSON file
         self.propname_version = "version"
@@ -62,6 +69,8 @@ class SimJob(object):
         self.propname_server_ssh_tool = "server_ssh_tool"
         self.propname_server_nsg_python = "server_nsg_python"
         self.propname_server_mpi_partition = "server_ssh_mpi_partition"
+        self.propname_server_stdout_file = "server_stdout_file"
+        self.propname_server_stderr_file = "server_stderr_file"
         self.propname_server_max_runtime = "server_max_runtime"
         self.propname_server_email = "email_addr"
         self.propname_server_status_email = "server_status_email"
@@ -88,6 +97,8 @@ class SimJob(object):
         self.server_ssh_tool = "sbatch"
         self.server_nsg_python = "1"
         self.server_mpi_partition = ""
+        self.server_stdout_file = "stdout.txt"
+        self.server_stderr_file = "stderr.txt"
         self.server_max_runtime = "1"
         self.server_email = ""
         self.server_status_email = "false"
@@ -104,8 +115,8 @@ class SimJob(object):
     def create_sim_directory(self, dir_=None):
         if not dir_:
             dir_ = self.sim_directory_object.sim_results_dir
-        path = os.mkdir(os.path.join(dir_,self.sim_name))
-        print(path)
+        os.mkdir(os.path.join(dir_,self.sim_name))
+        #print(path)
         
     def open_sim_directory(self):
         subprocess.call("start \"\" \""+self.job_directory+"\"", shell=True)
@@ -116,10 +127,14 @@ class SimJob(object):
     def write_notes(self, text):
         full_notes_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.notes)
         append_write = 'w'
-        
-        f = open(full_notes_path,append_write)
-        f.write(text)
-        f.close()
+        try:
+            f = open(full_notes_path,append_write)
+            f.write(text)
+            f.close()
+        except Exception as e:
+            print("Could not write notes to " + full_notes_path)
+            print("Directory could be deleted")
+            print(e)
         
         return
     
@@ -133,17 +148,21 @@ class SimJob(object):
             append_write = 'a' # append if already exists
         else:
             append_write = 'w' # make a new file if not
-        
-        f = open(full_log_path,append_write)
-        if isinstance(text,list):
-            for i,line in enumerate(text):
-                if i == 0:
-                    f.write(st + ' > ' + line)
-                else:
-                    f.write(line)
-        else:
-            f.write(st + ' > ' + text+'\n')
-        f.close()
+        try:
+            f = open(full_log_path,append_write)
+            if isinstance(text,list):
+                for i,line in enumerate(text):
+                    if i == 0:
+                        f.write(st + ' > ' + line)
+                    else:
+                        f.write(line)
+            else:
+                f.write(st + ' > ' + text+'\n')
+            f.close()
+        except Exception as e:
+            print("Could not append log" + full_log_path)
+            print("Directory could be deleted")
+            print(e)
         
         return
     
@@ -182,6 +201,24 @@ class SimJob(object):
         f.close()
         return string
     
+    def get_log_stdout(self):
+        out = os.path.join(self.job_directory_absolute,self.stdout_file)
+        if not os.path.isfile(out):
+            return ""
+        f = open(os.path.join(self.job_directory_absolute,self.stdout_file),"r")
+        string = f.read()
+        f.close()
+        return string
+    
+    def get_log_stderr(self):
+        err = os.path.join(self.job_directory_absolute,self.stderr_file)
+        if not os.path.isfile(err):
+            return ""
+        f = open(err,"r")
+        string = f.read()
+        f.close()
+        return string
+    
     def read_properties(self):
         if(os.path.isfile(self.full_properties_path)):
             with open(self.full_properties_path) as json_file:  
@@ -203,13 +240,17 @@ class SimJob(object):
                 self.server_ssh_tool = data[self.propname_server_ssh_tool]
                 self.server_nsg_python = data[self.propname_server_nsg_python]
                 self.server_mpi_partition = data[self.propname_server_mpi_partition]
+                self.server_stdout_file = data.get(self.propname_server_stdout_file, "stdout.txt")
+                self.server_stderr_file = data.get(self.propname_server_stderr_file,"stderr.txt")
                 self.server_max_runtime = data[self.propname_server_max_runtime]
                 self.server_email = data[self.propname_server_email]
                 self.server_status_email = data[self.propname_server_status_email]
                 self.server_remote_identifier = data[self.propname_server_remote_identifier]
                 self.sim_start_time = data[self.propname_sim_start_time]
                 self.sim_last_update_time = data[self.propname_sim_last_update_time]
-            
+        else:
+            self.write_properties()
+            self.append_log("")
         return
     
     def write_properties(self):
@@ -231,6 +272,8 @@ class SimJob(object):
         data[self.propname_server_ssh_tool] = self.server_ssh_tool
         data[self.propname_server_nsg_python] = self.server_nsg_python
         data[self.propname_server_mpi_partition] = self.server_mpi_partition
+        data[self.propname_server_stdout_file] = self.server_stdout_file
+        data[self.propname_server_stderr_file] = self.server_stderr_file
         data[self.propname_server_max_runtime] = self.server_max_runtime
         data[self.propname_server_email] = self.server_email
         data[self.propname_server_status_email] = self.server_status_email
@@ -257,7 +300,10 @@ class SimJob(object):
     
     def download_remote(self):
         self.append_log("Download remote results initiated")        
-        ServerInterface().download_results_simjob(self)
+        try:
+            ServerInterface().download_results_simjob(self)
+        except Exception as e:
+            self.append_log("Couldn't download the files: " + e)
         return
     
     def create_snapshot(self):
@@ -284,14 +330,20 @@ class SimJob(object):
         
         return
     
+    def download_server_output(self):
+        ServerInterface.download_status_simjob(self)
+        return
+    
     def update(self):
         if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]:
             ServerInterface().update_for_completion(self)
+            ServerInterface().download_status_simjob(self)
             self.sim_last_update_time = time.time()
             self.write_properties()
             
         if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1]:
             ServerInterface().download_results_simjob(self)
+            ServerInterface().download_status_simjob(self)
             self.sim_last_update_time = time.time()
             self.write_properties()
         

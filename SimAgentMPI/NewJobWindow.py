@@ -51,6 +51,8 @@ class JobEntryBox:
             self.server_connector = tk.StringVar(top)
             self.server_nodes = tk.StringVar(top)
             self.server_cores = tk.StringVar(top)
+            self.server_out = tk.StringVar(top)
+            self.server_err = tk.StringVar(top)
             self.server_nsg_tool = tk.StringVar(top)
             self.server_ssh_tool = tk.StringVar(top)
             self.server_nsg_python = tk.IntVar(top)
@@ -70,6 +72,8 @@ class JobEntryBox:
                 self.server_connector.set(edit_job.server_connector)
                 self.server_nodes.set(edit_job.server_nodes)
                 self.server_cores.set(edit_job.server_cores)
+                self.server_out.set(edit_job.server_stdout_file)
+                self.server_err.set(edit_job.server_stderr_file)
                 self.server_nsg_tool.set(edit_job.server_nsg_tool)
                 self.server_ssh_tool.set(edit_job.server_ssh_tool)
                 self.server_nsg_python.set(edit_job.server_nsg_python)
@@ -138,10 +142,14 @@ class JobEntryBox:
                 part = "#SBATCH -p "
                 nodes = "#SBATCH -N "
                 cores = "#SBATCH -n "
+                out = "#SBATCH -o "
+                err = "#SBATCH -e "
                 
                 batch_part = SimAgentMPI.Utils.get_line_with(batch_f,part)
                 batch_nodes = SimAgentMPI.Utils.get_line_with(batch_f,nodes)
                 batch_cores = SimAgentMPI.Utils.get_line_with(batch_f,cores)
+                batch_out = SimAgentMPI.Utils.get_line_with(batch_f,out)
+                batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
                                 
                 if batch_part:
                     batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
@@ -149,10 +157,15 @@ class JobEntryBox:
                 if batch_nodes:
                     batch_nodes = batch_nodes.replace(nodes,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
                     self.server_nodes.set(batch_nodes)
-                if batch_nodes:
+                if batch_cores:
                     batch_cores = batch_cores.replace(cores,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
-                    self.server_cores.set(batch_cores)         
-                     
+                    self.server_cores.set(batch_cores)    
+                if batch_out:
+                    batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    self.server_out.set(batch_out)
+                if batch_err:
+                    batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    self.server_err.set(batch_err)
                 return
             
             
@@ -316,6 +329,8 @@ class JobEntryBox:
             simjob.server_connector = self.server_connector.get()
             simjob.server_nodes = self.server_nodes.get()
             simjob.server_cores = self.server_cores.get()
+            simjob.server_stdout_file = self.server_out.get()
+            simjob.server_stderr_file = self.server_err.get()
             simjob.server_nsg_tool = self.server_nsg_tool.get()
             simjob.server_ssh_tool = self.server_ssh_tool.get()
             simjob.server_nsg_python = str(self.server_nsg_python.get())
@@ -327,13 +342,14 @@ class JobEntryBox:
         def ok(self):
             self.confirm.set(True)
             if(self.confirm.get() and self.is_valid()):
+                self.change_batch()
                 if self.edit_job and not self.clone_mode:
                     simjob = self.to_simjob()
                     simjob.write_properties()
                     #simjob.append_log("Job edited")
                 else:
+                    #simjob.create_sim_directory()
                     simjob = self.to_simjob()
-                    simjob.create_sim_directory()
                     simjob.write_properties()
                     simjob.append_log("Job created")
                     self.sim_directory.add_new_job(simjob)

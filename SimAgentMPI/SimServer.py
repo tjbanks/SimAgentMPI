@@ -60,7 +60,18 @@ class ServersFile(object):
         if not self.update:
             self.servers.append(sim_server)
             
-            
+        self.update_file()
+        return
+    
+    def delete_server(self, server_name):
+        if server_name=="":
+            return
+        serv = self.get_server_byname(server_name)
+        self.servers.remove(serv)
+        self.update_file()
+        return
+    
+    def update_file(self):
         json_data = []
         for s in self.servers:
             json_data.append(s.to_dict())
