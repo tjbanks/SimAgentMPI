@@ -466,7 +466,7 @@ class ServerInterface(object):
                         if os.path.exists(std_out):
                             os.remove(std_out)
                         os.rename(out_dl, std_out)
-                        os.remove(out_dl)
+                        #os.remove(out_dl)
                     if filename == errfile:
                         resultFiles[filename].download(simjob.job_directory_absolute)
                         err_dl = os.path.join(simjob.job_directory_absolute,errfile)
@@ -474,7 +474,7 @@ class ServerInterface(object):
                         if os.path.exists(std_err):
                             os.remove(std_err)
                         os.rename(err_dl, std_err)
-                        os.remove(err_dl)
+                        #os.remove(err_dl)
         return
     
     def download_status_ssh(self, simjob, server):

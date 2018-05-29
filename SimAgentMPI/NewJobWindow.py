@@ -134,40 +134,6 @@ class JobEntryBox:
             def change_dropdown_ssh_tool(*args):
                 return
             
-            def change_batch(*args):
-                if self.batch_file.get() == "":
-                    return
-                
-                batch_f = os.path.join(self.sim_directory.sim_directory,self.batch_file.get())
-                part = "#SBATCH -p "
-                nodes = "#SBATCH -N "
-                cores = "#SBATCH -n "
-                out = "#SBATCH -o "
-                err = "#SBATCH -e "
-                
-                batch_part = SimAgentMPI.Utils.get_line_with(batch_f,part)
-                batch_nodes = SimAgentMPI.Utils.get_line_with(batch_f,nodes)
-                batch_cores = SimAgentMPI.Utils.get_line_with(batch_f,cores)
-                batch_out = SimAgentMPI.Utils.get_line_with(batch_f,out)
-                batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
-                                
-                if batch_part:
-                    batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
-                    self.server_mpi_partition.set(batch_part) 
-                if batch_nodes:
-                    batch_nodes = batch_nodes.replace(nodes,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
-                    self.server_nodes.set(batch_nodes)
-                if batch_cores:
-                    batch_cores = batch_cores.replace(cores,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
-                    self.server_cores.set(batch_cores)    
-                if batch_out:
-                    batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
-                    self.server_out.set(batch_out)
-                if batch_err:
-                    batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
-                    self.server_err.set(batch_err)
-                return
-            
             
             def validate(action, index, value_if_allowed,
                        prior_value, text, validation_type, trigger_type, widget_name):
@@ -232,7 +198,7 @@ class JobEntryBox:
             self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.batch_file,state=tk.DISABLED)
             self.name_e.grid(row=2,column=1,padx=5,columnspan=1)
             b = tk.Button(conn_option_frame, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
-            self.batch_file.trace('w', change_batch)
+            self.batch_file.trace('w', self.change_batch)
             
             tk.Label(conn_option_frame, text='Partition',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
             self.host_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_mpi_partition)
@@ -293,6 +259,39 @@ class JobEntryBox:
             b = tk.Button(button_frame, text="Cancel", command=self.cancel)
             b.grid(pady=5, padx=5, column=1, row=0, sticky="WE")
             
+        def change_batch(self, *args):
+                if self.batch_file.get() == "":
+                    return
+                
+                batch_f = os.path.join(self.sim_directory.sim_directory,self.batch_file.get())
+                part = "#SBATCH -p "
+                nodes = "#SBATCH -N "
+                cores = "#SBATCH -n "
+                out = "#SBATCH -o "
+                err = "#SBATCH -e "
+                
+                batch_part = SimAgentMPI.Utils.get_line_with(batch_f,part)
+                batch_nodes = SimAgentMPI.Utils.get_line_with(batch_f,nodes)
+                batch_cores = SimAgentMPI.Utils.get_line_with(batch_f,cores)
+                batch_out = SimAgentMPI.Utils.get_line_with(batch_f,out)
+                batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
+                                
+                if batch_part:
+                    batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    self.server_mpi_partition.set(batch_part) 
+                if batch_nodes:
+                    batch_nodes = batch_nodes.replace(nodes,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    self.server_nodes.set(batch_nodes)
+                if batch_cores:
+                    batch_cores = batch_cores.replace(cores,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    self.server_cores.set(batch_cores)    
+                if batch_out:
+                    batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    self.server_out.set(batch_out)
+                if batch_err:
+                    batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    self.server_err.set(batch_err)
+                return
             
         def verify_good(self):
             if (' ' in self.name.get()) == True:
