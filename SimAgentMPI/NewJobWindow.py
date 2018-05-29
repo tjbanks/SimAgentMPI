@@ -13,6 +13,7 @@ from SimAgentMPI.SimServer import ServersFile
 from SimAgentMPI.NewServerConfig import ServerEntryBox
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
+from SimAgentMPI.Utils import AutocompleteEntry
 import SimAgentMPI
 
 class JobEntryBox:
@@ -111,7 +112,12 @@ class JobEntryBox:
                 self.batch_file.set(os.path.basename(filedialog.askopenfilename()))
                 self.top.lift()
                 return
-                
+            
+            def new_batch(*args):
+                Create_Batch_File(self.top)
+                return
+        
+        
             def new_server():
                 ServerEntryBox(self.top, confirm_callback=set_server_choices)
                 #Refresh options
@@ -199,6 +205,8 @@ class JobEntryBox:
             self.name_e.grid(row=2,column=1,padx=5,columnspan=1)
             b = tk.Button(conn_option_frame, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
             self.batch_file.trace('w', self.change_batch)
+            b = tk.Button(conn_option_frame, text="New", command=new_batch).grid(pady=5, padx=5, column=3, row=2, sticky="WE",columnspan=1)
+            
             
             tk.Label(conn_option_frame, text='Partition',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
             self.host_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_mpi_partition)
@@ -259,6 +267,7 @@ class JobEntryBox:
             b = tk.Button(button_frame, text="Cancel", command=self.cancel)
             b.grid(pady=5, padx=5, column=1, row=0, sticky="WE")
             
+        
         def change_batch(self, *args):
                 if self.batch_file.get() == "":
                     return
@@ -361,4 +370,60 @@ class JobEntryBox:
             
         def cancel(self):
             self.top.destroy()
-            
+
+
+class Create_Batch_File(object):
+    
+    def __init__(self, parent, server=None, callback=None):
+        self.parent = parent
+        self.server = server
+        self.window_title = "Select Server"
+        self.confirm = False
+        self.callback = callback
+        self.display()
+        
+    def display(self):
+        top = self.top = tk.Toplevel(self.parent)
+        top.geometry('340x175')
+        top.resizable(1,1)
+        top.title(self.window_title)
+        
+        servers = ServersFile().servers
+        names = [""]
+        
+        for server in servers:
+            names.append(server.name)
+        
+        main_frame = tk.Frame(self.top)
+        main_frame.grid(pady=5, padx=5, column=0,row=0, sticky='NEWS')
+        
+        self.server_selected = tk.StringVar(main_frame)
+        tk.Label(main_frame, text='Server',width=15, background='light gray',relief=tk.GROOVE).grid(row=0,column=0,pady=5,padx=5)
+        popupMenu = OptionMenu(main_frame, self.server_selected, *names)
+        popupMenu.grid(row = 0, column =1)
+        
+        autocompleteList = [ 'Dora Lyons (7714)', 'Hannah Golden (6010)', 'Walker Burns (9390)', 'Dieter Pearson (6347)', 'Allen Sullivan (9781)', 'Warren Sullivan (3094)', 'Genevieve Mayo (8427)', 'Igor Conner (4740)', 'Ulysses Shepherd (8116)', 'Imogene Bullock (6736)', 'Dominique Sanchez (949)', 'Sean Robinson (3784)', 'Diana Greer (2385)', 'Arsenio Conrad (2891)', 'Sophia Rowland (5713)', 'Garrett Lindsay (5760)', 'Lacy Henry (4350)', 'Tanek Conley (9054)', 'Octavia Michael (5040)', 'Kimberly Chan (1989)', 'Melodie Wooten (7753)', 'Winter Beard (3896)', 'Callum Schultz (7762)', 'Prescott Silva (3736)', 'Adena Crane (6684)', 'Ocean Schroeder (2354)', 'Aspen Blevins (8588)', 'Allegra Gould (7323)', 'Penelope Aguirre (7639)', 'Deanna Norman (1963)', 'Herman Mcintosh (1776)', 'August Hansen (547)', 'Oscar Sanford (2333)', 'Guy Vincent (1656)', 'Indigo Frye (3236)', 'Angelica Vargas (1697)', 'Bevis Blair (4354)', 'Trevor Wilkinson (7067)', 'Kameko Lloyd (2660)', 'Giselle Gaines (9103)', 'Phyllis Bowers (6661)', 'Patrick Rowe (2615)', 'Cheyenne Manning (1743)', 'Jolie Carney (6741)', 'Joel Faulkner (6224)', 'Anika Bennett (9298)', 'Clayton Cherry (3687)', 'Shellie Stevenson (6100)', 'Marah Odonnell (3115)', 'Quintessa Wallace (5241)', 'Jayme Ramsey (8337)', 'Kyle Collier (8284)', 'Jameson Doyle (9258)', 'Rigel Blake (2124)', 'Joan Smith (3633)', 'Autumn Osborne (5180)', 'Renee Randolph (3100)', 'Fallon England (6976)', 'Fallon Jefferson (6807)', 'Kevyn Koch (9429)', 'Paki Mckay (504)', 'Connor Pitts (1966)', 'Rebecca Coffey (4975)', 'Jordan Morrow (1772)', 'Teegan Snider (5808)', 'Tatyana Cunningham (7691)', 'Owen Holloway (6814)', 'Desiree Delaney (272)', 'Armand Snider (8511)', 'Wallace Molina (4302)', 'Amela Walker (1637)', 'Denton Tillman (201)', 'Bruno Acevedo (7684)', 'Slade Hebert (5945)', 'Elmo Watkins (9282)', 'Oleg Copeland (8013)', 'Vladimir Taylor (3846)', 'Sierra Coffey (7052)', 'Holmes Scott (8907)', 'Evelyn Charles (8528)', 'Steel Cooke (5173)', 'Roth Barrett (7977)', 'Justina Slater (3865)', 'Mara Andrews (3113)', 'Ulla Skinner (9342)', 'Reece Lawrence (6074)', 'Violet Clay (6516)', 'Ainsley Mcintyre (6610)', 'Chanda Pugh (9853)', 'Brody Rosales (2662)', 'Serena Rivas (7156)', 'Henry Lang (4439)', 'Clark Olson (636)', 'Tashya Cotton (5795)', 'Kim Matthews (2774)', 'Leilani Good (5360)', 'Deirdre Lindsey (5829)', 'Macy Fields (268)', 'Daniel Parrish (1166)', 'Talon Winters (8469)' ]
+    
+        entry = AutocompleteEntry(main_frame, autocompleteList, listboxLength=6, width=32)
+        entry.grid(row=0, column=2)    
+        
+        b = tk.Button(main_frame, text="Ok", command=self.ok)
+        b.grid(pady=5, padx=5, column=0, row=99, sticky="WE")
+        
+        b = tk.Button(main_frame, text="Cancel", command=self.cancel)
+        b.grid(pady=5, padx=5, column=1, row=100, sticky="WE")
+        
+        
+    def ok(self):
+        self.confirm = True
+        self.top.destroy()
+        self.callback(self)
+        
+    def cancel(self):
+        self.top.destroy()
+        
+        return
+    
+    
+    
+    

@@ -6,11 +6,11 @@ Created on Sun May 20 16:48:45 2018
 """
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk,Entry,StringVar,Listbox
 
 import re
 from tempfile import mkstemp
-from shutil import move, copyfile
+from shutil import move
 from os import fdopen, remove
 
 def replace(file_path, pattern, subst,unix_end=False):
@@ -99,3 +99,178 @@ class CreateToolTip(object):
         if tw:
             tw.destroy()
             
+class AutocompleteEntry(Entry):
+    def __init__(self, parent, autocompleteList, *args, **kwargs):
+        self.parent=parent
+        # Listbox length
+        if 'listboxLength' in kwargs:
+            self.listboxLength = kwargs['listboxLength']
+            del kwargs['listboxLength']
+        else:
+            self.listboxLength = 8
+
+        # Custom matches function
+        if 'matchesFunction' in kwargs:
+            self.matchesFunction = kwargs['matchesFunction']
+            del kwargs['matchesFunction']
+        else:
+            def matches(fieldValue, acListEntry):
+                pattern = re.compile('.*' + re.escape(fieldValue) + '.*', re.IGNORECASE)
+                return re.match(pattern, acListEntry)
+                
+            self.matchesFunction = matches
+
+        
+        Entry.__init__(self,master=parent, *args, **kwargs)
+        self.focus()
+
+        self.autocompleteList = autocompleteList
+        
+        self.var = self["textvariable"]
+        if self.var == '':
+            self.var = self["textvariable"] = StringVar()
+
+        self.var.trace('w', self.changed)
+        self.bind("<Right>", self.selection)
+        self.bind("<Up>", self.moveUp)
+        self.bind("<Down>", self.moveDown)
+        
+        self.listboxUp = False
+
+    def changed(self, name, index, mode):
+        if self.var.get() == '':
+            if self.listboxUp:
+                self.listbox.destroy()
+                self.listboxUp = False
+        else:
+            words = self.comparison()
+            if words:
+                if not self.listboxUp:
+                    self.listbox = Listbox(master=self.parent,width=self["width"], height=self.listboxLength)
+                    self.listbox.bind("<Button-1>", self.selection)
+                    self.listbox.bind("<Right>", self.selection)
+                    self.listbox.place(x=self.winfo_x(), y=self.winfo_y() + self.winfo_height())
+                    self.listboxUp = True
+                
+                self.listbox.delete(0, tk.END)
+                for w in words:
+                    self.listbox.insert(tk.END,w)
+            else:
+                if self.listboxUp:
+                    self.listbox.destroy()
+                    self.listboxUp = False
+        
+    def selection(self, event):
+        if self.listboxUp:
+            self.var.set(self.listbox.get(tk.ACTIVE))
+            self.listbox.destroy()
+            self.listboxUp = False
+            self.icursor(tk.END)
+
+    def moveUp(self, event):
+        if self.listboxUp:
+            if self.listbox.curselection() == ():
+                index = '0'
+            else:
+                index = self.listbox.curselection()[0]
+                
+            if index != '0':                
+                self.listbox.selection_clear(first=index)
+                index = str(int(index) - 1)
+                
+                self.listbox.see(index) # Scroll!
+                self.listbox.selection_set(first=index)
+                self.listbox.activate(index)
+
+    def moveDown(self, event):
+        if self.listboxUp:
+            if self.listbox.curselection() == ():
+                index = '0'
+            else:
+                index = self.listbox.curselection()[0]
+                
+            if index != tk.END:                        
+                self.listbox.selection_clear(first=index)
+                index = str(int(index) + 1)
+                
+                self.listbox.see(index) # Scroll!
+                self.listbox.selection_set(first=index)
+                self.listbox.activate(index) 
+
+    def comparison(self):
+        return [ w for w in self.autocompleteList if self.matchesFunction(self.var.get(), w) ]
+    
+    
+class Batch_File(object):
+    parallel_cmd = "srun"
+    
+    def __init__(self, filename):
+        self.filename = filename
+        
+        self.partition = "General"
+        self.cust_name = ""
+        self.out_file = ""
+        self.err_file = ""
+        self.hours_limit = 2
+        self.nodes = 1
+        self.cores = 1
+        self.modules = []
+        self.singlecoreruns = []
+        self.sruns = []
+        
+        
+        self.read_file()
+        
+    def read_file(self):
+        return
+        
+    def write_replacements(self):
+        return
+    
+    def write_new_file(self):
+        
+        
+        
+        
+        return    
+        
+    def get_file_lines(self):
+        arr = []
+        
+        header = [
+                "#! /bin/bash",
+                "",
+                "{}#SBATCH -p {} # Uses the {} partition".format(("" if self.partition else "#"),self.partition,self.partition),
+                "{}#SBATCH -J {} # job's custom name".format(("" if self.cust_name else "#"),self.cust_name),
+                "{}#SBATCH -o {} # job output custom name".format(("" if self.out_file else "#"),self.out_file),
+                "{}#SBATCH -e {} # job error custom name".format(("" if self.err_file else "#"),self.err_file),
+                "{}#SBATCH -t 0-{}:00".format(("" if self.hours_limit else "#"),self.hours_limit),
+                "",
+                "{}#SBATCH -N {} # number of nodes".format(("" if self.nodes else "#"),self.nodes),
+                "{}#SBATCH -n {} # number of codes (tasks)".format(("" if self.cores else "#"),self.cores),
+                ""
+                ]
+        
+        module_load = []
+        
+        single_header = [
+                "# Commands here run only on the first core",
+                ]
+        
+        single = []
+
+        parallel_header = [
+                "# Commands with {} will run on all cores in the allocation".format(Batch_File.parallel_cmd)
+                ]        
+        
+        parallel = []
+        
+        module_unload = []
+        
+        for m in self.modules:
+            module_load.append("module load ".format(m))
+        
+        
+        arr = header + module_load + single_header + single + parallel_header + parallel + module_unload
+        
+        return arr
