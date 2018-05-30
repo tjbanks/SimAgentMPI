@@ -221,14 +221,18 @@ class ServerInterface(object):
         ##
         os.remove(snapzip)
         self.take_snapshotzip(snapdir,snapdir, zipfold=snapdir)
-        
+        simjob.dir_results = simjob.sim_name
+        simjob.write_properties()
         try:
             client = self.connect_ssh(server,simjob)
             
             simjob.append_log("Verifying/creating folder /home/{}/{} on {}".format(server.user,self.remote_dir,server.host))
             command= 'mkdir '+ self.remote_dir
-            self.exec_ssh_command(client, command, simjob, server)
-                    
+            try:
+                self.exec_ssh_command(client, command, simjob, server)
+            except IOError as e:
+                pass #We're probably ok if we can't mkdir, probably already exists
+                
             rem_loc = "./"+self.remote_dir+"/"+simjob.file_snapshotzip
             zip_file = os.path.join(simjob.job_directory_absolute,simjob.file_snapshotzip)
             zip_dir = simjob.file_snapshotzip.split(".zip")[0]
@@ -606,5 +610,6 @@ class ServerInterface(object):
                 simjob.append_log(lines)
             else:
                 print(lines)
+            raise IOError(lines)
         return lines
     

@@ -205,7 +205,7 @@ class JobEntryBox:
             self.name_e.grid(row=2,column=1,padx=5,columnspan=1)
             b = tk.Button(conn_option_frame, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
             self.batch_file.trace('w', self.change_batch)
-            b = tk.Button(conn_option_frame, text="New", command=new_batch).grid(pady=5, padx=5, column=3, row=2, sticky="WE",columnspan=1)
+            #b = tk.Button(conn_option_frame, text="New", command=new_batch).grid(pady=5, padx=5, column=3, row=2, sticky="WE",columnspan=1)
             
             
             tk.Label(conn_option_frame, text='Partition',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
@@ -286,20 +286,50 @@ class JobEntryBox:
                 batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
                                 
                 if batch_part:
-                    batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
                     self.server_mpi_partition.set(batch_part) 
                 if batch_nodes:
-                    batch_nodes = batch_nodes.replace(nodes,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    batch_nodes = batch_nodes.replace(nodes,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
                     self.server_nodes.set(batch_nodes)
                 if batch_cores:
-                    batch_cores = batch_cores.replace(cores,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    batch_cores = batch_cores.replace(cores,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
                     self.server_cores.set(batch_cores)    
                 if batch_out:
-                    batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
                     self.server_out.set(batch_out)
                 if batch_err:
-                    batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n")
+                    batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
                     self.server_err.set(batch_err)
+                    
+                    
+                part = "#SBATCH --partition="
+                nodes = "#SBATCH --nodes="
+                cores = "#SBATCH --ntasks="
+                out = "#SBATCH --output="
+                err = "#SBATCH --error="
+                
+                batch_part = SimAgentMPI.Utils.get_line_with(batch_f,part)
+                batch_nodes = SimAgentMPI.Utils.get_line_with(batch_f,nodes)
+                batch_cores = SimAgentMPI.Utils.get_line_with(batch_f,cores)
+                batch_out = SimAgentMPI.Utils.get_line_with(batch_f,out)
+                batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
+                                
+                if batch_part:
+                    batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                    self.server_mpi_partition.set(batch_part) 
+                if batch_nodes:
+                    batch_nodes = batch_nodes.replace(nodes,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                    self.server_nodes.set(batch_nodes)
+                if batch_cores:
+                    batch_cores = batch_cores.replace(cores,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                    self.server_cores.set(batch_cores)    
+                if batch_out:
+                    batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                    self.server_out.set(batch_out)
+                if batch_err:
+                    batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                    self.server_err.set(batch_err)
+                    
                 return
             
         def verify_good(self):
@@ -380,6 +410,10 @@ class Create_Batch_File(object):
         self.window_title = "Select Server"
         self.confirm = False
         self.callback = callback
+        self.modules_avail = []
+        self.mod_frames = []
+        self.mod_vals = []
+        self.mod_num = 0
         self.display()
         
     def display(self):
@@ -398,26 +432,50 @@ class Create_Batch_File(object):
         main_frame.grid(pady=5, padx=5, column=0,row=0, sticky='NEWS')
         
         self.server_selected = tk.StringVar(main_frame)
-        tk.Label(main_frame, text='Server',width=15, background='light gray',relief=tk.GROOVE).grid(row=0,column=0,pady=5,padx=5)
+        #tk.Label(main_frame, text='Load Modules from Server',width=15, background='light gray',relief=tk.GROOVE).grid(row=0,column=0,pady=5,padx=5)
         popupMenu = OptionMenu(main_frame, self.server_selected, *names)
         popupMenu.grid(row = 0, column =1)
+        b = tk.Button(main_frame, text="Load Modules from Server", command=self.get_modules)
+        b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
         
-        autocompleteList = [ 'Dora Lyons (7714)', 'Hannah Golden (6010)', 'Walker Burns (9390)', 'Dieter Pearson (6347)', 'Allen Sullivan (9781)', 'Warren Sullivan (3094)', 'Genevieve Mayo (8427)', 'Igor Conner (4740)', 'Ulysses Shepherd (8116)', 'Imogene Bullock (6736)', 'Dominique Sanchez (949)', 'Sean Robinson (3784)', 'Diana Greer (2385)', 'Arsenio Conrad (2891)', 'Sophia Rowland (5713)', 'Garrett Lindsay (5760)', 'Lacy Henry (4350)', 'Tanek Conley (9054)', 'Octavia Michael (5040)', 'Kimberly Chan (1989)', 'Melodie Wooten (7753)', 'Winter Beard (3896)', 'Callum Schultz (7762)', 'Prescott Silva (3736)', 'Adena Crane (6684)', 'Ocean Schroeder (2354)', 'Aspen Blevins (8588)', 'Allegra Gould (7323)', 'Penelope Aguirre (7639)', 'Deanna Norman (1963)', 'Herman Mcintosh (1776)', 'August Hansen (547)', 'Oscar Sanford (2333)', 'Guy Vincent (1656)', 'Indigo Frye (3236)', 'Angelica Vargas (1697)', 'Bevis Blair (4354)', 'Trevor Wilkinson (7067)', 'Kameko Lloyd (2660)', 'Giselle Gaines (9103)', 'Phyllis Bowers (6661)', 'Patrick Rowe (2615)', 'Cheyenne Manning (1743)', 'Jolie Carney (6741)', 'Joel Faulkner (6224)', 'Anika Bennett (9298)', 'Clayton Cherry (3687)', 'Shellie Stevenson (6100)', 'Marah Odonnell (3115)', 'Quintessa Wallace (5241)', 'Jayme Ramsey (8337)', 'Kyle Collier (8284)', 'Jameson Doyle (9258)', 'Rigel Blake (2124)', 'Joan Smith (3633)', 'Autumn Osborne (5180)', 'Renee Randolph (3100)', 'Fallon England (6976)', 'Fallon Jefferson (6807)', 'Kevyn Koch (9429)', 'Paki Mckay (504)', 'Connor Pitts (1966)', 'Rebecca Coffey (4975)', 'Jordan Morrow (1772)', 'Teegan Snider (5808)', 'Tatyana Cunningham (7691)', 'Owen Holloway (6814)', 'Desiree Delaney (272)', 'Armand Snider (8511)', 'Wallace Molina (4302)', 'Amela Walker (1637)', 'Denton Tillman (201)', 'Bruno Acevedo (7684)', 'Slade Hebert (5945)', 'Elmo Watkins (9282)', 'Oleg Copeland (8013)', 'Vladimir Taylor (3846)', 'Sierra Coffey (7052)', 'Holmes Scott (8907)', 'Evelyn Charles (8528)', 'Steel Cooke (5173)', 'Roth Barrett (7977)', 'Justina Slater (3865)', 'Mara Andrews (3113)', 'Ulla Skinner (9342)', 'Reece Lawrence (6074)', 'Violet Clay (6516)', 'Ainsley Mcintyre (6610)', 'Chanda Pugh (9853)', 'Brody Rosales (2662)', 'Serena Rivas (7156)', 'Henry Lang (4439)', 'Clark Olson (636)', 'Tashya Cotton (5795)', 'Kim Matthews (2774)', 'Leilani Good (5360)', 'Deirdre Lindsey (5829)', 'Macy Fields (268)', 'Daniel Parrish (1166)', 'Talon Winters (8469)' ]
-    
-        entry = AutocompleteEntry(main_frame, autocompleteList, listboxLength=6, width=32)
-        entry.grid(row=0, column=2)    
+        module_frame = tk.Frame(main_frame)
+        module_frame.grid(column = 0, row=2)
+        
+        b = tk.Button(main_frame, text="New Module", command=lambda x=module_frame:self.new_module(x))
+        b.grid(pady=5, padx=5, column=0, row=1, sticky="WE")
         
         b = tk.Button(main_frame, text="Ok", command=self.ok)
-        b.grid(pady=5, padx=5, column=0, row=99, sticky="WE")
+        b.grid(pady=5, padx=5, column=0, row=400, sticky="WE")
         
         b = tk.Button(main_frame, text="Cancel", command=self.cancel)
-        b.grid(pady=5, padx=5, column=1, row=100, sticky="WE")
+        b.grid(pady=5, padx=5, column=1, row=400, sticky="WE")
         
+    def new_module(self, parent):
+        frame = tk.Frame(parent)
+        entry = AutocompleteEntry(frame, self.modules_avail, listboxLength=6, width=32, window_frame=tk.Tk())
+        b = tk.Button(frame, text="X", command=lambda x=self.mod_num:self.on_delete_module(x))
+        entry.grid(row=0,column=0)
+        b.grid(row=0,column=1)
+        self.mod_frames.append(frame)
+        self.mod_vals.append(entry)
+        frame.grid(row=self.mod_num, column=0)
+        self.mod_num = self.mod_num+1
+        return 
+        
+    def get_modules(self):
+        #self.server_selected
+        list_ = [ 'Dora Lyons (7714)', 'Hannah Golden (6010)', 'Walker Burns (9390)', 'Dieter Pearson (6347)', 'Allen Sullivan (9781)', 'Warren Sullivan (3094)', 'Genevieve Mayo (8427)', 'Igor Conner (4740)', 'Ulysses Shepherd (8116)', 'Imogene Bullock (6736)', 'Dominique Sanchez (949)', 'Sean Robinson (3784)', 'Diana Greer (2385)', 'Arsenio Conrad (2891)', 'Sophia Rowland (5713)', 'Garrett Lindsay (5760)', 'Lacy Henry (4350)', 'Tanek Conley (9054)', 'Octavia Michael (5040)', 'Kimberly Chan (1989)', 'Melodie Wooten (7753)', 'Winter Beard (3896)', 'Callum Schultz (7762)', 'Prescott Silva (3736)', 'Adena Crane (6684)', 'Ocean Schroeder (2354)', 'Aspen Blevins (8588)', 'Allegra Gould (7323)', 'Penelope Aguirre (7639)', 'Deanna Norman (1963)', 'Herman Mcintosh (1776)', 'August Hansen (547)', 'Oscar Sanford (2333)', 'Guy Vincent (1656)', 'Indigo Frye (3236)', 'Angelica Vargas (1697)', 'Bevis Blair (4354)', 'Trevor Wilkinson (7067)', 'Kameko Lloyd (2660)', 'Giselle Gaines (9103)', 'Phyllis Bowers (6661)', 'Patrick Rowe (2615)', 'Cheyenne Manning (1743)', 'Jolie Carney (6741)', 'Joel Faulkner (6224)', 'Anika Bennett (9298)', 'Clayton Cherry (3687)', 'Shellie Stevenson (6100)', 'Marah Odonnell (3115)', 'Quintessa Wallace (5241)', 'Jayme Ramsey (8337)', 'Kyle Collier (8284)', 'Jameson Doyle (9258)', 'Rigel Blake (2124)', 'Joan Smith (3633)', 'Autumn Osborne (5180)', 'Renee Randolph (3100)', 'Fallon England (6976)', 'Fallon Jefferson (6807)', 'Kevyn Koch (9429)', 'Paki Mckay (504)', 'Connor Pitts (1966)', 'Rebecca Coffey (4975)', 'Jordan Morrow (1772)', 'Teegan Snider (5808)', 'Tatyana Cunningham (7691)', 'Owen Holloway (6814)', 'Desiree Delaney (272)', 'Armand Snider (8511)', 'Wallace Molina (4302)', 'Amela Walker (1637)', 'Denton Tillman (201)', 'Bruno Acevedo (7684)', 'Slade Hebert (5945)', 'Elmo Watkins (9282)', 'Oleg Copeland (8013)', 'Vladimir Taylor (3846)', 'Sierra Coffey (7052)', 'Holmes Scott (8907)', 'Evelyn Charles (8528)', 'Steel Cooke (5173)', 'Roth Barrett (7977)', 'Justina Slater (3865)', 'Mara Andrews (3113)', 'Ulla Skinner (9342)', 'Reece Lawrence (6074)', 'Violet Clay (6516)', 'Ainsley Mcintyre (6610)', 'Chanda Pugh (9853)', 'Brody Rosales (2662)', 'Serena Rivas (7156)', 'Henry Lang (4439)', 'Clark Olson (636)', 'Tashya Cotton (5795)', 'Kim Matthews (2774)', 'Leilani Good (5360)', 'Deirdre Lindsey (5829)', 'Macy Fields (268)', 'Daniel Parrish (1166)', 'Talon Winters (8469)' ]
+        self.modules_avail = list_
+        return 
+    def on_delete_module(self, mod):
+        self.mod_frames[mod].grid_forget()
+        self.mod_vals[mod].set("")
         
     def ok(self):
         self.confirm = True
         self.top.destroy()
-        self.callback(self)
+        if self.callback:
+            self.callback(self)
         
     def cancel(self):
         self.top.destroy()

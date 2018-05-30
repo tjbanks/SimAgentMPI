@@ -159,3 +159,5 @@
 18-05-25 09:02:11 > Extracting results
 18-05-25 09:02:11 > Extracted results to C:/Users/tjbanks/Desktop/personal/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-1timetest_clone\SampleModel-1timetest_clone-nsg-return
 18-05-25 09:35:00 > Executed cd C:/Users/tjbanks/Desktop/personal/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-1timetest_clone\SampleModel-1timetest_clone-nsg-return\SampleModel-1timetest_clone && start ./graph.png18-05-25 17:26:33 > Executed cd C:/Users/Tyler/Desktop/git_stage/SimAgentMPI/SampleModel\SimAgentResults\SampleModel-1timetest_clone\SampleModel-1timetest_clone-nsg-return\SampleModel-1timetest_clone && start graph.png && exit
+18-05-29 22:55:38 > Download remote results initiated
+18-05-29 22:55:38 > Loading server nsg-tbg28

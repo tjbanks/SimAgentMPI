@@ -13,12 +13,13 @@ import datetime
 from PIL import ImageTk, Image
 import os, time
 
-from SimAgentMPI.NewJobWindow import JobEntryBox
+from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File
 from SimAgentMPI.NewServerConfig import ServerEntryBox,SelectServerEditBox
 from SimAgentMPI.SimDirectory import SimDirectory
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
 from SimAgentMPI.SimServer import ServersFile
+from SimAgentMPI.Utils import Batch_File
 
 import threading
 
@@ -162,14 +163,20 @@ class MainWindow():
         
         # create a pulldown menu, and add it to the menu bar
         filemenu = tk.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Add Server", command=self.add_server)
-        filemenu.add_command(label="Edit Server", command=self.edit_server)
-        filemenu.add_command(label="Delete Server", command=self.delete_server)
-        filemenu.add_separator()
-        filemenu.add_command(label="Delete All Jobs on Server", command=self.delete_all_jobs_server)
+        #filemenu.add_separator()
+        filemenu.add_command(label="Generate a Batch File Template", command=self.generate_batch_template)
+        #filemenu.add_command(label="Create New Batch File", command=self.create_batch)#half baked experiment
         filemenu.add_separator()
         filemenu.add_command(label="Add Results Folder to .gitignore", command=self.add_to_git_ignore)
         menubar.add_cascade(label="File", menu=filemenu)
+        
+        servermenu = tk.Menu(menubar, tearoff=0)
+        servermenu.add_command(label="Add Server", command=self.add_server)
+        servermenu.add_command(label="Edit Server", command=self.edit_server)
+        servermenu.add_command(label="Delete Server", command=self.delete_server)
+        servermenu.add_separator()
+        servermenu.add_command(label="Delete All Jobs on a Server", command=self.delete_all_jobs_server)
+        menubar.add_cascade(label='Servers', menu=servermenu)
         
         helpmenu = tk.Menu(menubar, tearoff=0)
         helpmenu.add_command(label="Warnings", command=self.warning)
@@ -451,6 +458,20 @@ class MainWindow():
         self.sim_dir.set_update_enabled(self.update_status.get())
         return
     
+    def create_batch(self):
+        Create_Batch_File(self.root)
+        
+    def generate_batch_template(self):
+        init_dir = None
+        if self.sim_dir:
+            init_dir = self.sim_dir.sim_directory
+        bat = filedialog.asksaveasfilename(defaultextension=".sh", initialdir=init_dir, confirmoverwrite=True)
+        try:
+            Batch_File(bat).write_demo()
+        except Exception as e:
+            messagebox.showerror("Error", "Unable to write " + bat + "\n" + e)
+        return
+        
     def add_to_git_ignore(self):
         if not self.sim_dir:
             messagebox.showinfo("Add to .gitignore", "No directory selected")
