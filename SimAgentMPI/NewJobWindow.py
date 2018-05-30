@@ -276,14 +276,11 @@ class JobEntryBox:
                 part = "#SBATCH -p "
                 nodes = "#SBATCH -N "
                 cores = "#SBATCH -n "
-                out = "#SBATCH -o "
-                err = "#SBATCH -e "
                 
                 batch_part = SimAgentMPI.Utils.get_line_with(batch_f,part)
                 batch_nodes = SimAgentMPI.Utils.get_line_with(batch_f,nodes)
                 batch_cores = SimAgentMPI.Utils.get_line_with(batch_f,cores)
-                batch_out = SimAgentMPI.Utils.get_line_with(batch_f,out)
-                batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
+               
                                 
                 if batch_part:
                     batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
@@ -294,25 +291,17 @@ class JobEntryBox:
                 if batch_cores:
                     batch_cores = batch_cores.replace(cores,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
                     self.server_cores.set(batch_cores)    
-                if batch_out:
-                    batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
-                    self.server_out.set(batch_out)
-                if batch_err:
-                    batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
-                    self.server_err.set(batch_err)
-                    
+                
                     
                 part = "#SBATCH --partition="
                 nodes = "#SBATCH --nodes="
                 cores = "#SBATCH --ntasks="
-                out = "#SBATCH --output="
-                err = "#SBATCH --error="
+                
                 
                 batch_part = SimAgentMPI.Utils.get_line_with(batch_f,part)
                 batch_nodes = SimAgentMPI.Utils.get_line_with(batch_f,nodes)
                 batch_cores = SimAgentMPI.Utils.get_line_with(batch_f,cores)
-                batch_out = SimAgentMPI.Utils.get_line_with(batch_f,out)
-                batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
+                
                                 
                 if batch_part:
                     batch_part = batch_part.replace(part,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
@@ -322,15 +311,47 @@ class JobEntryBox:
                     self.server_nodes.set(batch_nodes)
                 if batch_cores:
                     batch_cores = batch_cores.replace(cores,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
-                    self.server_cores.set(batch_cores)    
-                if batch_out:
-                    batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
-                    self.server_out.set(batch_out)
-                if batch_err:
-                    batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
-                    self.server_err.set(batch_err)
+                    self.server_cores.set(batch_cores)
+                    
+                self.update_outerr_file_batch()
                     
                 return
+            
+        def update_outerr_file_batch(self):
+            if self.batch_file.get() == "":
+                return
+            
+            batch_f = os.path.join(self.sim_directory.sim_directory,self.batch_file.get())
+            
+            out = "#SBATCH -o "
+            err = "#SBATCH -e "
+            
+           
+            batch_out = SimAgentMPI.Utils.get_line_with(batch_f,out)
+            batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
+                         
+            if batch_out:
+                batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                self.server_out.set(batch_out)
+            if batch_err:
+                batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                self.server_err.set(batch_err)
+                
+            out = "#SBATCH --output="
+            err = "#SBATCH --error="
+           
+            batch_out = SimAgentMPI.Utils.get_line_with(batch_f,out)
+            batch_err = SimAgentMPI.Utils.get_line_with(batch_f,err)
+                            
+            
+            if batch_out:
+                batch_out = batch_out.replace(out,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                self.server_out.set(batch_out)
+            if batch_err:
+                batch_err = batch_err.replace(err,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                self.server_err.set(batch_err)
+                
+            return
             
         def verify_good(self):
             if (' ' in self.name.get()) == True:
@@ -380,7 +401,7 @@ class JobEntryBox:
         def ok(self):
             self.confirm.set(True)
             if(self.confirm.get() and self.is_valid()):
-                self.change_batch()
+                self.update_outerr_file_batch()
                 if self.edit_job and not self.clone_mode:
                     simjob = self.to_simjob()
                     simjob.write_properties()
