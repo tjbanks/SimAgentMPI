@@ -20,6 +20,7 @@ from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
 from SimAgentMPI.SimServer import ServersFile
 from SimAgentMPI.Utils import Batch_File
+from SimAgentMPI.ParametricSweep import ParametricSweep
 
 import threading
 
@@ -105,11 +106,14 @@ class MainWindow():
         label.pack(expand=True)
     
         page1 = ttk.Frame(nb)
+        page2 = ttk.Frame(nb)
         
-        nb.add(page1, text='Manage Jobs')
+        nb.add(page1, text='Single Jobs')
+        nb.add(page2, text='Parametric Sweep')
         
         #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
         self.bind_page(page1, self.jobs_page)
+        self.bind_page(page2, ParametricSweepPage)
         
         self.display_app_status("Ready")
                 
@@ -202,7 +206,7 @@ class MainWindow():
         
         button_width = 15
         self.selected_job_name = None
-        self.refresh_time = 5
+        self.refresh_time = 60
         self.refresh_thread = threading.Timer(self.refresh_time, self.refresh_periodically)
         self.refresh_thread.setDaemon(True)
         self.refresh_thread.start()
@@ -848,3 +852,204 @@ class Exclude_Files_Window():
         self.callback = callback
         return
     
+
+class ParametricSweepPage(object):
+
+    def __init__(self, root):
+        
+        button_width = 15
+        
+        self.root = root
+        self.left_frame = tk.Frame(root)
+        self.right_frame = tk.Frame(root)
+        
+        self.directory_frame = tk.LabelFrame(self.left_frame, text="Directory")
+        self.jobs_frame = tk.LabelFrame(self.left_frame, text="Parameter Sweep")
+        self.notes_frame = tk.LabelFrame(self.right_frame, text="Notes")
+        self.log_frame = tk.Frame(self.right_frame)
+        
+        self.parametric_sweep_state = tk.StringVar(root)
+        self.parametric_sweep_state.trace("w",self.ps_state_changed)
+        self.ps = None
+        
+        #======================================================================
+        
+        b = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=button_width)
+        b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
+        
+        tk.Label(self.directory_frame, fg="blue",text="Under development.",anchor=tk.W,width=75).grid(column=1,row=0)
+        
+        buttons_frame = tk.LabelFrame(self.jobs_frame, text="")        
+        buttons_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        buttons_frame_inner_1 = tk.Frame(buttons_frame)        
+        buttons_frame_inner_1.grid(column=0,row=0,sticky='news',padx=10,pady=5)        
+        
+        self.b_new = tk.Button(buttons_frame_inner_1, text="Create Sweep", command=self.new_ps, width=button_width,state=tk.DISABLED)
+        self.b_new.grid(pady=0, padx=5, column=0, row=0, sticky="WE")
+        
+        self.b_edit = tk.Button(buttons_frame_inner_1, text="Edit Sweep", command=self.edit_ps, width=button_width,state=tk.DISABLED)
+        self.b_edit.grid(pady=0, padx=5, column=1, row=0, sticky="WE")
+        
+        self.b_build = tk.Button(buttons_frame_inner_1, text="Build", command=self.build_ps, width=button_width,state=tk.DISABLED)
+        self.b_build.grid(pady=0, padx=5, column=2, row=0, sticky="WE")
+        
+        self.b_decon = tk.Button(buttons_frame_inner_1, text="Deconstruct", command=self.decon_ps, width=button_width,state=tk.DISABLED)
+        self.b_decon.grid(pady=0, padx=5, column=3, row=0, sticky="WE")
+        
+        self.b_start = tk.Button(buttons_frame_inner_1, text="Start Sweep", command=self.start_ps, width=button_width,state=tk.DISABLED)
+        self.b_start.grid(pady=0, padx=5, column=4, row=0, sticky="WE")
+        
+        self.b_cancel = tk.Button(buttons_frame_inner_1, text="Cancel Sweep", command=self.cancel_ps, width=button_width,state=tk.DISABLED)
+        self.b_cancel.grid(pady=0, padx=5, column=5, row=0, sticky="WE")
+                
+        self.b_open = tk.Button(buttons_frame_inner_1, text="Open Results Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
+        self.b_open.grid(pady=0, padx=5, column=7, row=0, sticky="WE")
+        
+        self.b_run_cust = tk.Button(buttons_frame_inner_1, text="Run Custom Tool", command=self.custom_run, width=button_width,state=tk.DISABLED)
+        self.b_run_cust.grid(pady=0, padx=5, column=8, row=0, sticky="WE")
+        
+        #======================================================================
+        
+        self.left_frame.grid(column=0,row=0,sticky='news')
+        self.right_frame.grid(column=1,row=0,sticky='news')
+        
+        self.directory_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5,columnspan=2)
+        self.jobs_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5,columnspan=2)
+        self.notes_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5)
+        self.log_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        
+      
+    def load_dir(self, btn=None):
+        self.parametric_sweep_state.set("")
+        return
+    
+    def new_ps(self):
+        self.ps = ParametricSweep("dir","name",external_state_var=self.parametric_sweep_state)
+        return
+    
+    def edit_ps(self):
+        if self.ps:
+            pass
+        return
+    
+    def build_ps(self):
+        if self.ps:
+            self.ps.build()
+        return
+    
+    def decon_ps(self):
+        if self.ps:
+            self.ps.deconstruct()
+        return
+    
+    def start_ps(self):
+        if self.ps:
+            self.ps.submit()
+        return
+    
+    def cancel_ps(self):
+        if self.ps:
+            self.ps.cancel()
+        return
+    
+    def open_job_folder(self):
+        return
+    
+    def custom_run(self):
+        return
+    '''
+    
+    (PS_CREATE) --(PS_BUILD)--> (PS_READY) --(PS_SUBMITTING) <-> (PS_RUNNING) --> (PS_COMPLETE)
+          ^                         V                                V
+          |<---(PS_DECONSTRUCT)-----|                                |
+                       ^                                             |
+                       |------ (PS_CANCELLED) <-- (PS_CANCELLING) ---|
+          
+    
+    state = ["PS_CREATE", "PS_BUILD", "PS_READY", "PS_DECONSTRUCT",
+             "PS_SUBMITTING", "PS_RUNNING", "PS_CANCELLING", "PS_CANCELLED",
+             "PS_COMPLETE"]
+    '''
+    def ps_state_changed(self, *args):
+        if self.parametric_sweep_state.get() == "":
+            self.b_new.config(state=tk.NORMAL)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.DISABLED)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[0]:   #PS_CREATE
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.NORMAL)
+            self.b_build.config(state=tk.NORMAL)
+            self.b_decon.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.DISABLED)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[1]: #PS_BUILD
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.DISABLED)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[2]: #PS_READY
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.NORMAL)
+            self.b_start.config(state=tk.NORMAL)
+            self.b_cancel.config(state=tk.DISABLED)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[3]: #PS_DECONSTRUCT
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.DISABLED)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[4]: #PS_SUBMITTING
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.NORMAL)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[5]: #PS_RUNNING
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.NORMAL)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[6]: #PS_CANCELLING
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.DISABLED)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[7]: #PS_CANCELLED
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.NORMAL)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.DISABLED)
+            
+        elif self.parametric_sweep_state.get() == ParametricSweep.state[8]: #PS_COMPLETE
+            self.b_new.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_build.config(state=tk.DISABLED)
+            self.b_decon.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_cancel.config(state=tk.DISABLED)
+        return

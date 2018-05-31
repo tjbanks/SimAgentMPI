@@ -24,6 +24,7 @@ Directory structure
 """
 
 from SimAgentMPI.SimJob import SimJob
+from SimAgentMPI.ParametricSweep import ParametricSweep
 import os,errno
 import zipfile
 import json
@@ -108,7 +109,7 @@ class SimDirectory(object):
                 dir_ = root.split(self.sim_directory_relative, 1)[-1]
                 if(len(dir_) and dir_[0] == "\\"):
                     dir_ = dir_[1:]
-                if(dir_.startswith(SimDirectory.results_folder_name) or dir_.startswith(".git")):#only want files in root dir and not results
+                if(dir_.startswith(SimDirectory.results_folder_name) or dir_.startswith(ParametricSweep.sweeps_folder_name) or dir_.startswith(".git")):#only want files in root dir and not results
                     continue
                 #print(os.path.join(self.sim_directory_relative,dir_,file))
                 ziph.write(os.path.join(root, file), arcname=os.path.join(foldername,dir_,file))
