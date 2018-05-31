@@ -7,7 +7,7 @@ Created on Sun May 20 16:46:40 2018
 from SimAgentMPI.Utils import CreateToolTip, Autoresized_Notebook
 
 import tkinter as tk
-from tkinter import messagebox,ttk,filedialog
+from tkinter import messagebox,ttk,filedialog,OptionMenu
 from SimAgentMPI.tktable import Table
 import datetime
 from PIL import ImageTk, Image
@@ -217,6 +217,7 @@ class MainWindow():
         b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
         
         self.sim_dir_var = tk.StringVar(root)
+        self.sim_dir_var.set("Select a project folder to get started.")
         self.sim_dir_label = tk.Label(self.directory_frame, fg="blue",textvariable=self.sim_dir_var,anchor=tk.W,width=75)
         self.sim_dir_label.grid(column=1,row=0,sticky='news',padx=10,pady=5)
         
@@ -864,69 +865,395 @@ class ParametricSweepPage(object):
         self.right_frame = tk.Frame(root)
         
         self.directory_frame = tk.LabelFrame(self.left_frame, text="Directory")
-        self.jobs_frame = tk.LabelFrame(self.left_frame, text="Parameter Sweep")
+        self.sweep_frame = tk.LabelFrame(self.left_frame, text="Parameter Sweep")
+        self.jobs_frame = tk.LabelFrame(self.left_frame, text="Sweep Jobs")
         self.notes_frame = tk.LabelFrame(self.right_frame, text="Notes")
         self.log_frame = tk.Frame(self.right_frame)
+        
+        self.sim_dir = None
+        self.sweep_sim_dir = None
+        self.selected_job_name = None
+        self.selected_row_num = None
+        
         
         self.parametric_sweep_state = tk.StringVar(root)
         self.parametric_sweep_state.trace("w",self.ps_state_changed)
         self.ps = None
+        self.sweep_picked_default = "<Select a Previous Sweep>"
+        self.sweep_picked = tk.StringVar(root)
+        self.reset_sweep_picked()
+        self.sweep_choices = [""]
+        
+        self.refresh_time = 60
+        
+        try:
+            #http://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/sign-error-icon.html
+            icon_dir = "./SimAgentMPI/icons"
+            new = os.path.join(icon_dir,"sun-icon.png")
+            check = os.path.join(icon_dir,"sign-check-icon.png")
+            error = os.path.join(icon_dir,"sign-error-icon.png")
+            sync = os.path.join(icon_dir,"sign-sync-icon.png")
+            cloud_down = os.path.join(icon_dir, "cloud-down-icon.png")
+    
+            #Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
+            self.new_img = ImageTk.PhotoImage(Image.open(new))
+            self.check_img = ImageTk.PhotoImage(Image.open(check))
+            self.error_img = ImageTk.PhotoImage(Image.open(error))
+            self.sync_img  = ImageTk.PhotoImage(Image.open(sync))
+            self.cloud_img = ImageTk.PhotoImage(Image.open(cloud_down))
+            
+        except Exception as e:
+            print('Difficulty loading icons\n' + e)
         
         #======================================================================
         
         b = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=button_width)
         b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
         
-        tk.Label(self.directory_frame, fg="blue",text="Under development.",anchor=tk.W,width=75).grid(column=1,row=0)
+        self.sim_dir_var = tk.StringVar(root)
+        self.sim_dir_var.set("Under development.")
+        tk.Label(self.directory_frame, fg="blue",textvariable=self.sim_dir_var,anchor=tk.W,width=75).grid(column=1,row=0,columnspan=3)
         
-        buttons_frame = tk.LabelFrame(self.jobs_frame, text="")        
-        buttons_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        self.b_tool_exclude = tk.Button(self.directory_frame, text="Exclude Folders", command=self.exclude_folders_tool, width=button_width)
+        self.b_tool_exclude.grid(pady=5, padx=5, column=4, row=0, sticky="E")
+        self.b_tool_exclude.config(state=tk.DISABLED)
         
-        buttons_frame_inner_1 = tk.Frame(buttons_frame)        
-        buttons_frame_inner_1.grid(column=0,row=0,sticky='news',padx=10,pady=5)        
+        self.b_tool_edit = tk.Button(self.directory_frame, text="Edit Custom Tool", command=self.edit_dir_tool, width=button_width)
+        self.b_tool_edit.grid(pady=5, padx=5, column=5, row=0, sticky="E")
+        self.b_tool_edit.config(state=tk.DISABLED)
         
-        self.b_new = tk.Button(buttons_frame_inner_1, text="Create Sweep", command=self.new_ps, width=button_width,state=tk.DISABLED)
-        self.b_new.grid(pady=0, padx=5, column=0, row=0, sticky="WE")
+        self.update_status = tk.BooleanVar()
+        self.b_update_check = tk.Checkbutton(self.directory_frame, text="Auto-Update", variable=self.update_status)
+        self.b_update_check.grid(row=0,column=6, sticky="we")
+        self.update_status.trace("w",self.update_button_enabled)
+        self.b_update_check.config(state=tk.DISABLED)
         
-        self.b_edit = tk.Button(buttons_frame_inner_1, text="Edit Sweep", command=self.edit_ps, width=button_width,state=tk.DISABLED)
+        
+        self.buttons_frame_ps = tk.LabelFrame(self.sweep_frame, text="")        
+        self.buttons_frame_ps.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        self.buttons_frame_inner_ps = tk.Frame(self.buttons_frame_ps)        
+        self.buttons_frame_inner_ps.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        #tk.Label(buttons_frame_inner_ps, text='Sweep',width=15, background='light gray',relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5)
+        self.b_new = tk.Button(self.buttons_frame_inner_ps, text="Create New Sweep", command=self.new_ps, width=button_width,state=tk.DISABLED)
+        self.b_new.grid(pady=0, padx=5, column=0, row=1, sticky="WE")
+        
+        self.sweep_popupMenu = None
+        self.reload_old_sweeps()
+        
+        self.b_load = tk.Button(self.buttons_frame_inner_ps, text="Load", command=self.load_ps, width=button_width,state=tk.DISABLED)
+        self.b_load.grid(pady=0, padx=5, column=2, row=1, sticky="WE")
+        
+        self.b_delete = tk.Button(self.buttons_frame_inner_ps, text="Delete", command=self.delete_ps, width=button_width,state=tk.DISABLED)
+        self.b_delete.grid(pady=0, padx=5, column=3, row=1, sticky="WE")
+        
+        
+        
+        buttons_frame_ps = tk.LabelFrame(self.sweep_frame, text="")        
+        buttons_frame_ps.grid(column=0,row=1,sticky='news',padx=10,pady=5)
+        
+        ps_buttons_frame_inner_1 = tk.Frame(buttons_frame_ps)        
+        ps_buttons_frame_inner_1.grid(column=0,row=0,sticky='news',padx=10,pady=5)             
+        
+        self.b_edit = tk.Button(ps_buttons_frame_inner_1, text="Edit Sweep", command=self.edit_ps, width=button_width,state=tk.DISABLED)
         self.b_edit.grid(pady=0, padx=5, column=1, row=0, sticky="WE")
         
-        self.b_build = tk.Button(buttons_frame_inner_1, text="Build", command=self.build_ps, width=button_width,state=tk.DISABLED)
+        self.b_build = tk.Button(ps_buttons_frame_inner_1, text="Build", command=self.build_ps, width=button_width,state=tk.DISABLED)
         self.b_build.grid(pady=0, padx=5, column=2, row=0, sticky="WE")
         
-        self.b_decon = tk.Button(buttons_frame_inner_1, text="Deconstruct", command=self.decon_ps, width=button_width,state=tk.DISABLED)
+        self.b_decon = tk.Button(ps_buttons_frame_inner_1, text="Deconstruct", command=self.decon_ps, width=button_width,state=tk.DISABLED)
         self.b_decon.grid(pady=0, padx=5, column=3, row=0, sticky="WE")
         
-        self.b_start = tk.Button(buttons_frame_inner_1, text="Start Sweep", command=self.start_ps, width=button_width,state=tk.DISABLED)
+        self.b_start = tk.Button(ps_buttons_frame_inner_1, text="Start Sweep", command=self.start_ps, width=button_width,state=tk.DISABLED)
         self.b_start.grid(pady=0, padx=5, column=4, row=0, sticky="WE")
         
-        self.b_cancel = tk.Button(buttons_frame_inner_1, text="Cancel Sweep", command=self.cancel_ps, width=button_width,state=tk.DISABLED)
+        self.b_cancel = tk.Button(ps_buttons_frame_inner_1, text="Cancel Sweep", command=self.cancel_ps, width=button_width,state=tk.DISABLED)
         self.b_cancel.grid(pady=0, padx=5, column=5, row=0, sticky="WE")
                 
-        self.b_open = tk.Button(buttons_frame_inner_1, text="Open Results Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
+        self.b_open = tk.Button(ps_buttons_frame_inner_1, text="Open Sweep Folder", command=self.open_sweep_folder, width=button_width,state=tk.DISABLED)
         self.b_open.grid(pady=0, padx=5, column=7, row=0, sticky="WE")
         
-        self.b_run_cust = tk.Button(buttons_frame_inner_1, text="Run Custom Tool", command=self.custom_run, width=button_width,state=tk.DISABLED)
+        self.b_run_cust = tk.Button(ps_buttons_frame_inner_1, text="Run Custom Tool", command=self.custom_run, width=button_width,state=tk.DISABLED)
         self.b_run_cust.grid(pady=0, padx=5, column=8, row=0, sticky="WE")
         
+        
+        
+        
+        job_buttons_frame = tk.LabelFrame(self.jobs_frame, text="")        
+        job_buttons_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        job_buttons_frame_inner_1 = tk.Frame(job_buttons_frame)        
+        job_buttons_frame_inner_1.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        
+                
+        self.bj_edit = tk.Button(job_buttons_frame_inner_1, text="Edit Job", command=self.edit_job, width=button_width,state=tk.DISABLED)
+        self.bj_edit.grid(pady=0, padx=5, column=3, row=0, sticky="WE")
+        
+        self.bj_start = tk.Button(job_buttons_frame_inner_1, text="Re-Start Job", command=self.start_job, width=button_width,state=tk.DISABLED)
+        self.bj_start.grid(pady=0, padx=5, column=4, row=0, sticky="WE")
+        
+        self.bj_stop = tk.Button(job_buttons_frame_inner_1, text="Stop Job", command=self.stop_job, width=button_width,state=tk.DISABLED)
+        self.bj_stop.grid(pady=0, padx=5, column=5, row=0, sticky="WE")
+        
+        self.bj_update = tk.Button(job_buttons_frame_inner_1, text="Update Status", command=self.update_job, width=button_width,state=tk.DISABLED)
+        self.bj_update.grid(pady=0, padx=5, column=6, row=0, sticky="WE")
+        
+        self.bj_open = tk.Button(job_buttons_frame_inner_1, text="Open Results Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
+        self.bj_open.grid(pady=0, padx=5, column=7, row=0, sticky="WE")
+        
+        self.bj_run_cust = tk.Button(job_buttons_frame_inner_1, text="Run Custom Tool", command=self.run_custom, width=button_width,state=tk.DISABLED)
+        self.bj_run_cust.grid(pady=0, padx=5, column=8, row=0, sticky="WE")
+        
+        
+        self.columns = ["Status","Name", "Server", "Tool/Partition", "Nodes", "Cores", "Start", "Runtime", "Remote ID"]
+        self.col_wid = [45, 200, 100, 100, 50, 50, 100, 100, 150]
+        
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
+        self.table.grid(row=1,column=0,padx=10,pady=10)
+        self.table.set_data([[""],[""],[""],[""]])
+        
+        
         #======================================================================
+        
+        
+        """=Logs Frame======================================"""
+        
+        def log_file(root):
+            self.log_console = tk.Text(root)
+            self.log_console.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
+            self.log_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        
+        def stdout_file(root):
+            self.log_console_stdout = tk.Text(root)
+            self.log_console_stdout.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
+            self.log_console_stdout.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+            
+        def stderr_file(root):
+            self.log_console_stderr = tk.Text(root)
+            self.log_console_stderr.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
+            self.log_console_stderr.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+            
+        nb = Autoresized_Notebook(self.log_frame)
+        nb.pack(padx=5,pady=5,side="left",fill="both",expand=True)
+        
+        #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
+        page1 = ttk.Frame(nb)
+        nb.add(page1, text='Job Log File')
+        log_file(page1)
+        #self.bind_page(page1, log_file)
+        
+        page2 = ttk.Frame(nb)
+        nb.add(page2, text='Job Server Output')
+        stdout_file(page2)
+        #self.bind_page(page2, stdout_file)
+        
+        page3 = ttk.Frame(nb)
+        nb.add(page3, text='Job Server Error')
+        stderr_file(page3)
+        #self.bind_page(page3, stderr_file)
+        
+        
+        
+        """================================================="""
+        
+        
         
         self.left_frame.grid(column=0,row=0,sticky='news')
         self.right_frame.grid(column=1,row=0,sticky='news')
         
         self.directory_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5,columnspan=2)
-        self.jobs_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5,columnspan=2)
+        self.sweep_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5,columnspan=2)
+        self.jobs_frame.grid(column=0,row=2,sticky='news',padx=10,pady=5,columnspan=2)
         self.notes_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5)
         self.log_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
         
+    def reload_old_sweeps(self):
+        if self.sweep_popupMenu:
+            self.sweep_popupMenu.grid_forget()
+        self.sweep_popupMenu = OptionMenu(self.buttons_frame_inner_ps, self.sweep_picked, *self.sweep_choices)
+        self.sweep_popupMenu.config(width=75,state=tk.DISABLED)
+        self.sweep_popupMenu.grid(row = 1, column =1, sticky='WE')
+        self.sweep_picked.trace("w",self.on_sweep_changed)
         
-      
-    def load_dir(self, btn=None):
-        self.parametric_sweep_state.set("")
+    def select_row(self, row):
+        self.selected_row_num = row
+        if row != None:
+            name_of_selected = str(self.table.row(row)[1])
+        else:
+            name_of_selected = ""
+        
+        job = None
+        
+        if name_of_selected == "":
+            self.log_console.config(state=tk.NORMAL)
+            self.log_console.delete('1.0', tk.END)
+            self.log_console.config(state=tk.DISABLED)
+            
+            self.log_console_stdout.config(state=tk.NORMAL)
+            self.log_console_stdout.delete('1.0', tk.END)
+            self.log_console_stdout.config(state=tk.DISABLED)
+            
+            self.log_console_stderr.config(state=tk.NORMAL)
+            self.log_console_stderr.delete('1.0', tk.END)
+            self.log_console_stderr.config(state=tk.DISABLED)
+        
+        #if name_of_selected == self.selected_job_name:
+        #    return
+           
+        if not self.sweep_sim_dir:
+            return
+        
+        if self.selected_job_name != None or (self.selected_job_name != name_of_selected and name_of_selected != ""): #selecting something different
+            job = self.sweep_sim_dir.get_job(name_of_selected)
+            self.display_job_log(job)
+            
+        """
+        ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
+        nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED"]
+        """
+        self.selected_job_name = name_of_selected
+        if(self.selected_job_name != ""):
+            self.bj_clone.config(state=tk.NORMAL)
+                        
+            if(job.status==SimJob.created_status or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
+                self.bj_start.config(state=tk.NORMAL)
+                self.bj_edit.config(state=tk.NORMAL)
+            else:
+                self.bj_start.config(state=tk.DISABLED)
+                self.bj_edit.config(state=tk.DISABLED)
+                            
+            if(job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2]):
+                self.bj_open.config(state=tk.NORMAL)
+                self.bj_run_cust.config(state=tk.NORMAL)
+            else:
+                self.bj_open.config(state=tk.DISABLED)
+                self.bj_run_cust.config(state=tk.DISABLED)
+            
+            if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
+                self.bj_stop.config(state=tk.NORMAL)
+                self.bj_update.config(state=tk.NORMAL)
+            else:
+                self.bj_stop.config(state=tk.DISABLED)
+                self.b_update.config(state=tk.DISABLED)
+            
+            
+        else:
+            self.bj_edit.config(state=tk.DISABLED)
+            self.bj_start.config(state=tk.DISABLED)
+            self.bj_stop.config(state=tk.DISABLED)
+            self.bj_update.config(state=tk.DISABLED)
+            self.bj_open.config(state=tk.DISABLED)
+            self.bj_run_cust.config(state=tk.DISABLED)
+        
+        #print(str(self.table.row(row)))
+    
+    def display_job_log(self, job):
+        if job != None:
+            log = job.get_log()
+            self.log_console.config(state=tk.NORMAL)
+            self.log_console.delete('1.0', tk.END)
+            self.log_console.insert(tk.END, log) 
+            self.log_console.see("end")
+            self.log_console.config(state=tk.DISABLED)
+            
+            log_stdout = job.get_log_stdout()
+            self.log_console_stdout.config(state=tk.NORMAL)
+            self.log_console_stdout.delete('1.0', tk.END)
+            self.log_console_stdout.insert(tk.END, log_stdout) 
+            self.log_console_stdout.see("end")
+            self.log_console_stdout.config(state=tk.DISABLED)
+            
+            log_stderr = job.get_log_stderr()
+            self.log_console_stderr.config(state=tk.NORMAL)
+            self.log_console_stderr.delete('1.0', tk.END)
+            self.log_console_stderr.insert(tk.END, log_stderr) 
+            self.log_console_stderr.see("end")
+            self.log_console_stderr.config(state=tk.DISABLED)
         return
     
+    def load_dir(self, btn=None):
+        
+        dir_ = None
+        if self.sim_dir and not btn:
+            dir_ = self.sim_dir.sim_directory
+        else:
+            dir_ = filedialog.askdirectory()
+        if not dir_:
+            return
+        try:
+            
+            self.sim_dir = SimDirectory(dir_,initialize=True)
+            self.sim_dir_var.set(self.sim_dir.sim_directory)
+            self.update_status.set(self.sim_dir.is_update_enabled())
+            self.reload_table()         
+            
+            sim_sweeps_dir = os.path.join(self.sim_dir.sim_directory,ParametricSweep.sweeps_folder_name)
+            sweeps_dir_files = os.listdir(sim_sweeps_dir)
+            self.sweep_choices.clear()
+            self.sweep_choices.append("")
+            for file in sweeps_dir_files:
+                if(os.path.isdir(os.path.join(sim_sweeps_dir,file))):
+                    self.sweep_choices.append(file)
+            self.reload_old_sweeps()
+            
+            self.b_new.config(state=tk.NORMAL)
+            self.sweep_popupMenu.config(state=tk.NORMAL)
+            self.b_tool_edit.config(state=tk.NORMAL)
+            self.b_update_check.config(state=tk.NORMAL)
+            
+            self.refresh_time = self.sim_dir.update_interval_seconds  
+            self.reset_sweep_picked()
+        except Exception as e:
+            print(e)
+        
+        return
+    
+    def reset_sweep_picked(self):
+        self.sweep_picked.set(self.sweep_picked_default)
+    
     def new_ps(self):
-        self.ps = ParametricSweep("dir","name",external_state_var=self.parametric_sweep_state)
+        self.ps = ParametricSweep(self.sim_dir,"testsweep",external_state_var=self.parametric_sweep_state)
+        return
+    
+    def on_sweep_changed(self, *args):
+        #print(self.sweep_picked.get())
+        if self.sweep_picked.get() != "" and self.sweep_picked.get() != self.sweep_picked_default:
+            self.b_load.config(state=tk.NORMAL)
+            self.b_delete.config(state=tk.NORMAL)
+            #self.load_ps() #IF YOU DON'T WANT TO MANUALLY RELOAD UNCOMMENT THIS
+        else:
+            self.b_load.config(state=tk.DISABLED)
+            self.b_delete.config(state=tk.DISABLED)
+            self.parametric_sweep_state.set("")
+        
+        return
+    
+    def update_button_enabled(self, *args):
+        self.sim_dir.set_update_enabled(self.update_status.get())
+        return
+    
+    def exclude_folders_tool(self):
+        return
+    
+    def reload_table(self):
+        return
+    
+    def edit_dir_tool(self):
+        if self.sim_dir and self.sim_dir != "":
+            Edit_dir_tool(self.root, self.sim_dir)
+    
+    def load_ps(self):
+        if self.sim_dir:
+            if self.sweep_picked.get() != "" and self.sweep_picked.get() != self.sweep_picked_default:
+                self.ps = ParametricSweep(self.sim_dir,self.sweep_picked.get(),external_state_var=self.parametric_sweep_state)
+            else:
+                #clear all options/windows
+                pass
+        return
+    
+    def delete_ps(self):
         return
     
     def edit_ps(self):
@@ -954,10 +1281,73 @@ class ParametricSweepPage(object):
             self.ps.cancel()
         return
     
-    def open_job_folder(self):
+    def open_sweep_folder(self):
         return
     
     def custom_run(self):
+        return
+    
+    """################ JOBS #################"""
+    def edit_job(self):
+        job = self.sweep_sim_dir.get_job(self.selected_job_name)
+        JobEntryBox(self.root, self.sweep_sim_dir, oncomplete_callback=self.update_row_info, edit_job=job)
+        return
+        
+    def start_job(self):
+        job = self.sweep_sim_dir.get_job(self.selected_job_name)
+        if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sweep_sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run. The display may freeze for a few as this action is not threaded.", icon='warning') == 'yes'):
+            job.run()
+            self.update_row_info()
+        return
+    
+    def update_job(self):
+        if(messagebox.askquestion("Update Job", "Do you want to manually update the status of this job? The display may freeze for a few as this action is not threaded.", icon='warning') == 'yes'):
+            job = self.sweep_sim_dir.get_job(self.selected_job_name)
+            job.update()
+            self.update_row_info()
+        return
+        
+    def stop_job(self):
+        job = self.sweep_sim_dir.get_job(self.selected_job_name)
+        if(messagebox.askquestion("Stop Job", "Are you sure you want to stop this job?", icon='warning') == 'yes'):
+            job.stop()
+            self.update_row_info()
+        return
+    
+    def delete_job_files(self):
+        job = self.sweep_sim_dir.get_job(self.selected_job_name)
+        if(messagebox.askquestion("Delete Remote Job Files", "Are you sure you want to delete this job? This action is irreversible and removes the files from your local disk and remote server.", icon='warning') == 'yes'):  
+            try:
+                job.delete_remote()
+                self.sweep_sim_dir.delete_job(job)
+                self.reload_table()
+            except Exception as e:
+                messagebox.showerror("Error", "There was an error deleting job files:\n\n" + e)
+        return
+    
+    def download_remote_files(self):
+        job = self.sweep_sim_dir.get_job(self.selected_job_name)
+        if(messagebox.askquestion("Download Remote Job Files", "Are you sure you want to re-download the files on the remote server? This is usually done through the update process automatically. This will overwrite {} and files in the folder {}.\n\n Additionally, this task is NOT threaded and will lock the window until the download has completed.".format(job.file_resultszip, job.dir_results), icon='warning') == 'yes'):
+            job.download_remote()
+            self.update_row_info()
+        return    
+    
+    def open_job_folder(self):
+        job = self.sweep_sim_dir.get_job(self.selected_job_name)
+        job.open_sim_results_directory()
+        return
+    
+    def run_custom(self):
+        job = self.sweep_sim_dir.get_job(self.selected_job_name)
+        job.run_custom()
+        self.update_row_info()
+    
+    def get_status_image_dict(self):
+        return {SimJob.created_status:self.new_img,
+                ServerInterface.nsg_status[0]:self.sync_img,ServerInterface.nsg_status[1]:self.cloud_img,ServerInterface.nsg_status[2]:self.check_img,ServerInterface.nsg_status[3]:self.error_img,
+                ServerInterface.ssh_status[0]:self.sync_img,ServerInterface.ssh_status[1]:self.cloud_img,ServerInterface.ssh_status[2]:self.check_img,ServerInterface.ssh_status[3]:self.error_img}        
+        #The Label widget is a standard Tkinter widget used to display a text or image on the screen.
+        #panel = tk.Label(window, image = img)
         return
     '''
     
@@ -982,7 +1372,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.DISABLED)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[0]:   #PS_CREATE
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.NORMAL)
             self.b_build.config(state=tk.NORMAL)
             self.b_decon.config(state=tk.DISABLED)
@@ -990,7 +1380,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.DISABLED)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[1]: #PS_BUILD
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.DISABLED)
             self.b_build.config(state=tk.DISABLED)
             self.b_decon.config(state=tk.DISABLED)
@@ -998,7 +1388,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.DISABLED)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[2]: #PS_READY
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.DISABLED)
             self.b_build.config(state=tk.DISABLED)
             self.b_decon.config(state=tk.NORMAL)
@@ -1006,7 +1396,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.DISABLED)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[3]: #PS_DECONSTRUCT
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.DISABLED)
             self.b_build.config(state=tk.DISABLED)
             self.b_decon.config(state=tk.DISABLED)
@@ -1014,7 +1404,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.DISABLED)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[4]: #PS_SUBMITTING
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.DISABLED)
             self.b_build.config(state=tk.DISABLED)
             self.b_decon.config(state=tk.DISABLED)
@@ -1022,7 +1412,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.NORMAL)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[5]: #PS_RUNNING
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.DISABLED)
             self.b_build.config(state=tk.DISABLED)
             self.b_decon.config(state=tk.DISABLED)
@@ -1030,7 +1420,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.NORMAL)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[6]: #PS_CANCELLING
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.DISABLED)
             self.b_build.config(state=tk.DISABLED)
             self.b_decon.config(state=tk.DISABLED)
@@ -1038,7 +1428,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.DISABLED)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[7]: #PS_CANCELLED
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.DISABLED)
             self.b_build.config(state=tk.DISABLED)
             self.b_decon.config(state=tk.NORMAL)
@@ -1046,7 +1436,7 @@ class ParametricSweepPage(object):
             self.b_cancel.config(state=tk.DISABLED)
             
         elif self.parametric_sweep_state.get() == ParametricSweep.state[8]: #PS_COMPLETE
-            self.b_new.config(state=tk.DISABLED)
+            self.b_new.config(state=tk.NORMAL)
             self.b_edit.config(state=tk.DISABLED)
             self.b_build.config(state=tk.DISABLED)
             self.b_decon.config(state=tk.DISABLED)

@@ -15,14 +15,14 @@ def main():
     except KeyboardInterrupt:
         main_window.exitapp = True
         raise
-    """except Exception as e:
+    except Exception as e:
         try:
             main_window.exitapp = True
         except Exception:
             print("main_window.exitapp not defined yet, other problem too, passing")
             pass
-        print(e)
-  """      
+        print(e)  
+        raise e
     
     
 main()
