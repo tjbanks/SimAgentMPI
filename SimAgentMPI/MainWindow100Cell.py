@@ -11,7 +11,7 @@ from tkinter import messagebox,ttk,filedialog,OptionMenu
 from SimAgentMPI.tktable import Table
 import datetime
 from PIL import ImageTk, Image
-import os, time
+import os, time, subprocess
 
 from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File
 from SimAgentMPI.NewServerConfig import ServerEntryBox,SelectServerEditBox
@@ -27,14 +27,17 @@ import threading
 class MainWindow():
     def __init__(self):
         self.root = tk.Tk()
-        self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - Tyler Banks)"
-        self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
+        self.window_title = "100 Cell LA Project (University of Missouri - Nair Neural Engineering Laboratory) [Sim Agent MPI - Banks]"
+        self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nApp Developed by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
         self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of accidental data deletion, always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
         self.sim_dir = None
         self.window_size = '1580x725'
         self.default_status = "Status: Ready"
         self.status_timer = 4.0
         self.root.resizable(1,1)
+        
+        self.sim_load = "./Models/100CellLa/"
+        self.sim_load = os.path.abspath(self.sim_load)
         
         self.root.columnconfigure(0,weight=1)
         self.root.rowconfigure(0,weight=1)
@@ -108,12 +111,13 @@ class MainWindow():
         page1 = ttk.Frame(nb)
         page2 = ttk.Frame(nb)
         
-        nb.add(page1, text='Single Jobs')
+        nb.add(page1, text='Manage Jobs')
+        nb.add(page2, text='Parameters')
         #nb.add(page2, text='Parametric Sweep')
         
         #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
         self.bind_page(page1, self.jobs_page)
-        self.bind_page(page2, ParametricSweepPage)
+        self.bind_page(page2, self.parameters_page)
         
         self.display_app_status("Ready")
                 
@@ -188,6 +192,85 @@ class MainWindow():
         menubar.add_cascade(label="Help", menu=helpmenu)
         return menubar
     
+    def parameters_page(self, root):
+        import SimAgentMPI
+        """
+        row = Row(params_frame).config("bg2pyr.mod", "initW", "\tinitW = ", "Background to pyramidal initial weights")
+        row.pack(padx=10)
+        rows.append(row)
+        """
+        class Row(tk.Frame):
+            def __init__(self, parent, *args, **kwargs):
+                tk.Frame.__init__(self, parent, *args, **kwargs)
+                self.parent = parent
+                self.root = tk.Frame(self.parent)
+                return
+            
+            def configure(self, file_name, variable, search_for, comment):
+                self.v_value = tk.StringVar(self.root)
+                self.original_value = tk.StringVar(self.root)
+                
+                line = SimAgentMPI.Utils.get_line_with(file_name,search_for)
+                if line:
+                    line = line.replace(search_for,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                    self.original_value.set(line)
+                    self.v_value.set(line)
+                    self.v_value.trace("w", self.save_)
+                 
+                #self.v_value.set(variable)#Not correct
+                
+                self.search_for = search_for
+                
+                self.file_name = file_name
+                
+                frame = tk.Frame(self.root)
+                var = tk.Label(frame, text="{} ({})".format(variable,os.path.basename(file_name)) ,width=30,background='light gray',anchor=tk.W)
+                var.config(relief=tk.GROOVE)
+                var.grid(column=0, row=0, padx=5, sticky='WE') 
+                
+                val = tk.Entry(frame,textvariable=self.v_value,width=50)
+                val.grid(column=1, row=0, sticky='E')
+                
+                but = tk.Button(frame,text="Reset", command=self.reset)
+                but.grid(column=2, row=0, sticky='WE')
+                
+                CreateToolTip(var,comment)
+                frame.pack()
+                #self.root.grid(row=0, column=0)
+                return self
+            
+            def pack(self,*args,**kwargs):
+                super(Row,self).pack(*args,**kwargs)
+                self.root.pack(*args,**kwargs)
+            
+            def grid(self,*args,**kwargs):
+                super(Row,self).grid(*args,**kwargs)
+                self.root.grid(*args,**kwargs)
+                
+            def reset(self, *args):
+                self.v_value.set(self.original_value.get())
+                return
+            def save_(self, *args):
+                #SimAgentMPI.Utils.replace(self.file_name, "#SBATCH -p " + "(.*)", "{}{}".format("#SBATCH -p ", simjob.server_mpi_partition),unix_end=True)
+                SimAgentMPI.Utils.replace(self.file_name, self.search_for + "(.*)", "{}{}".format(self.search_for, self.v_value.get()),unix_end=True)
+        
+        self.left_frame = tk.Frame(root)
+        
+        params_frame = tk.LabelFrame(self.left_frame,text="Parameters")
+        
+        
+        Row(params_frame).configure(os.path.join(self.sim_load,"main.hoc"), "tstop", "tstop = ", "tstop").grid(row=0,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"bg2pyr.mod"), "initW", "\tinitW = ", "Background to pyramidal initial weights").grid(row=1,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"bg2inter.mod"), "initW", "\tinitW = ", "Background to interneuron initial weights").grid(row=2,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"tone2pyrD_new.mod"), "initW", "\tinitW = ", "Tone to pyramidal initial weights").grid(row=3,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"tone2interD_new.mod"), "initW", "\tinitW = ", "Tone to interneuron initial weights").grid(row=4,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Pyramidal to pyramidal initial weights").grid(row=5,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2interD_STFD.mod"), "initW", "\tinitW = ", "Background to Interneurons initial weights").grid(row=6,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"interD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Interneurons to pyramidal initial weights").grid(row=7,pady=10)
+        
+        params_frame.grid(row=0,column=0,rowspan=100)
+        self.left_frame.grid(row=0,column=0)
+        return
     
     def jobs_page(self, root):
         #self.date_format = '%y%m%d-%H%M%S'
@@ -213,7 +296,7 @@ class MainWindow():
         ###!!!self.refresh_periodically()
         
         
-        b = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=button_width)
+        b = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=button_width, state=tk.DISABLED)
         b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
         
         self.sim_dir_var = tk.StringVar(root)
@@ -221,9 +304,9 @@ class MainWindow():
         self.sim_dir_label = tk.Label(self.directory_frame, fg="blue",textvariable=self.sim_dir_var,anchor=tk.W,width=75)
         self.sim_dir_label.grid(column=1,row=0,sticky='news',padx=10,pady=5)
         
-        self.b_tool_exclude = tk.Button(self.directory_frame, text="Exclude Folders", command=self.exclude_folders_tool, width=button_width)
+        self.b_tool_exclude = tk.Button(self.directory_frame, text="Open Folder", command=self.exclude_folders_tool, width=button_width)
         self.b_tool_exclude.grid(pady=5, padx=5, column=2, row=0, sticky="E")
-        self.b_tool_exclude.config(state=tk.DISABLED)
+        self.b_tool_exclude.config(state=tk.NORMAL)
         
         self.b_tool_edit = tk.Button(self.directory_frame, text="Edit Custom Tool", command=self.edit_dir_tool, width=button_width)
         self.b_tool_edit.grid(pady=5, padx=5, column=3, row=0, sticky="E")
@@ -363,6 +446,8 @@ class MainWindow():
         self.jobs_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5,columnspan=2)
         self.notes_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5)
         self.log_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        self.load_dir(directory_=self.sim_load)
         
         return
     
@@ -580,6 +665,7 @@ class MainWindow():
         return
         
     def exclude_folders_tool(self):
+        subprocess.call("start \"\" \""+self.sim_load+"\"", shell=True)
         return
     
     def edit_dir_tool(self):
@@ -669,12 +755,16 @@ class MainWindow():
         job.open_sim_results_directory()
         return
     
-    def load_dir(self, btn=False, dir_=None):
-        dir_ = None
-        if self.sim_dir and not btn:
-            dir_ = self.sim_dir.sim_directory
+    def load_dir(self, btn=False, directory_=None):
+        if not directory_:
+            dir_ = None
+            if self.sim_dir and not btn:
+                dir_ = self.sim_dir.sim_directory
+            else:
+                dir_ = filedialog.askdirectory()
         else:
-            dir_ = filedialog.askdirectory()
+            dir_ = directory_
+            
         if not dir_:
             return
         try:

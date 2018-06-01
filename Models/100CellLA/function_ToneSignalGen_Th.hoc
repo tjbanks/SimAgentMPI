@@ -1,0 +1,24 @@
+begintemplate ToneSignalGen_D
+
+	public tone
+	objref tonehabit,tonehabit1,tonehabit2,tonehabit3,tonehabit4,tonecon,tonecon1,tonecon2,tonecon3,tonecon4
+	objref toneext,toneext1,toneext2,toneext3,toneext4
+	objref temptone1,temptone2,temptone3,temptone4,temptone5,temptone6,temptone7,temptone8,tone,noise
+	
+	proc init() {
+		tonehabit1 = new ToneGen(20,0,500,3500,9,5,$2)
+		
+		tonecon1 = new ToneGen(40,36000,500,3500,15,5,$2)
+		
+		toneext1 = new ToneGen(40,196000,500,3500,20,5,$2)
+		
+		//noise = new BgGen(2,363999,$1,5,$2)
+				
+		temptone3 = new NetStimOR(tonecon1.intfire1,tonehabit1.intfire1,$2)
+		temptone8 = new NetStimOR(toneext1.intfire1,temptone3.intfire1,$2)
+		tone = new NetStimOR(toneext1.intfire1,temptone8.intfire1,$2)
+		
+		//tone = new NetStimOR(noise.intfire1,toneext.intfire1,$2)
+	}
+	
+endtemplate ToneSignalGen_D

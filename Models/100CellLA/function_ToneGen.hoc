@@ -1,0 +1,95 @@
+begintemplate ToneGen
+
+	public tone_freq,tone_start,tone_duration,tone_total_length,tone_trial_number,refractory_period,tone_netstim,tone_turn,intfire1,TempNetCon1,TempNetCon2,TempNetCon3,TempNetCon4
+	objref tone_netstim,tone_turn,intfire1,TempNetCon1,TempNetCon2,TempNetCon3
+	
+	proc init() {
+		tone_freq = $1
+		tone_start = $2
+
+		tone_on_time = $3
+		tone_off_time = $4
+		tone_trial_number = $5
+
+		refractory_period = $6
+
+		timestep = $7
+
+		refractory_period = refractory_period - timestep
+
+		tone_total_length = (tone_on_time + tone_off_time)*tone_trial_number
+
+		tone_netstim = new NetStim()
+		tone_netstim.interval = 1000/tone_freq
+		tone_netstim.number = tone_total_length*tone_freq/1000
+		tone_netstim.start = tone_start+tone_off_time
+		tone_netstim.noise = 0
+
+
+		tone_turn = new NetStim()
+		tone_turn.interval = tone_on_time+tone_off_time
+		tone_turn.number = tone_trial_number
+		tone_turn.start = tone_start+tone_off_time
+		tone_turn.noise = 0
+
+		intfire1 = new IntFire1()
+		intfire1.tau = 1e9
+		intfire1.refrac = refractory_period
+		intfire1.m = 0
+
+		intfirewgt = 1+(1e-9)
+
+		TempNetCon1 = new NetCon(tone_turn,tone_netstim,0.5,0,1)
+		TempNetCon2 = new NetCon(tone_turn,tone_netstim,0.5,tone_on_time,-1)
+		TempNetCon3 = new NetCon(tone_netstim,intfire1,0.5,0,intfirewgt)
+	}
+	
+endtemplate ToneGen
+
+begintemplate ToneGen0
+
+	public tone_freq,tone_start,tone_duration,tone_total_length,tone_trial_number,refractory_period,tone_netstim,tone_turn,intfire1,TempNetCon1,TempNetCon2,TempNetCon3,TempNetCon4
+	objref tone_netstim,tone_turn,intfire1,TempNetCon1,TempNetCon2,TempNetCon3
+	
+	proc init() {
+		tone_freq = $1
+		tone_start = $2
+
+		tone_on_time = $3
+		tone_off_time = $4
+		tone_trial_number = $5
+
+		refractory_period = $6
+
+		timestep = $7
+
+		refractory_period = refractory_period - timestep
+
+		tone_total_length = (tone_on_time + tone_off_time)*tone_trial_number
+
+		tone_netstim = new NetStim()
+		tone_netstim.interval = 1000/tone_freq
+		tone_netstim.number = tone_total_length*tone_freq/1000
+		tone_netstim.start = tone_start+tone_off_time
+		tone_netstim.noise = 0
+
+
+		tone_turn = new NetStim()
+		tone_turn.interval = tone_on_time+tone_off_time
+		tone_turn.number = tone_trial_number
+		tone_turn.start = tone_start+tone_off_time
+		tone_turn.noise = 0
+
+		intfire1 = new IntFire1()
+		intfire1.tau = 1e9
+		intfire1.refrac = refractory_period
+		intfire1.m = 0
+
+		intfirewgt = 1+(1e-9)
+
+		TempNetCon1 = new NetCon(tone_turn,tone_netstim,0.5,0,1)
+		TempNetCon2 = new NetCon(tone_turn,tone_netstim,0.5,tone_on_time,-1)
+		TempNetCon3 = new NetCon(tone_netstim,intfire1,0.5,0,intfirewgt)
+	}
+	
+endtemplate ToneGen0
