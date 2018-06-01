@@ -634,16 +634,16 @@ class MainWindow():
             def run(self):
                 job.status == ServerInterface.ssh_status[0]
                 job.write_properties()
-                self.update_row_info()
+                self.ref.update_row_info()
                 job.run()
-                self.update_row_info()
+                self.ref.update_row_info()
                 return
         
         job = self.sim_dir.get_job(self.selected_job_name)
         if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run. The display may freeze for a few moments.", icon='warning') == 'yes'):
-            start_thread = StartJobThread()
+            start_thread = StartJobThread(ref=self)
             start_thread.setDaemon(True)
-            self.threads.add(start_thread)
+            self.threads.append(start_thread)
             start_thread.start()
         return
     
@@ -663,7 +663,7 @@ class MainWindow():
         
     def delete_job_files(self):
         job = self.sim_dir.get_job(self.selected_job_name)
-        if(messagebox.askquestion("Delete Remote Job Files", "Are you sure you want to delete this job? This action is irreversible and removes the files from your local disk. The files will remain on the server and you will have to delete the manually", icon='warning') == 'yes'):  
+        if(messagebox.askquestion("Delete Remote Job Files", "Are you sure you want to delete this job? This action is irreversible and removes the files from your local disk. The files will remain on the server and you will have to delete the manually.", icon='warning') == 'yes'):  
             try:
                 self.sim_dir.delete_job(job)
                 self.reload_table()
