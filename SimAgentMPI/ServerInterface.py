@@ -14,8 +14,8 @@ from SimAgentMPI.SimServer import ServersFile
 import SimAgentMPI
 
 class ServerInterface(object):
-    ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
-    nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED"]
+    ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED","SSH_sbatch_DOWNLOADING","SSH_STARTING"]
+    nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED","NSG_DOWNLOADING","NSG_STARTING"]
     
     def __init__(self):
         self.remote_dir = "simagent_remote"#THIS IS THE DIRECTORY WHERE ALL CODE WILL BE EXECUTED FROM
@@ -49,13 +49,13 @@ class ServerInterface(object):
             
         return 
     
-    def update_for_completion(self, simjob, nsg_job_list=None): 
+    def update_for_completion(self, simjob, nsg_job_list=None,ssh_connection=None): 
         server = self.get_server(simjob)
         if server:#check to make sure we have a valid server
             if(server.type == "nsg"):
                 self.update_nsg(simjob, server, nsg_job_list=nsg_job_list)
             elif(server.type == "ssh"):
-                self.update_ssh(simjob, server)
+                self.update_ssh(simjob, server, ssh_connection=ssh_connection)
         else:
             simjob.append_log("ERROR: Can't update... not a valid server connector")
             
@@ -73,25 +73,25 @@ class ServerInterface(object):
             
         return
     
-    def download_results_simjob(self, simjob):
+    def download_results_simjob(self, simjob,nsg_job_list=None, ssh_connection=None):
         server = self.get_server(simjob)
         if server:#check to make sure we have a valid server
             if(server.type == "nsg"):
-                self.download_nsg(simjob, server)
+                self.download_nsg(simjob, server, nsg_job_list=nsg_job_list)
             elif(server.type == "ssh"):
-                self.download_ssh(simjob, server)
+                self.download_ssh(simjob, server,ssh_connection=ssh_connection)
         else:
             simjob.append_log("ERROR: Can't download... not a valid server connector")
         
         return
         
-    def download_status_simjob(self, simjob):
+    def download_status_simjob(self, simjob, nsg_job_list=None, ssh_connection=None):
         server = self.get_server(simjob)
         if server:#check to make sure we have a valid server
             if(server.type == "nsg"):
-                self.download_status_nsg(simjob, server)
+                self.download_status_nsg(simjob, server, nsg_job_list=nsg_job_list)
             elif(server.type == "ssh"):
-                self.download_status_ssh(simjob, server)
+                self.download_status_ssh(simjob, server, ssh_connection=ssh_connection)
         else:
             simjob.append_log("ERROR: Can't update status files... not a valid server connector")
         
@@ -249,7 +249,7 @@ class ServerInterface(object):
             self.exec_ssh_command(client, command, simjob, server)
             
             simjob.append_log("{}> Deleting zip".format(server.host))
-            command = 'rm -rf '+self.remote_dir+'/'+simjob.file_snapshotzip
+            command = 'rm '+self.remote_dir+'/'+simjob.file_snapshotzip
             self.exec_ssh_command(client, command, simjob, server)
                 
             if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
@@ -288,7 +288,7 @@ class ServerInterface(object):
         if not nsg_job_list: #Just save a couple calls to their server
             nsg_job_list = nsg.listJobs()
             
-        for job in nsg.listJobs():
+        for job in nsg_job_list:
             if job.jobUrl == simjob.server_remote_identifier:
                 job.update()
                 for m in job.messages:
@@ -304,11 +304,9 @@ class ServerInterface(object):
             
         return
     
-    def update_ssh(self, simjob, server):
+    def update_ssh(self, simjob, server, ssh_connection=None):
         
-        try:
-            client = self.connect_ssh(server,simjob)
-            
+        def update_ssh_():
             if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
                 command = 'squeue -u ' + server.user
                 lines = self.exec_ssh_command(client, command, simjob, server)
@@ -320,14 +318,26 @@ class ServerInterface(object):
                     simjob.append_log("SSH Job Completed")
                     simjob.status = ServerInterface.ssh_status[1]
                     simjob.write_properties()
-            client.close()
-        except Exception as e:
-                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
-                #traceback.print_exc()
-                try:
-                    client.close()
-                except:
-                    pass
+        
+        
+        if not ssh_connection:
+            try:
+                client = self.connect_ssh(server,simjob)
+                update_ssh_()            
+                client.close()
+            except Exception as e:
+                    simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                    #traceback.print_exc()
+                    try:
+                        client.close()
+                    except:
+                        pass
+                    
+        else:
+            client = ssh_connection
+            update_ssh_()
+        
+        return
     
     def stop_nsg(self, simjob, server):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
@@ -376,12 +386,21 @@ class ServerInterface(object):
         return
     
     
-    def download_nsg(self, simjob, server):
+    def download_nsg(self, simjob, server,nsg_job_list=None):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
         
-        for job in nsg.listJobs():
+        simjob.status = ServerInterface.nsg_status[4] #In a downloading state, don't try to download again
+        simjob.write_properties()
+        
+        updateJob = False
+        if not nsg_job_list: #Just save a couple calls to their server
+            nsg_job_list = nsg.listJobs()
+            updateJob = True #We probably didn't update it earlier
+        
+        for job in nsg_job_list:
             if job.jobUrl == simjob.server_remote_identifier:
-                job.update()
+                if updateJob:
+                    job.update()
                 if not job.isError():
                     if job.isDone():
                         results = job.listResults()
@@ -403,7 +422,7 @@ class ServerInterface(object):
                             simjob.status = ServerInterface.nsg_status[2]
                             
                         except Exception as e:
-                            simjob.append_log("Error extracting tar file, the job may not have completed.")
+                            simjob.append_log("Error extracting tar file, the job may not have completed. " + e)
                             simjob.status = ServerInterface.nsg_status[3]
                         
                         simjob.write_properties()
@@ -414,9 +433,11 @@ class ServerInterface(object):
        
         return
     
-    def download_ssh(self, simjob, server):
-        try:
-            client = self.connect_ssh(server,simjob)
+    def download_ssh(self, simjob, server, ssh_connection=None):
+        
+        def download_ssh_():
+            simjob.status = ServerInterface.ssh_status[4]
+            simjob.write_properties()
             
             if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
                 zip_dir = simjob.file_snapshotzip.split(".zip")[0]
@@ -441,25 +462,39 @@ class ServerInterface(object):
                 simjob.append_log("Results saved to: {}".format(results_dir_absolute))
                 simjob.status = ServerInterface.ssh_status[2]
                 simjob.write_properties()
+        
+        if not ssh_connection:
+            try:
+                client = self.connect_ssh(server,simjob)
+                download_ssh_()
+                client.close()
+            except Exception as e:
+                    simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                    #traceback.print_exc()
+                    try:
+                        client.close()
+                    except:
+                        pass
+        else:
+            client = ssh_connection
+            download_ssh_()
             
-            client.close()
-        except Exception as e:
-                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
-                #traceback.print_exc()
-                try:
-                    client.close()
-                except:
-                    pass
         return
     
-    def download_status_nsg(self, simjob, server):
+    def download_status_nsg(self, simjob, server, nsg_job_list=None):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
         outfile = "stdout.txt"
         errfile = "stderr.txt"
         
-        for job in nsg.listJobs():
+        updateJob = False
+        if not nsg_job_list: #Just save a couple calls to their server
+            nsg_job_list = nsg.listJobs()
+            updateJob = True #We probably didn't update it earlier
+        
+        for job in nsg_job_list:
             if job.jobUrl == simjob.server_remote_identifier:
-                job.update()
+                if updateJob:
+                    job.update()
                 resultFiles = job.listResults(final=False)
                 
                 for filename in resultFiles: 
@@ -481,11 +516,9 @@ class ServerInterface(object):
                         #os.remove(err_dl)
         return
     
-    def download_status_ssh(self, simjob, server):
-        #the outfiles are in the simjob now
-        try:
-            client = self.connect_ssh(server,simjob)
-            
+    def download_status_ssh(self, simjob, server, ssh_connection=None):
+        
+        def download_status_ssh_():
             if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
                 local_out = os.path.join(simjob.job_directory_absolute,simjob.stdout_file)
                 local_err = os.path.join(simjob.job_directory_absolute,simjob.stderr_file)
@@ -495,16 +528,23 @@ class ServerInterface(object):
                 ftp_client.get(rem_out,local_out)
                 ftp_client.get(rem_err,local_err)
                 ftp_client.close()
-                
-            client.close()
-        except Exception as e:
-                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
-                #traceback.print_exc()
-                try:
-                    client.close()
-                except:
-                    pass
-        return
+        
+        if not ssh_connection:
+            #the outfiles are in the simjob now
+            try:
+                client = self.connect_ssh(server,simjob)
+                download_status_ssh_()    
+                client.close()
+            except Exception as e:
+                    simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                    #traceback.print_exc()
+                    try:
+                        client.close()
+                    except:
+                        pass
+        else:
+            client = ssh_connection
+            download_status_ssh_()
         return
         
     def delete_all_nsg(self, server):

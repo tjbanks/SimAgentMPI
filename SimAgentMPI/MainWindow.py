@@ -19,7 +19,7 @@ from SimAgentMPI.SimDirectory import SimDirectory
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
 from SimAgentMPI.SimServer import ServersFile
-from SimAgentMPI.Utils import Batch_File
+from SimAgentMPI.Utils import Batch_File,StoppableThread
 from SimAgentMPI.ParametricSweep import ParametricSweep
 
 import threading
@@ -40,6 +40,7 @@ class MainWindow():
         self.root.rowconfigure(0,weight=1)
         self.root.title(self.window_title)
         self.root.geometry(self.window_size)
+        self.threads = []
         
         #self.root.resizable(0,0)
         self.root.config(menu=self.menu_bar(self.root))
@@ -159,7 +160,7 @@ class MainWindow():
 
     def display_app_status(self,str):
         self.app_status.set("Status: "+str)
-        threading.Timer(4.0, self.reset_app_status).start()
+        #threading.Timer(4.0, self.reset_app_status).start()
         
     def menu_bar(self, root):
             
@@ -206,10 +207,29 @@ class MainWindow():
         
         button_width = 15
         self.selected_job_name = None
+        
         self.refresh_time = 60
-        self.refresh_thread = threading.Timer(self.refresh_time, self.refresh_periodically)
+        
+        class RefreshThread(StoppableThread):
+            def run(self):
+                while not self.stopped():
+                    #print("Update status thread running")
+                    if(self.ref.sim_dir and self.ref.sim_dir.is_update_enabled()):
+                        self.ref.sim_dir.update_all_jobs()
+                        for i in range(self.ref.table.number_of_rows):
+                           self.ref.update_row_info(row=i)
+                    #print("sleeping for {} seconds".format(self.refresh_time))
+                    for i in range(self.ref.refresh_time): #this is 60 seconds from when we're done updating everything
+                        if self.stopped():
+                            return
+                        time.sleep(1) #use signals, fix later
+                return
+        
+        
+        self.refresh_thread = RefreshThread(ref=self)#Strongly untyped, be careful
         self.refresh_thread.setDaemon(True)
         self.refresh_thread.start()
+        self.threads.append(self.refresh_thread)
         ###!!!self.refresh_periodically()
         
         
@@ -454,10 +474,22 @@ class MainWindow():
         
         #print(str(self.table.row(row)))
     
-    def on_closing(self):
-            if not self.sim_dir or messagebox.askokcancel("Quit", "Do you want to quit? All running remote jobs will continue to run."):
-                self.exitapp = True
-                self.root.destroy()
+    def on_closing(self,noprompt=False):
+        if not self.sim_dir or messagebox.askokcancel("Quit", "Do you want to quit? All running remote jobs will continue to run."):
+            self.exitapp = True
+            self.root.destroy()
+            self.stop_threads()
+    
+    def stop_threads(self):
+        print("stopping threads")
+        main_thread = threading.currentThread()
+        for t in self.threads:
+            if t is not main_thread:
+                print('joining {} (If this task hangs a job may be being downloaded)'.format(t.getName()))
+                t.stop()
+                t.join()
+                print('joined {}'.format(t.getName()))
+        print("stopping threads complete")
                 
     def update_button_enabled(self, *args):
         self.sim_dir.set_update_enabled(self.update_status.get())
@@ -519,21 +551,6 @@ class MainWindow():
             self.log_console_stderr.insert(tk.END, log_stderr) 
             self.log_console_stderr.see("end")
             self.log_console_stderr.config(state=tk.DISABLED)
-        return
-    
-    def refresh_periodically(self):
-        while not self.exitapp:
-            #print("Update status thread running")
-            if(self.sim_dir and self.sim_dir.is_update_enabled()):
-                for i in range(self.table.number_of_rows):
-                    name_of_selected = str(self.table.row(i)[1])#If you move around the index of the name it will mess up
-                    job = self.sim_dir.get_job(name_of_selected)
-                    if job and (job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
-                        job.update()
-                        job.read_properties()
-                        self.update_row_info(row=i)
-            #print("sleeping for {} seconds".format(self.refresh_time))
-            time.sleep(self.refresh_time)
         return
     
     def write_notes(self):
@@ -612,10 +629,22 @@ class MainWindow():
         return
         
     def start_job(self):
+                
+        class StartJobThread(StoppableThread):
+            def run(self):
+                job.status == ServerInterface.ssh_status[0]
+                job.write_properties()
+                self.update_row_info()
+                job.run()
+                self.update_row_info()
+                return
+        
         job = self.sim_dir.get_job(self.selected_job_name)
-        if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run. The display may freeze for a few as this action is not threaded.", icon='warning') == 'yes'):
-            job.run()
-            self.update_row_info()
+        if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run. The display may freeze for a few moments.", icon='warning') == 'yes'):
+            start_thread = StartJobThread()
+            start_thread.setDaemon(True)
+            self.threads.add(start_thread)
+            start_thread.start()
         return
     
     def update_job(self):
@@ -631,12 +660,11 @@ class MainWindow():
             job.stop()
             self.update_row_info()
         return
-    
+        
     def delete_job_files(self):
         job = self.sim_dir.get_job(self.selected_job_name)
-        if(messagebox.askquestion("Delete Remote Job Files", "Are you sure you want to delete this job? This action is irreversible and removes the files from your local disk and remote server.", icon='warning') == 'yes'):  
+        if(messagebox.askquestion("Delete Remote Job Files", "Are you sure you want to delete this job? This action is irreversible and removes the files from your local disk. The files will remain on the server and you will have to delete the manually", icon='warning') == 'yes'):  
             try:
-                job.delete_remote()
                 self.sim_dir.delete_job(job)
                 self.reload_table()
             except Exception as e:
@@ -757,7 +785,7 @@ class MainWindow():
     def update_row_info(self, row=None):
         #print("update_row_info row: {}".format(row))
         #print("update_row_info self.selected_row_num: {}".format(self.selected_row_num))
-        if not row:
+        if row == None:
             if self.selected_row_num is not None:
                 row = self.selected_row_num
             
