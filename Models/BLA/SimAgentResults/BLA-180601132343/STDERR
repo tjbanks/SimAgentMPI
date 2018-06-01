@@ -1,0 +1,6 @@
+NEURON -- VERSION 7.5 master (6b4c19f) 2017-09-25
+Duke, Yale, and the BlueBrain Project -- Copyright 1984-2016
+See http://neuron.yale.edu/neuron/credits
+
+Additional mechanisms from files
+ mod_nsgportal/Gfluct_new_exc.mod mod_nsgportal/Gfluct_new_inh.mod mod_nsgportal/bg2pyr.mod mod_nsgportal/ca.mod mod_nsgportal/cadyn.mod mod_nsgportal/cal2.mod mod_nsgportal/capool.mod mod_nsgportal/function_TMonitor.mod mod_nsgportal/gap.mod mod_nsgportal/h.mod mod_nsgportal/im.mod mod_nsgportal/interD2interD_STFD_new.mod mod_nsgportal/interD2pyrD_STFD_new.mod mod_nsgportal/kadist.mod mod_nsgportal/kaprox.mod mod_nsgportal/kdrca1.mod mod_nsgportal/kdrca1DA.mod mod_nsgportal/kdrinter.mod mod_nsgportal/leak.mod mod_nsgportal/leakDA.mod mod_nsgportal/leakinter.mod mod_nsgportal/na3.mod mod_nsgportal/na3DA.mod mod_nsgportal/nainter.mod mod_nsgportal/nap.mod mod_nsgportal/nat.mod mod_nsgportal/pyrD2interD_STFD.mod mod_nsgportal/pyrD2pyrD_STFD_new.mod mod_nsgportal/sahp.mod mod_nsgportal/sahpNE.mod mod_nsgportal/vecevent.mod mod_nsgportal/xtra.mod mod_nsgportal/xtra_imemrec.mod

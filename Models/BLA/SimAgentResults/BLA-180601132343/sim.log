@@ -1,0 +1,57 @@
+18-06-01 13:24:06 > 
+18-06-01 13:24:06 > Job created
+18-06-01 13:24:22 > Run initiated
+18-06-01 13:24:22 > Creating directory snapshot
+18-06-01 13:24:23 > BLA-180601132343.zip created
+18-06-01 13:24:23 > Loading server nsg-tbg28
+18-06-01 13:24:23 > Creating NSG parameter files: param.properties,input.properties
+18-06-01 13:24:23 > Validating job build with NSG...
+18-06-01 13:24:24 > Error validating NSG template: HTTP Code: 401, Authentication Error
+18-06-01 13:24:24 > Job stopped
+18-06-01 13:24:40 > Run initiated
+18-06-01 13:24:40 > Creating directory snapshot
+18-06-01 13:24:41 > BLA-180601132343.zip created
+18-06-01 13:24:41 > Loading server nsg-tbg28
+18-06-01 13:24:41 > Creating NSG parameter files: param.properties,input.properties
+18-06-01 13:24:41 > Validating job build with NSG...
+18-06-01 13:24:47 > NSG template validation success
+18-06-01 13:24:48 > NSG template submit success
+18-06-01 13:25:28 > Loading server nsg-tbg28
+18-06-01 13:25:28 > Updating NSG information on job...
+18-06-01 13:25:28 > 2018-06-01T11:24:49-07:00: Added to NSG run queue.
+18-06-01 13:25:29 > 2018-06-01T11:24:50-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-01 13:25:29 > 2018-06-01T11:24:50-07:00: Staging input files to comet
+18-06-01 13:25:29 > 2018-06-01T11:24:54-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-B3D0395EE1D849F0B39C93C3B4B103C4/
+18-06-01 13:25:29 > 2018-06-01T11:25:14-07:00: Submitted to comet as job '16601197'.
+18-06-01 13:25:29 > 2018-06-01T11:24:49-07:00: Added to NSG run queue.
+18-06-01 13:25:29 > 2018-06-01T11:24:50-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-01 13:25:29 > 2018-06-01T11:24:50-07:00: Staging input files to comet
+18-06-01 13:25:29 > 2018-06-01T11:24:54-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-B3D0395EE1D849F0B39C93C3B4B103C4/
+18-06-01 13:25:29 > 2018-06-01T11:25:14-07:00: Submitted to comet as job '16601197'.
+18-06-01 13:25:29 > Loading server nsg-tbg28
+18-06-01 13:26:50 > Loading server nsg-tbg28
+18-06-01 13:26:50 > Updating NSG information on job...
+18-06-01 13:26:51 > 2018-06-01T11:24:49-07:00: Added to NSG run queue.
+18-06-01 13:26:51 > 2018-06-01T11:24:50-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-01 13:26:51 > 2018-06-01T11:24:50-07:00: Staging input files to comet
+18-06-01 13:26:51 > 2018-06-01T11:24:54-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-B3D0395EE1D849F0B39C93C3B4B103C4/
+18-06-01 13:26:51 > 2018-06-01T11:25:14-07:00: Submitted to comet as job '16601197'.
+18-06-01 13:26:51 > 2018-06-01T11:24:49-07:00: Added to NSG run queue.
+18-06-01 13:26:51 > 2018-06-01T11:24:50-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-01 13:26:51 > 2018-06-01T11:24:50-07:00: Staging input files to comet
+18-06-01 13:26:51 > 2018-06-01T11:24:54-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-B3D0395EE1D849F0B39C93C3B4B103C4/
+18-06-01 13:26:51 > 2018-06-01T11:25:14-07:00: Submitted to comet as job '16601197'.
+18-06-01 13:26:51 > Loading server nsg-tbg28
+18-06-01 13:28:51 > Attempting to stop
+18-06-01 13:28:51 > Loading server nsg-tbg28
+18-06-01 13:28:52 > 2018-06-01T11:24:49-07:00: Added to NSG run queue.
+18-06-01 13:28:52 > 2018-06-01T11:24:50-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-01 13:28:52 > 2018-06-01T11:24:50-07:00: Staging input files to comet
+18-06-01 13:28:52 > 2018-06-01T11:24:54-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-B3D0395EE1D849F0B39C93C3B4B103C4/
+18-06-01 13:28:52 > 2018-06-01T11:25:14-07:00: Submitted to comet as job '16601197'.
+18-06-01 13:28:52 > 2018-06-01T11:24:49-07:00: Added to NSG run queue.
+18-06-01 13:28:52 > 2018-06-01T11:24:50-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-01 13:28:52 > 2018-06-01T11:24:50-07:00: Staging input files to comet
+18-06-01 13:28:52 > 2018-06-01T11:24:54-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-B3D0395EE1D849F0B39C93C3B4B103C4/
+18-06-01 13:28:52 > 2018-06-01T11:25:14-07:00: Submitted to comet as job '16601197'.
+18-06-01 13:28:54 > NSG Job Canceled
