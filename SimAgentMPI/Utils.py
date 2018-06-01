@@ -46,6 +46,10 @@ class Autoresized_Notebook(ttk.Notebook):
         tab = event.widget.nametowidget(event.widget.select())
         event.widget.configure(height=tab.winfo_reqheight())
         
+"""
+#Extend a tk frame easily
+
+"""
 
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check

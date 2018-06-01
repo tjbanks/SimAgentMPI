@@ -4,14 +4,14 @@ Created on Sun May 20 16:46:40 2018
 
 @author: Tyler
 """
-from SimAgentMPI.Utils import CreateToolTip, Autoresized_Notebook
+from SimAgentMPI.Utils import Autoresized_Notebook
 
 import tkinter as tk
 from tkinter import messagebox,ttk,filedialog,OptionMenu
 from SimAgentMPI.tktable import Table
 import datetime
 from PIL import ImageTk, Image
-import os, time
+import os, time, enum
 
 from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File
 from SimAgentMPI.NewServerConfig import ServerEntryBox,SelectServerEditBox
@@ -70,25 +70,6 @@ class MainWindow():
             self.style.theme_use("colored")
         except Exception:
             print('Style loaded previously. Continuing.')
-            
-        try:
-            #http://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/sign-error-icon.html
-            icon_dir = "./SimAgentMPI/icons"
-            new = os.path.join(icon_dir,"sun-icon.png")
-            check = os.path.join(icon_dir,"sign-check-icon.png")
-            error = os.path.join(icon_dir,"sign-error-icon.png")
-            sync = os.path.join(icon_dir,"sign-sync-icon.png")
-            cloud_down = os.path.join(icon_dir, "cloud-down-icon.png")
-    
-            #Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
-            self.new_img = ImageTk.PhotoImage(Image.open(new))
-            self.check_img = ImageTk.PhotoImage(Image.open(check))
-            self.error_img = ImageTk.PhotoImage(Image.open(error))
-            self.sync_img  = ImageTk.PhotoImage(Image.open(sync))
-            self.cloud_img = ImageTk.PhotoImage(Image.open(cloud_down))
-            
-        except Exception as e:
-            print('Difficulty loading icons\n' + e)
         
         frame1 = tk.Frame(self.root)
         frame1.grid(row=0,column=0,sticky='news')
@@ -128,6 +109,12 @@ class MainWindow():
             print('Error, closing display loop')
         print('Closing.\n')
         
+    def on_closing(self,noprompt=False):
+        if not self.sim_dir or messagebox.askokcancel("Quit", "Do you want to quit? All running remote jobs will continue to run."):
+            self.exitapp = True
+            self.root.destroy()
+            self.stop_threads()
+            
     def bind_page(self, page, gen_frame):
         #### Scrollable Frame Window ####
         #https://stackoverflow.com/questions/42237310/tkinter-canvas-scrollbar
@@ -191,47 +178,15 @@ class MainWindow():
     
     
     def jobs_page(self, root):
-        #self.date_format = '%y%m%d-%H%M%S'
-        #https://timestamp.online/article/how-to-convert-timestamp-to-datetime-in-python
-        self.date_format = '%b %d %y\n%I:%M %p'
-        #open project dir
-        #print(filedialog.askdirectory())
         
         self.left_frame = tk.Frame(root)
         self.right_frame = tk.Frame(root)
-        
-        self.directory_frame = tk.LabelFrame(self.left_frame, text="Directory")
         self.jobs_frame = tk.LabelFrame(self.left_frame, text="Jobs")
+        self.directory_frame = tk.LabelFrame(self.left_frame, text="Directory")
         self.notes_frame = tk.LabelFrame(self.right_frame, text="Notes")
         self.log_frame = tk.Frame(self.right_frame)
         
         button_width = 15
-        self.selected_job_name = None
-        
-        self.refresh_time = 60
-        
-        class RefreshThread(StoppableThread):
-            def run(self):
-                while not self.stopped():
-                    #print("Update status thread running")
-                    if(self.ref.sim_dir and self.ref.sim_dir.is_update_enabled()):
-                        self.ref.sim_dir.update_all_jobs()
-                        for i in range(self.ref.table.number_of_rows):
-                           self.ref.update_row_info(row=i)
-                    #print("sleeping for {} seconds".format(self.refresh_time))
-                    for i in range(self.ref.refresh_time): #this is 60 seconds from when we're done updating everything
-                        if self.stopped():
-                            return
-                        time.sleep(1) #use signals, fix later
-                return
-        
-        
-        self.refresh_thread = RefreshThread(ref=self)#Strongly untyped, be careful
-        self.refresh_thread.setDaemon(True)
-        self.refresh_thread.start()
-        self.threads.append(self.refresh_thread)
-        ###!!!self.refresh_periodically()
-        
         
         b = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=button_width)
         b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
@@ -254,243 +209,72 @@ class MainWindow():
         self.b_update_check.grid(row=0,column=4, sticky="we")
         self.update_status.trace("w",self.update_button_enabled)
         self.b_update_check.config(state=tk.DISABLED)
-        """=Jobs Frame======================================"""
-        
-        buttons_frame = tk.LabelFrame(self.jobs_frame, text="")        
-        buttons_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
-        
-        buttons_frame_inner_1 = tk.Frame(buttons_frame)        
-        buttons_frame_inner_1.grid(column=0,row=0,sticky='news',padx=10,pady=5)
-        
-        buttons_frame_inner_2 = tk.Frame(buttons_frame)        
-        buttons_frame_inner_2.grid(column=0,row=1,sticky='news',padx=10,pady=5)
-        
-        
-        self.b_new = tk.Button(buttons_frame_inner_1, text="New Job", command=self.new_job, width=button_width,state=tk.DISABLED)
-        self.b_new.grid(pady=0, padx=5, column=1, row=0, sticky="WE")
-        
-        self.b_clone = tk.Button(buttons_frame_inner_1, text="Clone to New Job", command=self.clone_job, width=button_width,state=tk.DISABLED)
-        self.b_clone.grid(pady=0, padx=5, column=2, row=0, sticky="WE")
-        
-        self.b_edit = tk.Button(buttons_frame_inner_1, text="Edit Job", command=self.edit_job, width=button_width,state=tk.DISABLED)
-        self.b_edit.grid(pady=0, padx=5, column=3, row=0, sticky="WE")
-        
-        self.b_start = tk.Button(buttons_frame_inner_1, text="Start Job", command=self.start_job, width=button_width,state=tk.DISABLED)
-        self.b_start.grid(pady=0, padx=5, column=4, row=0, sticky="WE")
-        
-        self.b_stop = tk.Button(buttons_frame_inner_1, text="Stop Job", command=self.stop_job, width=button_width,state=tk.DISABLED)
-        self.b_stop.grid(pady=0, padx=5, column=5, row=0, sticky="WE")
-        
-        self.b_update = tk.Button(buttons_frame_inner_1, text="Update Status", command=self.update_job, width=button_width,state=tk.DISABLED)
-        self.b_update.grid(pady=0, padx=5, column=6, row=0, sticky="WE")
-        
-        self.b_open = tk.Button(buttons_frame_inner_1, text="Open Results Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
-        self.b_open.grid(pady=0, padx=5, column=7, row=0, sticky="WE")
-        
-        self.b_run_cust = tk.Button(buttons_frame_inner_1, text="Run Custom Tool", command=self.run_custom, width=button_width,state=tk.DISABLED)
-        self.b_run_cust.grid(pady=0, padx=5, column=8, row=0, sticky="WE")
-        
-        self.b_run_cust = tk.Button(buttons_frame_inner_1, text="Run Custom Tool", command=self.run_custom, width=button_width,state=tk.DISABLED)
-        self.b_run_cust.grid(pady=0, padx=5, column=8, row=0, sticky="WE")
-        
-        #Exclude files/folder from upload
-        #Delete remote
-        #delete local/remote
-        #Copy Select Results to Main
-        
-        #Row 2
-        
-        self.b_promote = tk.Button(buttons_frame_inner_2, text="Promote Results", command=self.promote_job_files, width=button_width,state=tk.DISABLED)
-        self.b_promote.grid(pady=0, padx=5, column=3, row=0, sticky="WE") 
-        
-        self.b_down_remote = tk.Button(buttons_frame_inner_2, text="Re-Download Files", command=self.download_remote_files, width=button_width,state=tk.DISABLED)
-        self.b_down_remote.grid(pady=0, padx=5, column=4, row=0, sticky="WE")
-           
-        self.b_del_remote = tk.Button(buttons_frame_inner_2, text="Delete Remote Files", command=self.delete_remote_files, width=button_width,state=tk.DISABLED)
-        self.b_del_remote.grid(pady=0, padx=5, column=5, row=0, sticky="WE")           
-        
-        self.b_del_all = tk.Button(buttons_frame_inner_2, text="Delete Job", command=self.delete_job_files, width=button_width,state=tk.DISABLED)
-        self.b_del_all.grid(pady=0, padx=5, column=6, row=0, sticky="WE") 
-        
-        
-        
-                
-            
-        self.columns = ["Status","Name", "Server", "Tool/Partition", "Nodes", "Cores", "Start", "Runtime", "Remote ID"]
-        self.col_wid = [45, 200, 100, 100, 50, 50, 100, 100, 150]
-        
-        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
-        self.table.grid(row=1,column=0,padx=10,pady=10)
-        self.table.set_data([[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""]])
-        #table.cell(0,0, " a fdas fasd fasdf asdf asdfasdf asdf asdfa sdfas asd sadf ")
-        #table.grid_propagate(False) #Is this really the only way to get it to a specific size?
-            
-        #table.insert_row([22,23,24])
-        #table.insert_row([25,26,27],index=0)
         
         """=Note Frame======================================"""
         
-        self.notes_console = tk.Text(self.notes_frame)
-        self.notes_console.config(width= 50, height=18, bg='white',fg='black')
-        self.notes_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
-        
+        self.notes = Job_Notes(self.notes_frame)
+        self.notes.grid(column=0,row=0)
         
         """=Logs Frame======================================"""
         
-        def log_file(root):
-            self.log_console = tk.Text(root)
-            self.log_console.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
-            self.log_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        self.consoles = Job_Consoles(self.log_frame)
+        self.consoles.grid(column=0,row=0)
         
-        def stdout_file(root):
-            self.log_console_stdout = tk.Text(root)
-            self.log_console_stdout.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
-            self.log_console_stdout.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
-            
-        def stderr_file(root):
-            self.log_console_stderr = tk.Text(root)
-            self.log_console_stderr.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
-            self.log_console_stderr.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
-            
-        nb = Autoresized_Notebook(self.log_frame)
-        nb.pack(padx=5,pady=5,side="left",fill="both",expand=True)
+        """=Jobs Frame======================================"""
         
-        #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
-        page1 = ttk.Frame(nb)
-        nb.add(page1, text='Log File')
-        log_file(page1)
-        #self.bind_page(page1, log_file)
-        
-        page2 = ttk.Frame(nb)
-        nb.add(page2, text='Server Output')
-        stdout_file(page2)
-        #self.bind_page(page2, stdout_file)
-        
-        page3 = ttk.Frame(nb)
-        nb.add(page3, text='Server Error')
-        stderr_file(page3)
-        #self.bind_page(page3, stderr_file)
-        
+        self.table = Job_Table(self.jobs_frame, self.sim_dir, button_width=button_width,job_notes=self.notes,job_consoles=self.consoles)#on_select_row=self.display_job_notes_log,on_update_row=self.display_job_notes_log)
+        self.table.grid(column=0,row=0)
         
         
         """================================================="""
-        
         
         self.left_frame.grid(column=0,row=0,sticky='news')
         self.right_frame.grid(column=1,row=0,sticky='news')
         
         self.directory_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5,columnspan=2)
         self.jobs_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5,columnspan=2)
-        self.notes_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5)
+        
         self.log_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        self.notes_frame.grid(column=0,row=1,sticky='news',padx=10,pady=5)
+                
+        self.start_refresh_thread()
         
         return
     
-    def select_row(self, row):
-        self.write_notes()
-        self.selected_row_num = row
-        if row != None:
-            name_of_selected = str(self.table.row(row)[1])
-        else:
-            name_of_selected = ""
+    def start_refresh_thread(self):
+        self.refresh_time = 60
+        class RefreshThread(StoppableThread):
+            def run(self):
+                while not self.stopped():
+                    #print("Update status thread running")
+                    if(self.ref.sim_dir and self.ref.sim_dir.is_update_enabled()):
+                        self.ref.sim_dir.update_all_jobs()
+                        for i in range(self.ref.table.number_of_rows):
+                           self.ref.table.update_row_info(row=i)
+                    #print("sleeping for {} seconds".format(self.refresh_time))
+                    for i in range(self.ref.refresh_time): #this is 60 seconds from when we're done updating everything
+                        if self.stopped():
+                            return
+                        time.sleep(1) #use signals, fix later
+                return
         
-        job = None
-        
-        if name_of_selected == "":
-            self.notes_console.delete('1.0', tk.END)
-            self.log_console.config(state=tk.NORMAL)
-            self.log_console.delete('1.0', tk.END)
-            self.log_console.config(state=tk.DISABLED)
-            
-            self.log_console_stdout.config(state=tk.NORMAL)
-            self.log_console_stdout.delete('1.0', tk.END)
-            self.log_console_stdout.config(state=tk.DISABLED)
-            
-            self.log_console_stderr.config(state=tk.NORMAL)
-            self.log_console_stderr.delete('1.0', tk.END)
-            self.log_console_stderr.config(state=tk.DISABLED)
-        
-        #if name_of_selected == self.selected_job_name:
-        #    return
-                
-        if self.selected_job_name != None or (self.selected_job_name != name_of_selected and name_of_selected != ""): #selecting something different
-            job = self.sim_dir.get_job(name_of_selected)
-            self.display_job_notes_log(job)
-            
-        """
-        ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
-        nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED"]
-        """
-        self.selected_job_name = name_of_selected
-        if(self.selected_job_name != ""):
-            self.b_clone.config(state=tk.NORMAL)
-            self.b_del_all.config(state=tk.NORMAL)
-                        
-            if(job.status==SimJob.created_status or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
-                self.b_start.config(state=tk.NORMAL)
-                self.b_edit.config(state=tk.NORMAL)
-            else:
-                self.b_start.config(state=tk.DISABLED)
-                self.b_edit.config(state=tk.DISABLED)
-                
-            if(job.status==ServerInterface.ssh_status[1] or job.status==ServerInterface.nsg_status[1] or job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2] or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
-                self.b_del_remote.config(state=tk.NORMAL)
-            else:
-                self.b_del_remote.config(state=tk.DISABLED)
-                
-            if(job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2]):
-                self.b_open.config(state=tk.NORMAL)
-                self.b_run_cust.config(state=tk.NORMAL)
-                self.b_down_remote.config(state=tk.NORMAL)
-                self.b_promote.config(state=tk.NORMAL)
-            else:
-                self.b_open.config(state=tk.DISABLED)
-                self.b_run_cust.config(state=tk.DISABLED)
-                self.b_down_remote.config(state=tk.DISABLED)
-                self.b_promote.config(state=tk.DISABLED)
-            
-            if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
-                self.b_stop.config(state=tk.NORMAL)
-                self.b_update.config(state=tk.NORMAL)
-            else:
-                self.b_stop.config(state=tk.DISABLED)
-                self.b_update.config(state=tk.DISABLED)
-            
-            
-        else:
-            self.b_clone.config(state=tk.DISABLED)
-            self.b_edit.config(state=tk.DISABLED)
-            self.b_start.config(state=tk.DISABLED)
-            self.b_stop.config(state=tk.DISABLED)
-            self.b_update.config(state=tk.DISABLED)
-            self.b_open.config(state=tk.DISABLED)
-            self.b_run_cust.config(state=tk.DISABLED)
-            self.b_promote.config(state=tk.DISABLED)
-            self.b_down_remote.config(state=tk.DISABLED)
-            self.b_del_remote.config(state=tk.DISABLED)
-            self.b_del_all.config(state=tk.DISABLED)
-
-            
-        
-        #print(str(self.table.row(row)))
-    
-    def on_closing(self,noprompt=False):
-        if not self.sim_dir or messagebox.askokcancel("Quit", "Do you want to quit? All running remote jobs will continue to run."):
-            self.exitapp = True
-            self.root.destroy()
-            self.stop_threads()
+        self.refresh_thread = RefreshThread(ref=self)#Strongly untyped, be careful
+        self.refresh_thread.setDaemon(True)
+        #self.refresh_thread.start()
+        self.threads.append(self.refresh_thread)
     
     def stop_threads(self):
         print("stopping threads")
         main_thread = threading.currentThread()
         for t in self.threads:
             if t is not main_thread:
-                print('joining {} (If this task hangs a job may be being downloaded)'.format(t.getName()))
+                print('joining {} (If this task hangs a job may be uploading/downloding results. Please wait to exit cleanly.)'.format(t.getName()))
                 t.stop()
                 t.join()
                 print('joined {}'.format(t.getName()))
         print("stopping threads complete")
                 
+        
     def update_button_enabled(self, *args):
         self.sim_dir.set_update_enabled(self.update_status.get())
         return
@@ -516,49 +300,7 @@ class MainWindow():
         if(messagebox.askquestion("Add to .gitignore", "Do you want to add \"" + SimDirectory.results_folder_name +"/\" to the .gitignore file in " + self.sim_dir.sim_directory + "? If a .gitignore does not exist one will be created.", icon='warning') == 'yes'):
             self.sim_dir.add_results_to_gitignore()
         return
-            
-    def display_job_notes_log(self, job):
-        if job != None:
-            self.display_job_notes(job)
-            self.display_job_log(job)
-            
-    def display_job_notes(self, job):
-        if job != None:
-            notes = job.get_notes()
-            self.notes_console.delete('1.0', tk.END)
-            self.notes_console.insert(tk.END, notes)
-        return
-            
-    def display_job_log(self, job):
-        if job != None:
-            log = job.get_log()
-            self.log_console.config(state=tk.NORMAL)
-            self.log_console.delete('1.0', tk.END)
-            self.log_console.insert(tk.END, log) 
-            self.log_console.see("end")
-            self.log_console.config(state=tk.DISABLED)
-            
-            log_stdout = job.get_log_stdout()
-            self.log_console_stdout.config(state=tk.NORMAL)
-            self.log_console_stdout.delete('1.0', tk.END)
-            self.log_console_stdout.insert(tk.END, log_stdout) 
-            self.log_console_stdout.see("end")
-            self.log_console_stdout.config(state=tk.DISABLED)
-            
-            log_stderr = job.get_log_stderr()
-            self.log_console_stderr.config(state=tk.NORMAL)
-            self.log_console_stderr.delete('1.0', tk.END)
-            self.log_console_stderr.insert(tk.END, log_stderr) 
-            self.log_console_stderr.see("end")
-            self.log_console_stderr.config(state=tk.DISABLED)
-        return
-    
-    def write_notes(self):
-        if(self.selected_job_name != "" and self.selected_job_name != None):
-            job = self.sim_dir.get_job(self.selected_job_name)
-            if job:
-                job.write_notes(self.notes_console.get("1.0",'end-1c'))
-                
+                    
     def add_server(self):
         ServerEntryBox(self.root)#,server_id="180521092555")
         
@@ -603,11 +345,6 @@ class MainWindow():
         if self.sim_dir and self.sim_dir != "":
             Edit_dir_tool(self.root, self.sim_dir)
             
-    def run_custom(self):
-        job = self.sim_dir.get_job(self.selected_job_name)
-        job.run_custom()
-        self.update_row_info()
-        
             
     def about(self):
         messagebox.showinfo("About", self.about_text, icon='info')
@@ -615,6 +352,382 @@ class MainWindow():
     def warning(self):
         messagebox.showinfo("Warning", self.warnings_text, icon='info')
             
+    
+    def load_dir(self, btn=False, dir_=None):
+        dir_ = None
+        if self.sim_dir and not btn:
+            dir_ = self.sim_dir.sim_directory
+        else:
+            dir_ = filedialog.askdirectory()
+        if not dir_:
+            return
+        try:
+            self.sim_dir = SimDirectory(dir_,initialize=True)
+            self.sim_dir_var.set(self.sim_dir.sim_directory)
+            self.update_status.set(self.sim_dir.is_update_enabled())
+            self.table.reload_table(dir_=self.sim_dir)  
+            self.b_tool_edit.config(state=tk.NORMAL)
+            self.b_update_check.config(state=tk.NORMAL)
+            self.refresh_time = self.sim_dir.update_interval_seconds            
+                
+        except Exception as e:
+            print(e)
+        
+        return
+
+class Job_Consoles(tk.Frame):
+
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.root = tk.Frame(self.parent)
+        self.create_widgets()
+        return
+    
+    def create_widgets(self):
+        
+        self.log_frame = tk.Frame(self.root)
+        
+        def log_file(root):
+            self.log_console = tk.Text(root)
+            self.log_console.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
+            self.log_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        
+        def stdout_file(root):
+            self.log_console_stdout = tk.Text(root)
+            self.log_console_stdout.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
+            self.log_console_stdout.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+            
+        def stderr_file(root):
+            self.log_console_stderr = tk.Text(root)
+            self.log_console_stderr.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
+            self.log_console_stderr.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+            
+        nb = Autoresized_Notebook(self.log_frame)
+        nb.pack(padx=5,pady=5,side="left",fill="both",expand=True)
+        
+        #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
+        page1 = ttk.Frame(nb)
+        nb.add(page1, text='Log File')
+        log_file(page1)
+        #self.bind_page(page1, log_file)
+        
+        page2 = ttk.Frame(nb)
+        nb.add(page2, text='Server Output')
+        stdout_file(page2)
+        #self.bind_page(page2, stdout_file)
+        
+        page3 = ttk.Frame(nb)
+        nb.add(page3, text='Server Error')
+        stderr_file(page3)
+        #self.bind_page(page3, stderr_file)
+        
+        self.log_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+    
+    def display_job_log(self, job):
+        if job != None:
+            log = job.get_log()
+            self.log_console.config(state=tk.NORMAL)
+            self.log_console.delete('1.0', tk.END)
+            self.log_console.insert(tk.END, log) 
+            self.log_console.see("end")
+            self.log_console.config(state=tk.DISABLED)
+            
+            log_stdout = job.get_log_stdout()
+            self.log_console_stdout.config(state=tk.NORMAL)
+            self.log_console_stdout.delete('1.0', tk.END)
+            self.log_console_stdout.insert(tk.END, log_stdout) 
+            self.log_console_stdout.see("end")
+            self.log_console_stdout.config(state=tk.DISABLED)
+            
+            log_stderr = job.get_log_stderr()
+            self.log_console_stderr.config(state=tk.NORMAL)
+            self.log_console_stderr.delete('1.0', tk.END)
+            self.log_console_stderr.insert(tk.END, log_stderr) 
+            self.log_console_stderr.see("end")
+            self.log_console_stderr.config(state=tk.DISABLED)
+        return
+
+    def clear(self):
+        self.notes_console.delete('1.0', tk.END)
+        self.log_console.config(state=tk.NORMAL)
+        self.log_console.delete('1.0', tk.END)
+        self.log_console.config(state=tk.DISABLED)
+        
+        self.log_console_stdout.config(state=tk.NORMAL)
+        self.log_console_stdout.delete('1.0', tk.END)
+        self.log_console_stdout.config(state=tk.DISABLED)
+        
+        self.log_console_stderr.config(state=tk.NORMAL)
+        self.log_console_stderr.delete('1.0', tk.END)
+        self.log_console_stderr.config(state=tk.DISABLED)
+    
+    def pack(self,*args,**kwargs):
+        super(Job_Consoles,self).pack(*args,**kwargs)
+        self.root.pack(*args,**kwargs)
+            
+    def grid(self,*args,**kwargs):
+        super(Job_Consoles,self).grid(*args,**kwargs)
+        self.root.grid(*args,**kwargs)
+        
+        
+class Job_Notes(tk.Frame):
+
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.root = tk.Frame(self.parent)
+        self.create_widgets()
+        return
+    
+    def create_widgets(self):
+        self.notes_frame = tk.Frame(self.root)
+        self.notes_console = tk.Text(self.notes_frame)
+        self.notes_console.config(width= 50, height=18, bg='white',fg='black')
+        self.notes_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        self.notes_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+    
+    def display_job_notes(self, job):
+        if job != None:
+            notes = job.get_notes()
+            self.notes_console.delete('1.0', tk.END)
+            self.notes_console.insert(tk.END, notes)
+        return
+    
+    def clear(self):
+        self.notes_console.delete('1.0', tk.END)
+        
+    def write_notes(self,job):
+        job.write_notes(self.notes_console.get("1.0",'end-1c'))
+                
+    def pack(self,*args,**kwargs):
+        super(Job_Notes,self).pack(*args,**kwargs)
+        self.root.pack(*args,**kwargs)
+            
+    def grid(self,*args,**kwargs):
+        super(Job_Notes,self).grid(*args,**kwargs)
+        self.root.grid(*args,**kwargs)
+        
+
+class Job_Table(tk.Frame):
+    
+    class Job_Button(enum.Enum):
+        ALL = 1
+        NEW = 2
+        CLONE = 3 
+        EDIT = 4
+        START = 5
+        STOP = 6
+        UPDATE = 7
+        OPENRESULTS = 8
+        RUNCUSTOM = 9
+        PROMOTE = 10
+        DOWNLOAD = 11
+        DELETEREMOTE = 12
+        DELETELOCAL = 13
+        
+    def __init__(self, parent, sim_dir, button_width = 15, use_buttons=[Job_Button.ALL], job_notes=None,job_consoles=None, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.root = tk.Frame(self.parent)
+        
+        self.columns = ["Status","Name", "Server", "Tool/Partition", "Nodes", "Cores", "Start", "Runtime", "Remote ID"]
+        self.col_wid = [45, 200, 100, 100, 50, 50, 100, 100, 150]
+        #https://timestamp.online/article/how-to-convert-timestamp-to-datetime-in-python
+        self.date_format = '%b %d %y\n%I:%M %p'
+        
+        self.sim_dir = sim_dir
+        self.button_width = button_width
+        self.use_buttons = use_buttons
+        self.job_notes = job_notes
+        self.job_consoles = job_consoles
+        
+        self.selected_job_name = None
+        
+        try:
+            #http://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/sign-error-icon.html
+            icon_dir = "./SimAgentMPI/icons"
+            new = os.path.join(icon_dir,"sun-icon.png")
+            check = os.path.join(icon_dir,"sign-check-icon.png")
+            error = os.path.join(icon_dir,"sign-error-icon.png")
+            sync = os.path.join(icon_dir,"sign-sync-icon.png")
+            cloud_down = os.path.join(icon_dir, "cloud-down-icon.png")
+    
+            #Creates a Tkinter-compatible photo image, which can be used everywhere Tkinter expects an image object.
+            self.new_img = ImageTk.PhotoImage(Image.open(new))
+            self.check_img = ImageTk.PhotoImage(Image.open(check))
+            self.error_img = ImageTk.PhotoImage(Image.open(error))
+            self.sync_img  = ImageTk.PhotoImage(Image.open(sync))
+            self.cloud_img = ImageTk.PhotoImage(Image.open(cloud_down))
+            
+        except Exception as e:
+            print('Difficulty loading icons\n' + e)        
+        
+        self.create_widgets()
+        
+        return
+            
+    def create_widgets(self):
+                
+        button_width = self.button_width
+        self.jobs_frame = tk.Frame(self.root)
+        
+        buttons_frame = tk.LabelFrame(self.jobs_frame, text="")        
+        buttons_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        buttons_frame_inner_1 = tk.Frame(buttons_frame)        
+        buttons_frame_inner_1.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        buttons_frame_inner_2 = tk.Frame(buttons_frame)        
+        buttons_frame_inner_2.grid(column=0,row=1,sticky='news',padx=10,pady=5)
+        
+        b = Job_Table.Job_Button
+        
+        
+        self.b_new = tk.Button(buttons_frame_inner_1, text="New Job", command=self.new_job, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_new.grid(pady=0, padx=5, column=1, row=0, sticky="WE")
+        
+        self.b_clone = tk.Button(buttons_frame_inner_1, text="Clone to New Job", command=self.clone_job, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_clone.grid(pady=0, padx=5, column=2, row=0, sticky="WE")
+        
+        self.b_edit = tk.Button(buttons_frame_inner_1, text="Edit Job", command=self.edit_job, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_edit.grid(pady=0, padx=5, column=3, row=0, sticky="WE")
+        
+        self.b_start = tk.Button(buttons_frame_inner_1, text="Start Job", command=self.start_job, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_start.grid(pady=0, padx=5, column=4, row=0, sticky="WE")
+        
+        self.b_stop = tk.Button(buttons_frame_inner_1, text="Stop Job", command=self.stop_job, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_stop.grid(pady=0, padx=5, column=5, row=0, sticky="WE")
+        
+        self.b_update = tk.Button(buttons_frame_inner_1, text="Update Status", command=self.update_job, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_update.grid(pady=0, padx=5, column=6, row=0, sticky="WE")
+        
+        self.b_open = tk.Button(buttons_frame_inner_1, text="Open Results Folder", command=self.open_job_folder, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_open.grid(pady=0, padx=5, column=7, row=0, sticky="WE")
+        
+        self.b_run_cust = tk.Button(buttons_frame_inner_1, text="Run Custom Tool", command=self.run_custom, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_run_cust.grid(pady=0, padx=5, column=8, row=0, sticky="WE")
+                
+        #Row 2
+        
+        self.b_promote = tk.Button(buttons_frame_inner_2, text="Promote Results", command=self.promote_job_files, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_promote.grid(pady=0, padx=5, column=3, row=0, sticky="WE") 
+        
+        self.b_down_remote = tk.Button(buttons_frame_inner_2, text="Re-Download Files", command=self.download_remote_files, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_down_remote.grid(pady=0, padx=5, column=4, row=0, sticky="WE")
+           
+        self.b_del_remote = tk.Button(buttons_frame_inner_2, text="Delete Remote Files", command=self.delete_remote_files, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_del_remote.grid(pady=0, padx=5, column=5, row=0, sticky="WE")           
+        
+        self.b_del_all = tk.Button(buttons_frame_inner_2, text="Delete Job", command=self.delete_job_files, width=button_width,state=tk.DISABLED)
+        if b.ALL in self.use_buttons:
+            self.b_del_all.grid(pady=0, padx=5, column=6, row=0, sticky="WE") 
+            
+         
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
+        self.table.grid(row=1,column=0,padx=10,pady=10)
+        self.table.set_data([[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""]])
+        #table.cell(0,0, " This is testing a long sentence ")
+        #table.insert_row([22,23,24])
+        #table.insert_row([25,26,27],index=0)
+        
+        self.jobs_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5,columnspan=2)
+    
+    
+    def select_row(self, row):
+        if(self.selected_job_name != "" and self.selected_job_name != None):
+            job = self.sim_dir.get_job(self.selected_job_name)
+            if job:
+                if self.job_notes:
+                    self.job_notes.write_notes(job)
+                    
+        self.selected_row_num = row
+        if row != None:
+            name_of_selected = str(self.table.row(row)[1])
+        else:
+            name_of_selected = ""
+        
+        job = None
+        
+        if name_of_selected == "":
+            self.job_consoles.clear()
+            self.job_notes.clear()
+        
+        #if name_of_selected == self.selected_job_name:
+        #    return
+                
+        if self.selected_job_name != None or (self.selected_job_name != name_of_selected and name_of_selected != ""): #selecting something different
+            job = self.sim_dir.get_job(name_of_selected)
+            if self.job_notes:
+                self.job_notes.display_job_notes(job)
+            if self.job_consoles:
+                self.job_consoles.display_job_log(job)
+            
+        """
+        ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED"]
+        nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED"]
+        """
+        self.selected_job_name = name_of_selected
+        if(self.selected_job_name != ""):
+            self.b_clone.config(state=tk.NORMAL)
+            self.b_del_all.config(state=tk.NORMAL)
+                        
+            if(job.status==SimJob.created_status or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
+                self.b_start.config(state=tk.NORMAL)
+                self.b_edit.config(state=tk.NORMAL)
+            else:
+                self.b_start.config(state=tk.DISABLED)
+                self.b_edit.config(state=tk.DISABLED)
+                
+            if(job.status==ServerInterface.ssh_status[1] or job.status==ServerInterface.nsg_status[1] or job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2] or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
+                self.b_del_remote.config(state=tk.NORMAL)
+            else:
+                self.b_del_remote.config(state=tk.DISABLED)
+                
+            if(job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2]):
+                self.b_open.config(state=tk.NORMAL)
+                self.b_run_cust.config(state=tk.NORMAL)
+                self.b_down_remote.config(state=tk.NORMAL)
+                self.b_promote.config(state=tk.NORMAL)
+            else:
+                self.b_open.config(state=tk.DISABLED)
+                self.b_run_cust.config(state=tk.DISABLED)
+                self.b_down_remote.config(state=tk.DISABLED)
+                self.b_promote.config(state=tk.DISABLED)
+            
+            if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
+                self.b_stop.config(state=tk.NORMAL)
+                self.b_update.config(state=tk.NORMAL)
+            else:
+                self.b_stop.config(state=tk.DISABLED)
+                self.b_update.config(state=tk.DISABLED)
+            
+        else:
+            self.b_clone.config(state=tk.DISABLED)
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_start.config(state=tk.DISABLED)
+            self.b_stop.config(state=tk.DISABLED)
+            self.b_update.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.DISABLED)
+            self.b_run_cust.config(state=tk.DISABLED)
+            self.b_promote.config(state=tk.DISABLED)
+            self.b_down_remote.config(state=tk.DISABLED)
+            self.b_del_remote.config(state=tk.DISABLED)
+            self.b_del_all.config(state=tk.DISABLED)
+      
+        #print(str(self.table.row(row)))
+    
     def new_job(self):
         JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.reload_table)
     
@@ -660,6 +773,11 @@ class MainWindow():
             job.stop()
             self.update_row_info()
         return
+    
+    def run_custom(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        job.run_custom()
+        self.update_row_info()
         
     def delete_job_files(self):
         job = self.sim_dir.get_job(self.selected_job_name)
@@ -695,34 +813,8 @@ class MainWindow():
     def open_job_folder(self):
         job = self.sim_dir.get_job(self.selected_job_name)
         job.open_sim_results_directory()
-        return
+        return    
     
-    def load_dir(self, btn=False, dir_=None):
-        dir_ = None
-        if self.sim_dir and not btn:
-            dir_ = self.sim_dir.sim_directory
-        else:
-            dir_ = filedialog.askdirectory()
-        if not dir_:
-            return
-        try:
-            
-            self.sim_dir = SimDirectory(dir_,initialize=True)
-            self.sim_dir_var.set(self.sim_dir.sim_directory)
-            self.update_status.set(self.sim_dir.is_update_enabled())
-            self.reload_table()         
-                
-            self.b_new.config(state=tk.NORMAL)
-            self.b_tool_edit.config(state=tk.NORMAL)
-            self.b_update_check.config(state=tk.NORMAL)
-            
-            self.refresh_time = self.sim_dir.update_interval_seconds            
-                
-        except Exception as e:
-            print(e)
-        
-        return
-
     def row_of_data(self,job):
         part_tool = ""
         server = job.get_server()
@@ -766,7 +858,11 @@ class MainWindow():
         data = [job.status, job.sim_name, job.server_connector, part_tool , job.server_nodes, job.server_cores, timeofstart, timedif,job.server_remote_identifier]
         return data
     
-    def reload_table(self):
+    def reload_table(self, dir_=None):
+        
+        if dir_:
+            self.sim_dir = dir_
+        
         self.table.grid_forget()
         self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
         self.table.grid(row=1,column=0,padx=10,pady=10)
@@ -779,15 +875,19 @@ class MainWindow():
                 self.table.insert_row(data)#,index=0)
         else:
             self.table.set_data([[""],[""],[""],[""]])
-            
+        
+        self.b_new.config(state=tk.NORMAL)
+        
         self.select_row(None)
             
     def update_row_info(self, row=None):
         #print("update_row_info row: {}".format(row))
         #print("update_row_info self.selected_row_num: {}".format(self.selected_row_num))
+        update_buttons = False
         if row == None:
             if self.selected_row_num is not None:
                 row = self.selected_row_num
+                update_buttons = True
             
         name_of_selected = str(self.table.row(row)[1])#If you move around the index of the name it will mess up
         job = self.sim_dir.get_job(name_of_selected)
@@ -798,8 +898,15 @@ class MainWindow():
             #print("updating row {} column {} with {}".format(row,i,c))
             self.table.cell(row,i,c)
         
-        self.display_job_notes_log(job) #refresh log too
-        self.select_row(self.selected_row_num) #just to refresh the buttons
+        
+        if self.job_notes:
+            self.job_notes.display_job_notes(job)
+        if self.job_consoles:
+            self.job_consoles.display_job_log(job)
+        #self.display_job_notes_log(job) #refresh log too#ORIGINAL
+        
+        if update_buttons:
+            self.select_row(self.selected_row_num) #just to refresh the buttons
                 
         return
     
@@ -808,8 +915,16 @@ class MainWindow():
                 ServerInterface.nsg_status[0]:self.sync_img,ServerInterface.nsg_status[1]:self.cloud_img,ServerInterface.nsg_status[2]:self.check_img,ServerInterface.nsg_status[3]:self.error_img,
                 ServerInterface.ssh_status[0]:self.sync_img,ServerInterface.ssh_status[1]:self.cloud_img,ServerInterface.ssh_status[2]:self.check_img,ServerInterface.ssh_status[3]:self.error_img}        
         #The Label widget is a standard Tkinter widget used to display a text or image on the screen.
-        #panel = tk.Label(window, image = img)
-        return
+        #panel = tk.Label(window, image = img)    
+    
+    def pack(self,*args,**kwargs):
+        super(Job_Table,self).pack(*args,**kwargs)
+        self.root.pack(*args,**kwargs)
+            
+    def grid(self,*args,**kwargs):
+        super(Job_Table,self).grid(*args,**kwargs)
+        self.root.grid(*args,**kwargs)
+
             
 class Edit_dir_tool(object):
     
