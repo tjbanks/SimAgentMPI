@@ -12,6 +12,7 @@ import re
 from tempfile import mkstemp
 from shutil import move
 from os import fdopen, remove
+import threading
 
 def replace(file_path, pattern, subst,unix_end=False):
     #Create temp file
@@ -45,6 +46,21 @@ class Autoresized_Notebook(ttk.Notebook):
         tab = event.widget.nametowidget(event.widget.select())
         event.widget.configure(height=tab.winfo_reqheight())
         
+
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
+
+    def __init__(self,ref=None):
+        super(StoppableThread, self).__init__()
+        self._stop_event = threading.Event()
+        self.ref = ref
+
+    def stop(self):
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()
 
 class CreateToolTip(object):
     """

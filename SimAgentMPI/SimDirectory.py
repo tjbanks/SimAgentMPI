@@ -25,6 +25,8 @@ Directory structure
 
 from SimAgentMPI.SimJob import SimJob
 from SimAgentMPI.ParametricSweep import ParametricSweep
+from SimAgentMPI.ServerInterface import ServerInterface
+from SimAgentMPI.nsg.nsgclient import Client
 import os,errno
 import zipfile
 import json
@@ -137,7 +139,55 @@ class SimDirectory(object):
             if job.sim_name == job_name:
                 return job
         return None
+    
+    def update_all_jobs(self):
+    
+        nsg_job_lists = {}
+        ssh_conns = {}
         
+        for job in self.sim_jobs:
+            if(job.status==ServerInterface.ssh_status[0]):
+                
+                ssh_conn = ssh_conns.get(job.server_connector)
+                if not ssh_conn:
+                    server = job.get_server()
+                    try:
+                        ssh_conn = ServerInterface().connect_ssh(server,job)
+                        ssh_conns[job.server_connector] = ssh_conn
+                    except Exception as e:
+                        job.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                        #traceback.print_exc()
+                        try:
+                            ssh_conn.close()
+                        except:
+                            pass
+                        
+                job.update(ssh_connection=ssh_conn)
+                job.read_properties()
+            
+            if(job.status==ServerInterface.nsg_status[0]):
+                
+                nsg_list = nsg_job_lists.get(job.server_connector)
+                if not nsg_list:
+                    server = job.get_server()
+                    nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
+                    nsg_job_lists[job.server_connector] = nsg.listJobs()
+                
+                job.update(nsg_job_list=nsg_list)
+                job.read_properties()
+                     
+        
+        for key, ssh_conn in ssh_conns.items():#clean up ssh connections
+            try:
+                ssh_conn.close()
+            except Exception as e:
+                print('*** Caught exception while attempting to close connections: %s: %s' % (e.__class__, e))
+                pass
+            
+        
+        return
+        
+
     def read_properties(self):
         if(os.path.isfile(self.full_properties_path)):
             with open(self.full_properties_path) as json_file:  
