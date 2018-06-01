@@ -109,7 +109,7 @@ class MainWindow():
         page2 = ttk.Frame(nb)
         
         nb.add(page1, text='Single Jobs')
-        nb.add(page2, text='Parametric Sweep')
+        #nb.add(page2, text='Parametric Sweep')
         
         #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
         self.bind_page(page1, self.jobs_page)
