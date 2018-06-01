@@ -165,7 +165,10 @@ class ServerInterface(object):
         if(validate_only):
             return
         try:
-            status = nsg.submitJobTemplate(simjob.job_directory_absolute,metadata={"statusEmail" : simjob.server_status_email})
+            sm = 'false'
+            if simjob.server_status_email:
+                sm = 'true'
+            status = nsg.submitJobTemplate(simjob.job_directory_absolute,metadata={"statusEmail" : sm})
         
             simjob.server_remote_identifier = status.jobUrl
             simjob.write_properties()
@@ -270,7 +273,7 @@ class ServerInterface(object):
                 
             client.close()
         except Exception as e:
-                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
                 #traceback.print_exc()
                 simjob.status = ServerInterface.ssh_status[3]
                 simjob.write_properties()
@@ -326,7 +329,7 @@ class ServerInterface(object):
                 update_ssh_()            
                 client.close()
             except Exception as e:
-                    simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                    simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
                     #traceback.print_exc()
                     try:
                         client.close()
@@ -376,7 +379,7 @@ class ServerInterface(object):
                     simjob.append_log("Trouble finding job to cancel")
             client.close()
         except Exception as e:
-                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
                 #traceback.print_exc()
                 try:
                     client.close()
@@ -469,7 +472,7 @@ class ServerInterface(object):
                 download_ssh_()
                 client.close()
             except Exception as e:
-                    simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                    simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
                     #traceback.print_exc()
                     try:
                         client.close()
@@ -496,24 +499,28 @@ class ServerInterface(object):
                 if updateJob:
                     job.update()
                 resultFiles = job.listResults(final=False)
-                
-                for filename in resultFiles: 
-                    if filename == outfile:
-                        resultFiles[filename].download(simjob.job_directory_absolute)
-                        out_dl = os.path.join(simjob.job_directory_absolute,outfile)
-                        std_out = os.path.join(simjob.job_directory_absolute,simjob.stdout_file)
-                        if os.path.exists(std_out):
-                            os.remove(std_out)
-                        os.rename(out_dl, std_out)
-                        #os.remove(out_dl)
-                    if filename == errfile:
-                        resultFiles[filename].download(simjob.job_directory_absolute)
-                        err_dl = os.path.join(simjob.job_directory_absolute,errfile)
-                        std_err = os.path.join(simjob.job_directory_absolute,simjob.stderr_file)
-                        if os.path.exists(std_err):
-                            os.remove(std_err)
-                        os.rename(err_dl, std_err)
-                        #os.remove(err_dl)
+                try:
+                    for filename in resultFiles: 
+                        if filename == outfile:
+                            resultFiles[filename].download(simjob.job_directory_absolute)
+                            out_dl = os.path.join(simjob.job_directory_absolute,outfile)
+                            std_out = os.path.join(simjob.job_directory_absolute,simjob.stdout_file)
+                            if os.path.exists(std_out):
+                                os.remove(std_out)
+                            os.rename(out_dl, std_out)
+                            #os.remove(out_dl)
+                        if filename == errfile:
+                            resultFiles[filename].download(simjob.job_directory_absolute)
+                            err_dl = os.path.join(simjob.job_directory_absolute,errfile)
+                            std_err = os.path.join(simjob.job_directory_absolute,simjob.stderr_file)
+                            if os.path.exists(std_err):
+                                os.remove(std_err)
+                            os.rename(err_dl, std_err)
+                            #os.remove(err_dl)
+                        
+                except Exception as e:
+                    simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
+                    #We don't care if we can't grab these files
         return
     
     def download_status_ssh(self, simjob, server, ssh_connection=None):
@@ -536,7 +543,7 @@ class ServerInterface(object):
                 download_status_ssh_()    
                 client.close()
             except Exception as e:
-                    simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                    simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
                     #traceback.print_exc()
                     try:
                         client.close()
@@ -596,7 +603,7 @@ class ServerInterface(object):
                     
             client.close()
         except Exception as e:
-                simjob.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
                 #traceback.print_exc()
                 try:
                     client.close()
