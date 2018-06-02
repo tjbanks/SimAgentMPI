@@ -58,7 +58,8 @@ def update_SimAgentMPI(install_dir, branch):
     #copy servers file
     src = os.path.join(old_install_n,".servers")
     dst = os.path.join(old_install, ".servers")
-    copyfile(src, dst)
+    if os.path.isfile(src):
+        copyfile(src, dst)
     
     return
 
