@@ -19,7 +19,7 @@ from SimAgentMPI.SimDirectory import SimDirectory
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
 from SimAgentMPI.SimServer import ServersFile
-from SimAgentMPI.Utils import Batch_File,StoppableThread
+from SimAgentMPI.Utils import Batch_File,StoppableThread,UpdateWindow
 from SimAgentMPI.ParametricSweep import ParametricSweep
 
 import threading
@@ -193,10 +193,18 @@ class MainWindow():
         menubar.add_cascade(label='Servers', menu=servermenu)
         
         helpmenu = tk.Menu(menubar, tearoff=0)
+        helpmenu.add_command(label="Update", command=self.update_from_github)
         helpmenu.add_command(label="Warnings", command=self.warning)
         helpmenu.add_command(label="About", command=self.about)
         menubar.add_cascade(label="Help", menu=helpmenu)
         return menubar
+    
+    def update_from_github(self):
+        def update_call():
+            messagebox.showinfo("Restart Sim Agent MPI", "Sim Agent has been successfully updated. Sim Agent MPI will now close, please restart")
+            self.on_closing()
+        UpdateWindow(self.root,callback=update_call)
+        return
     
     def add_server(self):
         ServerEntryBox(self.root)#,server_id="180521092555")

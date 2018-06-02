@@ -6,14 +6,111 @@ Created on Sun May 20 16:48:45 2018
 """
 
 import tkinter as tk
-from tkinter import ttk,Entry,StringVar,Listbox
+from tkinter import ttk,Entry,StringVar,Listbox,messagebox
 
 import re
 from tempfile import mkstemp
 from shutil import move
+import shutil
 from os import fdopen, remove
+import os
+import zipfile
 import threading
+import requests
 
+def update_SimAgentMPI(install_dir, branch):
+    updates_json_url = "https://raw.githubusercontent.com/tjbanks/SimAgentMPI/master/updates.json"
+    code_base_url = "https://github.com/tjbanks/SimAgentMPI/archive/{}.zip"
+    branches = ["master","release"]
+    base_file = "SimAgentMPI-"
+    #branch = branches[0]
+    SimAgentFolder = "SimAgentMPI"
+    #updates_json_r = requests.get(updates_json_url)
+    #Do something with update history 
+    
+    code_r = requests.get(code_base_url.format(branch))
+    code_file_path = os.path.join(install_dir,"{}{}.zip".format(base_file, branch))
+    with open(code_file_path,"wb+") as zipf:
+        for chunk in code_r.iter_content(chunk_size=1024):
+            if chunk:
+                zipf.write(chunk)
+           
+    if not code_r.status_code == requests.codes.ok:
+        raise Exception("Error downloading file {}. Returned code {}".format(code_base_url.format(branch),code_r.status_code))
+        
+    archive = zipfile.ZipFile(code_file_path)
+    
+    for file in archive.namelist():
+        if file.startswith(base_file+branch + "/" + SimAgentFolder):
+            archive.extract(file, install_dir)
+            
+    old_install = os.path.join(install_dir,SimAgentFolder)
+    old_install_n = os.path.join(install_dir,SimAgentFolder+"-old")
+    if os.path.exists(old_install):
+        if os.path.exists(old_install_n):
+            shutil.rmtree(old_install_n)
+        move(old_install, old_install_n)
+        
+    new_install = os.path.join(install_dir,base_file+branch,SimAgentFolder)
+    move(new_install,old_install)
+    
+    return
+
+class UpdateWindow:
+        
+    def __init__(self, parent, callback=None):
+        self.parent = parent
+        self.window_title = "Update Sim Agent MPI"
+        self.confirm = False
+        self.callback = callback
+        self.display()
+        
+    def display(self):
+        top = self.top = tk.Toplevel(self.parent)
+        top.geometry('300x400')
+        top.resizable(1,1)
+        top.title(self.window_title)
+        
+        
+        self.branch = tk.StringVar(top)
+        
+        tk.Label(top,width=40,wraplength=250, fg = 'red',text='WARNING: This feature is EXTREMELY experimental.').grid(columnspan=2,row=0,column=0,pady=5,padx=5)
+        tk.Label(top,width=40,wraplength=250, text='Most of the time you\'re better off re-downloading from https://tjbanks.github.io/SimAgentMPI/.\n\n You may need to re-download or re-extract SimAgentMPI (from the downloaded zip) if things go wrong. \n\n A backup copy of SimAgent\'s working files will be stored, if you want to return to a previous version, delete the folder SimAgentMPI and rename SimAgentMPI-old to SimAgentMPI in your install directory.').grid(columnspan=2,row=1,column=0,pady=5,padx=5)
+        
+        tk.Label(top,width=40,wraplength=250, fg='blue', text="Choose a branch. Type 'master' (without quotes) to get the latest and greatest. Type 'release' for something a little more stable.").grid(columnspan=2,row=2,column=0,pady=5,padx=5)
+        tk.Label(top, text='Branch',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
+        #popupMenu = OptionMenu(top, self.server_selected, *names)
+        #popupMenu.grid(row = 0, column =1)
+        self.branch = tk.Entry(top,width=25,textvariable=self.branch)
+        self.branch.grid(row=3,column=1,padx=5)
+        
+        b = tk.Button(top, text="Ok", command=self.ok)
+        b.grid(pady=5, padx=5, column=0, row=9, sticky="WE")
+        
+        b = tk.Button(top, text="Cancel", command=self.cancel)
+        b.grid(pady=5, padx=5, column=1, row=9, sticky="WE")
+        
+        
+    def ok(self):
+        if self.branch.get() == "":
+            messagebox.showerror("Validation Error", "Branch cannot be blank")
+            self.top.lift()
+            return
+        branch = self.branch.get()
+        self.top.destroy()
+        self.confirm = True
+        if (messagebox.askquestion("Confirm Update", "Are you sure you want to update from the \""+branch+"\" branch? Display may freeze for a moment while files are downloaded. ", icon='warning') == 'yes'):
+            try:
+                sa_path = os.path.dirname(os.path.realpath(__file__))[:-len("SimAgentMPI")]
+                update_SimAgentMPI(sa_path, branch)
+            except Exception as e:
+                messagebox.showerror("Update error","Error updating: {}".format(e))
+        if self.callback:
+            self.callback()
+        
+    def cancel(self):
+        self.top.destroy()
+        
 def replace(file_path, pattern, subst,unix_end=False):
     #Create temp file
     #print("searching for: {}".format(pattern))
