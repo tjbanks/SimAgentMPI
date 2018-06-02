@@ -27,7 +27,7 @@ import threading
 class MainWindow():
     def __init__(self):
         self.root = tk.Tk()
-        self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - Tyler Banks)"
+        self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - [Tyler Banks])"
         self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
         self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of accidental data deletion, always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
         self.window_size = '1580x725'
