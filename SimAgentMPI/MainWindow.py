@@ -96,6 +96,10 @@ class MainWindow():
         jobs_page = self.bind_page(page1, Jobs_Page)
         para_sweep_page = self.bind_page(page2, PS_Page)
         
+        #jobs_page.force_use_directory("C:\\Users\\Tyler\\Desktop\\CG - Jing\\GC-lv123-newest\\CG Code\\HOC Code")
+        jobs_page.set_threads(self.threads)
+        para_sweep_page.set_threads(self.threads)
+        
         self.threads.append(jobs_page.start_refresh_thread())
         #self.threads.append(para_sweep_page.start_refresh_thread())
         
@@ -259,6 +263,7 @@ class Jobs_Page(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.root = tk.Frame(self.parent)
+        self.threads = None
         self.create_widgets()
         return
     
@@ -310,6 +315,14 @@ class Jobs_Page(tk.Frame):
         
         return
     
+    def force_use_directory(self, dir_):
+        self.dir_loader.force_use_directory(dir_)
+        return self
+    
+    def set_threads(self,threads):
+        self.threads = threads
+        self.table.set_threads(self.threads)
+    
     def start_refresh_thread(self):
         self.refresh_time = 60
         class RefreshThread(StoppableThread):
@@ -319,7 +332,7 @@ class Jobs_Page(tk.Frame):
                     if(self.ref.dir_loader.sim_dir and self.ref.dir_loader.sim_dir.is_update_enabled()):
                         self.ref.dir_loader.sim_dir.update_all_jobs()
                         for i in range(self.ref.table.table.number_of_rows):
-                           self.ref.table.table.update_row_info(row=i)
+                           self.ref.table.update_row_info(row=i)
                     #print("sleeping for {} seconds".format(self.refresh_time))
                     for i in range(self.ref.refresh_time): #this is 60 seconds from when we're done updating everything
                         if self.stopped():
@@ -356,8 +369,8 @@ class Dir_Loader(tk.Frame):
     
     def create_widgets(self):
         self.directory_frame = tk.Frame(self.root)
-        b = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=self.button_width)
-        b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
+        self.b_select = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=self.button_width)
+        self.b_select.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
         
         self.sim_dir_var = tk.StringVar(self.root)
         self.sim_dir_var.set("Select a project folder to get started.")
@@ -386,6 +399,10 @@ class Dir_Loader(tk.Frame):
         
         self.directory_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5,columnspan=2)
     
+    def force_use_directory(self, dir_):
+        self.load_dir(directory=dir_)
+        self.b_select.config(state=tk.DISABLED)
+    
     def update_button_enabled(self, *args):
         self.sim_dir.set_update_enabled(self.update_status.get())
         return    
@@ -405,12 +422,16 @@ class Dir_Loader(tk.Frame):
             self.sim_dir.add_results_to_gitignore()
         return
             
-    def load_dir(self, btn=False):
+    def load_dir(self, btn=False, directory=None):
         dir_ = None
-        if self.sim_dir and not btn:
-            dir_ = self.sim_dir.sim_directory
+        if not directory:
+            if self.sim_dir and not btn:
+                dir_ = self.sim_dir.sim_directory
+            else:
+                dir_ = filedialog.askdirectory()
         else:
-            dir_ = filedialog.askdirectory()
+            dir_ = directory
+            
         if not dir_:
             return
         try:
@@ -591,7 +612,7 @@ class Job_Table(tk.Frame):
         DELETEREMOTE = 12
         DELETELOCAL = 13
         
-    def __init__(self, parent, sim_dir, button_width = 15, use_buttons=[Job_Button.ALL], job_notes=None,job_consoles=None, *args, **kwargs):
+    def __init__(self, parent, sim_dir, button_width = 15, use_buttons=[Job_Button.ALL], job_notes=None,job_consoles=None,threads=None, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.root = tk.Frame(self.parent)
@@ -606,6 +627,7 @@ class Job_Table(tk.Frame):
         self.use_buttons = use_buttons
         self.job_notes = job_notes
         self.job_consoles = job_consoles
+        self.threads = threads
         
         self.table = None
         
@@ -711,7 +733,9 @@ class Job_Table(tk.Frame):
         
         self.jobs_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5,columnspan=2)
     
-    
+    def set_threads(self,threads):
+        self.threads = threads
+        
     def select_row(self, row):
         if(self.selected_job_name != "" and self.selected_job_name != None):
             job = self.sim_dir.get_job(self.selected_job_name)
@@ -825,7 +849,8 @@ class Job_Table(tk.Frame):
         if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run. The display may freeze for a few moments.", icon='warning') == 'yes'):
             start_thread = StartJobThread(ref=self)
             start_thread.setDaemon(True)
-            self.threads.append(start_thread)
+            if self.threads:
+                self.threads.append(start_thread)
             start_thread.start()
         return
     
@@ -957,9 +982,15 @@ class Job_Table(tk.Frame):
             if self.selected_row_num is not None:
                 row = self.selected_row_num
                 update_buttons = True
+        elif row == self.selected_row_num:
+            update_buttons = True
             
         name_of_selected = str(self.table.row(row)[1])#If you move around the index of the name it will mess up
         job = self.sim_dir.get_job(name_of_selected)
+        
+        if not job:
+            return
+        
         job.read_properties()
         
         data = self.row_of_data(job)
@@ -968,13 +999,14 @@ class Job_Table(tk.Frame):
             self.table.cell(row,i,c)
         
         
-        if self.job_notes:
-            self.job_notes.display_job_notes(job)
-        if self.job_consoles:
-            self.job_consoles.display_job_log(job)
-        #self.display_job_notes_log(job) #refresh log too#ORIGINAL
         
         if update_buttons:
+            if self.job_notes:
+                self.job_notes.display_job_notes(job)
+            if self.job_consoles:
+                self.job_consoles.display_job_log(job)
+            #self.display_job_notes_log(job) #refresh log too#ORIGINAL
+            
             self.select_row(self.selected_row_num) #just to refresh the buttons
                 
         return
@@ -1343,6 +1375,7 @@ class PS_Page(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.root = tk.Frame(self.parent)
+        self.threads = None
         self.create_widgets()
         return
     
@@ -1408,6 +1441,14 @@ class PS_Page(tk.Frame):
         
         return
     
+    def force_use_directory(self, dir_):
+        self.dir_loader.force_use_directory(dir_)
+        return self
+    
+    def set_threads(self,threads):
+        self.threads = threads
+        self.table.set_threads(self.threads)
+        
     def start_refresh_thread(self):
         self.refresh_time = 60
         class RefreshThread(StoppableThread):
@@ -1417,7 +1458,7 @@ class PS_Page(tk.Frame):
                     if(self.ref.dir_loader.sim_dir and self.ref.dir_loader.sim_dir.is_update_enabled()):
                         self.ref.dir_loader.sim_dir.update_all_jobs()
                         for i in range(self.ref.table.table.number_of_rows):
-                           self.ref.table.table.update_row_info(row=i)
+                           self.ref.table.update_row_info(row=i)
                     #print("sleeping for {} seconds".format(self.refresh_time))
                     for i in range(self.ref.refresh_time): #this is 60 seconds from when we're done updating everything
                         if self.stopped():

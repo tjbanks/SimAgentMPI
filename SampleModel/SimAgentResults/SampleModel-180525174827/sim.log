@@ -1,9 +1,0 @@
-18-05-25 17:48:42 > Job created
-18-05-25 17:48:47 > Run initiated
-18-05-25 17:48:47 > Creating directory snapshot
-18-05-25 17:48:47 > SampleModel-180525174827.zip created
-18-05-25 17:48:47 > Loading server nsg-tbg28
-18-05-25 17:48:47 > Creating NSG parameter files: param.properties,input.properties
-18-05-25 17:48:47 > Validating job build with NSG...
-18-05-25 17:48:48 > Error validating NSG template: HTTP Code: 401, Authentication Error
-18-05-25 17:48:48 > Job stopped
