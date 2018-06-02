@@ -27,7 +27,7 @@ import threading
 class MainWindow():
     def __init__(self):
         self.root = tk.Tk()
-        self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - Banks)"
+        self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - Tyler Banks)"
         self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
         self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of accidental data deletion, always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
         self.window_size = '1580x725'
@@ -271,8 +271,8 @@ class Jobs_Page(tk.Frame):
         self.left_frame = tk.Frame(self.root)
         self.right_frame = tk.Frame(self.root)
         self.jobs_frame = tk.LabelFrame(self.left_frame, text="Jobs")
-        self.directory_frame = tk.LabelFrame(self.left_frame, text="Directory")
-        self.notes_frame = tk.LabelFrame(self.right_frame, text="Notes")
+        self.directory_frame = tk.LabelFrame(self.left_frame, text="Project Directory")
+        self.notes_frame = tk.LabelFrame(self.right_frame, text="Job Notes")
         self.log_frame = tk.Frame(self.right_frame)
         
         button_width = 15
@@ -737,6 +737,8 @@ class Job_Table(tk.Frame):
         self.threads = threads
         
     def select_row(self, row):
+        if not self.sim_dir:
+            return
         if(self.selected_job_name != "" and self.selected_job_name != None):
             job = self.sim_dir.get_job(self.selected_job_name)
             if job:
@@ -1383,9 +1385,9 @@ class PS_Page(tk.Frame):
         self.left_frame = tk.Frame(self.root)
         self.right_frame = tk.Frame(self.root)
         
-        self.directory_frame = tk.LabelFrame(self.left_frame, text="Directory")
+        self.directory_frame = tk.LabelFrame(self.left_frame, text="Project Directory")
         self.ps_frame = tk.LabelFrame(self.left_frame, text="Parametric Sweep")
-        self.jobs_frame = tk.LabelFrame(self.left_frame, text="Jobs")
+        self.jobs_frame = tk.LabelFrame(self.left_frame, text="Sweep Jobs")
         self.ps_stats_frame = tk.LabelFrame(self.right_frame, text="Parameter Sweep Information")
         self.log_frame = tk.Frame(self.right_frame)
         

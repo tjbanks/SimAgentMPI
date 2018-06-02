@@ -233,6 +233,7 @@ class SimDirectory(object):
         if not SimDirectory.results_folder_name in open(gitignore_file).read():
             f = open(gitignore_file, 'a')
             f.write("\n" + SimDirectory.results_folder_name + "/\n")
+            f.write(ParametricSweep.sweeps_folder_name + "/\n")
             f.close()
             
         return
