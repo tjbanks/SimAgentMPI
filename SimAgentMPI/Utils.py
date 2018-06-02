@@ -10,7 +10,7 @@ from tkinter import ttk,Entry,StringVar,Listbox,messagebox
 
 import re
 from tempfile import mkstemp
-from shutil import move
+from shutil import move,copyfile
 import shutil
 from os import fdopen, remove
 import os
@@ -50,9 +50,15 @@ def update_SimAgentMPI(install_dir, branch):
         if os.path.exists(old_install_n):
             shutil.rmtree(old_install_n)
         move(old_install, old_install_n)
-        
+    
+    
     new_install = os.path.join(install_dir,base_file+branch,SimAgentFolder)
     move(new_install,old_install)
+    
+    #copy servers file
+    src = os.path.join(old_install_n,".servers")
+    dst = os.path.join(old_install, ".servers")
+    copyfile(src, dst)
     
     return
 
