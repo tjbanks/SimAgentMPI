@@ -48,6 +48,25 @@ class Autoresized_Notebook(ttk.Notebook):
         
 """
 #Extend a tk frame easily
+class Job_Notes(tk.Frame):
+
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.root = tk.Frame(self.parent)
+        self.create_widgets()
+        return
+    
+    def create_widgets(self):
+        self.notes_frame = tk.Frame(self.root)
+                        
+    def pack(self,*args,**kwargs):
+        super(Job_Notes,self).pack(*args,**kwargs)
+        self.root.pack(*args,**kwargs)
+            
+    def grid(self,*args,**kwargs):
+        super(Job_Notes,self).grid(*args,**kwargs)
+        self.root.grid(*args,**kwargs)
 
 """
 
