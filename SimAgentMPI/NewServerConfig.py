@@ -19,7 +19,7 @@ Created on Sun May 20 16:46:40 2018
         self.nsg_api_appid = "nsgappname-id"
 """
 import tkinter as tk
-from tkinter import IntVar,filedialog,OptionMenu
+from tkinter import IntVar,filedialog,OptionMenu,messagebox
 import time, datetime
 
 from SimAgentMPI.SimServer import SimServer,ServersFile
@@ -72,6 +72,7 @@ class ServerEntryBox:
     def __init__(self, parent, server_id=None, display=True, confirm_callback=None):
         self.parent = parent
         self.confirm_callback = confirm_callback
+        self.valid_message = "Unspecified error, see console output"
                     
         if display:
             self.display(server_id=server_id)
@@ -273,6 +274,51 @@ class ServerEntryBox:
         
         
     def verify_good(self):
+        
+        if self.name.get() == '':
+            self.valid_message = "Enter a valid Display Name."
+            return False
+        
+        if self.use_ssh.get() == "1":
+            
+            if self.hostname.get() == '':
+                self.valid_message = "Enter a valid Hostname."
+                return False
+            
+            if self.port.get() == '':
+                self.valid_message = "Enter a valid SSH Port (default:22)."
+                return False
+            
+            if self.user.get() == '':
+                self.valid_message = "Enter a valid SSH User."
+                return False
+            
+            if self.password.get() == '':
+                self.valid_message = "Enter a valid SSH Password"
+                return False
+            
+        if self.use_ssh.get() == "0":
+            
+            if self.nsg_url.get() == '':
+                self.valid_message = "Enter a valid NSG Base URL."
+                return False
+            
+            if self.nsg_user.get() == '':
+                self.valid_message = "Enter a valid NSG Username."
+                return False
+            
+            if self.nsg_password.get() == '':
+                self.valid_message = "Enter a valid NSG Password."
+                return False
+            
+            if self.nsg_app_name.get() == '':
+                self.valid_message = "Enter a valid NSG Application Name."
+                return False
+            
+            if self.nsg_app_id.get() == '':
+                self.valid_message = "Enter a valid NSG Application ID."
+                return False
+        
         return True
     
     def save_file(self):
@@ -303,11 +349,18 @@ class ServerEntryBox:
         return
         
     def ok(self):
-        self.confirm = True
-        self.save_file()
-        if self.confirm_callback:
-            self.confirm_callback()
-        self.top.destroy()
+        
+        if(self.verify_good()):
+            self.confirm = True
+            self.save_file()
+            if self.confirm_callback:
+                self.confirm_callback()
+            self.top.destroy()
+        else:
+            messagebox.showinfo("Validation Error",self.valid_message)
+            self.top.lift()
+        
+        
         
     def cancel(self):
         self.top.destroy()

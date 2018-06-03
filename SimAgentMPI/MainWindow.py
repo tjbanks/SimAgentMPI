@@ -264,6 +264,8 @@ class MainWindow():
         #if self.dir_loader.sim_dir:
         #    init_dir = self.dir_loader.sim_dir.sim_directory
         bat = filedialog.asksaveasfilename(defaultextension=".sh", confirmoverwrite=True)#initialdir=init_dir,)
+        if bat == '':
+            return
         try:
             Batch_File(bat).write_demo()
         except Exception as e:
@@ -890,19 +892,24 @@ class Job_Table(tk.Frame):
         self.selected_job_name = name_of_selected
         if(self.selected_job_name != ""):
             self.b_clone.config(state=tk.NORMAL)
-            self.b_del_all.config(state=tk.NORMAL)
                         
             if(job.status==SimJob.created_status or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
                 self.b_start.config(state=tk.NORMAL)
                 self.b_edit.config(state=tk.NORMAL)
+                
             else:
                 self.b_start.config(state=tk.DISABLED)
                 self.b_edit.config(state=tk.DISABLED)
                 
             if(job.status==ServerInterface.ssh_status[1] or job.status==ServerInterface.nsg_status[1] or job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2] or job.status==ServerInterface.ssh_status[3] or job.status==ServerInterface.nsg_status[3]):
                 self.b_del_remote.config(state=tk.NORMAL)
+                self.b_del_all.config(state=tk.NORMAL)
             else:
                 self.b_del_remote.config(state=tk.DISABLED)
+                self.b_del_all.config(state=tk.DISABLED)
+            
+            if (job.status==SimJob.created_status):
+                self.b_del_all.config(state=tk.NORMAL)
                 
             if(job.status==ServerInterface.ssh_status[2] or job.status==ServerInterface.nsg_status[2]):
                 self.b_open.config(state=tk.NORMAL)
@@ -991,7 +998,7 @@ class Job_Table(tk.Frame):
         
     def delete_job_files(self):
         job = self.sim_dir.get_job(self.selected_job_name)
-        if(messagebox.askquestion("Delete Remote Job Files", "Are you sure you want to delete this job? This action is irreversible and removes the files from your local disk. The files will remain on the server and you will have to delete the manually.", icon='warning') == 'yes'):  
+        if(messagebox.askquestion("Delete Remote Job Files", "Are you sure you want to delete this job? This action is irreversible and removes the files from your local disk. If you have previously run the job, it is recommended that you delete the remote files first. Otherwise the files will remain on the server and you will have to delete them manually.", icon='warning') == 'yes'):  
             try:
                 self.sim_dir.delete_job(job)
                 self.reload_table()
