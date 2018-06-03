@@ -1,0 +1,865 @@
+//one-compartment cell template
+//load_file("nrngui.hoc")
+//The parameters in this model are based on Type C cell of 3-compartment model 
+
+
+//////===================//////
+///// Type A cell in LA  /////
+/////===================/////
+
+begintemplate Cell_A
+
+public soma, connect2target, type
+//public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_A"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.041//.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 /* decreased from 0.005 */
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0014//0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1  L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+	
+	    insert cadyn gcabar_cadyn = 5.5e-4  eca = 120
+		insert leak el_leak= -72 glbar_leak = 5.5e-5  Ra=RaAll cm=2.5 
+		insert hd ghdbar_hd=1.5e-5  78.72884325 
+		insert na3 sh_na3=nash ar_na3=1	gbar_na3 = 0.03 // 0.027 
+		insert nap gbar_nap= 0.000142
+		insert kdr gbar_kdr=0.0035//0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHP gsAHPbar_sAHP = 3e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+				
+		ena = 45
+		ek = -80
+		if (ismembrane("kdr") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_A
+
+
+//////===================//////
+////  Type ADA cell in LA ////
+/////===================/////
+
+begintemplate Cell_ADA
+
+public soma, connect2target, type
+//public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_ADA"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.041//.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 /* decreased from 0.005 */
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0014//0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1  L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+	
+	    insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leakDA el_leakDA= -72  glbar_leakDA = 5.5e-5  Ra=RaAll cm=2.5
+		insert hd ghdbar_hd=1.5e-5  78.72884325 
+		insert na3DA sh_na3DA=nash ar_na3DA=1	gbar_na3DA = 0.03 // 0.027
+		insert nap gbar_nap= 0.000142
+		insert kdrDA gbar_kdrDA=0.0035//0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHP gsAHPbar_sAHP = 3e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+				
+		ena = 45
+		ek = -80
+		if (ismembrane("kdrDA") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_ADA
+
+
+//////===================//////
+////  Type ANE cell in LA ////
+/////===================/////
+
+begintemplate Cell_ANE
+
+public soma, connect2target, type
+//public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_ANE"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.041//.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 /* decreased from 0.005 */
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0014//0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1  L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+	
+	    insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leak el_leak= -72  glbar_leak = 5.5e-5  Ra=RaAll cm=2.5
+		insert hd ghdbar_hd=1.5e-5  78.72884325
+		insert na3 sh_na3=nash ar_na3=1	gbar_na3 = 0.03 // 0.027 
+		insert nap gbar_nap= 0.000142
+		insert kdr gbar_kdr=0.0035//0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHPNE gsAHPbar_sAHPNE = 3e-4 
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+				
+		ena = 45
+		ek = -80
+		if (ismembrane("kdr") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_ANE
+
+
+//////===================//////
+/////  Type ADANE cell   /////
+/////===================/////
+
+begintemplate Cell_ADANE
+
+public soma, connect2target, type
+//public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_ADANE"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.041//.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 /* decreased from 0.005 */
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0014//0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1  L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+	
+	    insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leakDA el_leakDA= -72  glbar_leakDA = 5.5e-5  Ra=RaAll cm=2.5
+		insert hd ghdbar_hd=1.5e-5  78.72884325
+		insert na3DA sh_na3DA=nash ar_na3DA=1	gbar_na3DA = 0.03 // 0.027
+		insert nap gbar_nap= 0.000142
+		insert kdrDA gbar_kdrDA=0.0035//0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHPNE gsAHPbar_sAHPNE = 3e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+				
+		ena = 45
+		ek = -80
+		if (ismembrane("kdrDA") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_ADANE
+
+//////===================/////
+///// Type B cell in LA /////
+////===================/////
+
+begintemplate Cell_B
+
+public soma, connect2target, type
+public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_B"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 /* decreased from 0.005 */
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1 L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+		insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leak el_leak= -72  glbar_leak = 5.5e-5 Ra=RaAll cm=2.5
+		insert hd ghdbar_hd=1.5e-5 78.72884325 
+		insert na3 sh_na3=nash ar_na3=1	gbar_na3 = 0.027 
+		insert nap gbar_nap= 0.000142
+		insert kdr gbar_kdr=0.002//0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHP gsAHPbar_sAHP = 1.5e-4//2e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+
+		
+		ena = 45
+		ek = -80
+		if (ismembrane("kdr") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_B
+
+
+//////===================/////
+/////Type BDA cell in LA ////
+////===================/////
+
+begintemplate Cell_BDA
+
+public soma, connect2target, type
+public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_BDA"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 /* decreased from 0.005 */
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1 L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+		insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leakDA el_leakDA= -72  glbar_leakDA = 5.5e-5 Ra=RaAll cm=2.5
+		insert hd ghdbar_hd=1.5e-5  78.72884325  
+		insert na3DA sh_na3DA=nash ar_na3DA=1	gbar_na3DA = 0.027
+		insert nap gbar_nap= 0.000142
+		insert kdrDA gbar_kdrDA=0.002//0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHP gsAHPbar_sAHP = 1.5e-4//2e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+
+		
+		ena = 45
+		ek = -80
+		if (ismembrane("kdrDA") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_BDA
+
+//////===================/////
+//// Type BNE cell in LA ////
+////===================/////
+
+begintemplate Cell_BNE
+
+public soma, connect2target, type
+public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_BNE"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 /* decreased from 0.005 */
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1 L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+		insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leak el_leak= -72  glbar_leak = 5.5e-5 Ra=RaAll cm=2.5
+		insert hd ghdbar_hd=1.5e-5 78.72884325 
+		insert na3 sh_na3=nash ar_na3=1	gbar_na3 = 0.027 
+		insert nap gbar_nap= 0.000142
+		insert kdr gbar_kdr=0.002//0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHPNE gsAHPbar_sAHPNE = 1.5e-4//2e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+
+		
+		ena = 45
+		ek = -80
+		if (ismembrane("kdr") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_BNE
+
+
+//////=======================/////
+////  Type BDANE cell in LA ////
+////=======================/////
+
+begintemplate Cell_BDANE
+
+public soma, connect2target, type
+public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_BDANE"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 /* decreased from 0.005 */
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1 L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+		insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leakDA el_leakDA= -72  glbar_leakDA = 5.5e-5 Ra=RaAll cm=2.5
+		insert hd ghdbar_hd=1.5e-5  78.72884325  
+		insert na3DA sh_na3DA=nash ar_na3DA=1	gbar_na3DA = 0.027
+		insert nap gbar_nap= 0.000142
+		insert kdrDA gbar_kdrDA=0.002//0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHPNE gsAHPbar_sAHPNE = 1.5e-4//2e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+
+		
+		ena = 45
+		ek = -80
+		if (ismembrane("kdrDA") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_BDANE
+
+
+/////====================/////
+///// Type C cell in LA /////
+////===================/////
+
+begintemplate Cell_C
+
+public soma, connect2target, type
+public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_C"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0014//0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1  L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+		
+		insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leak el_leak= -72 glbar_leak = 5.5e-5 Ra=RaAll cm=2.5 
+		insert hd ghdbar_hd=1.5e-5  78.72884325
+		insert na3 sh_na3=nash ar_na3=1	gbar_na3 = 0.03 // 0.027
+		insert nap gbar_nap= 0.000142
+		insert kdr gbar_kdr=.0035 // 0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHP gsAHPbar_sAHP = 1.15e-4//5e-6 // 5e-5 // 1e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+			
+		ena = 45
+		ek = -80
+		if (ismembrane("kdr") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_C
+
+
+/////=====================/////
+///// Type CDA cell in LA ////
+////====================/////
+
+begintemplate Cell_CDA
+
+public soma, connect2target, type
+public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_CDA"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0014//0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1  L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+		
+		insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leakDA el_leakDA= -72 glbar_leakDA = 5.5e-5 Ra=RaAll cm=2.5 
+		insert hd ghdbar_hd=1.5e-5  78.72884325
+		insert na3DA sh_na3DA=nash ar_na3DA=1	gbar_na3DA = 0.03 // 0.027
+		insert nap gbar_nap= 0.000142
+		insert kdrDA gbar_kdrDA=.0035 // 0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHP gsAHPbar_sAHP = 1.15e-4//5e-6 // 5e-5 // 1e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+			
+		ena = 45
+		ek = -80
+		if (ismembrane("kdrDA") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_CDA
+
+
+/////=====================/////
+//// Type CNE cell in LA /////
+////====================/////
+
+begintemplate Cell_CNE
+
+public soma, connect2target, type
+public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_CNE"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0014//0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1  L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+		
+		insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leak el_leak= -72 glbar_leak = 5.5e-5 Ra=RaAll cm=2.5 
+		insert hd ghdbar_hd=1.5e-5  78.72884325
+		insert na3 sh_na3=nash ar_na3=1	gbar_na3 = 0.03 // 0.027
+		insert nap gbar_nap= 0.000142
+		insert kdr gbar_kdr=.0035 // 0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHPNE gsAHPbar_sAHPNE = 1.15e-4//5e-6 // 5e-5 // 1e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+			
+		ena = 45
+		ek = -80
+		if (ismembrane("kdr") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_CNE
+
+
+/////=======================/////
+/////Type CDANE cell in LA /////
+////======================/////
+
+begintemplate Cell_CDANE
+
+public soma, connect2target, type
+public all
+
+create soma
+access soma // declares soma as a membrane compartment object
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type	
+
+     /////biophysical properties/////
+proc init() {
+
+	create soma // create soma in the initialization
+	ncl = new List()
+	synlist =new List()		
+	type = "Cell_CDANE"
+	
+	gUnf_Xsoma = 2.5e-05
+	Rm = 80000 // decreased overall
+	SpineScale = 1.76371308 //2
+	SpineScale_leak = 1.763714578
+	RaAll= 200
+	RaSoma= 146.969697 //200 
+	RaAxIs = 100//100//200
+	Vpas = -70//-65//-69 // -67
+	gna =  0.039//.03*0.6*1.5 //.03*0.6*1.5 /* decreased from 0.03 */
+	AXONM = 3 /*decrease from 2 */
+	gkdr = 0.005*.6 
+	ghd=0.000003 *.7
+	nash=10
+	Vrest = -67
+	celsius = 31.0 
+	gsAHP = 0.0014//0.0005
+	GmC = 0.0096//0.0085//0.006 //0.0035 //0.0006
+
+     /////geometrical properties/////
+soma {nseg = 1  L = 25 diam = 24.75} // L = 117.77 diam = 24.5   //// area ratio is 4.6632
+	
+	soma {
+		
+		insert cadyn gcabar_cadyn = 5.5e-4 eca = 120
+		insert leakDA el_leakDA= -72 glbar_leakDA = 5.5e-5 Ra=RaAll cm=2.5 
+		insert hd ghdbar_hd=1.5e-5  78.72884325
+		insert na3DA sh_na3DA=nash ar_na3DA=1	gbar_na3DA = 0.03 // 0.027
+		insert nap gbar_nap= 0.000142
+		insert kdrDA gbar_kdrDA=.0035 // 0.0015
+		insert capool taucas = 1000  fcas_capool = 0.05 
+		insert sAHPNE gsAHPbar_sAHPNE = 1.15e-4//5e-6 // 5e-5 // 1e-4
+		insert im gbar_im = 6e-4
+		insert kap gkabar_kap =0.002 //  0.02
+			
+		ena = 45
+		ek = -80
+		if (ismembrane("kdrDA") || ismembrane("kap") ) {ek=-80} //???
+		if (ismembrane("hd") ) {ehd_hd=-43 } // change from -30 to -50 //???
+		}
+}
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate Cell_CDANE

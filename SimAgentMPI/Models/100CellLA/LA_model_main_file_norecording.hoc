@@ -1,0 +1,94 @@
+load_file("nrngui.hoc")load_file("LAcells_template.hoc")load_file("interneuron_template.hoc")load_file("shockcondi.hoc")load_file("BgGen.hoc")load_file("function_ToneGen.hoc")load_file("function_NetStimOR.hoc")load_file("function_ToneSignalGen_Th.hoc")load_file("function_ToneSignalGen_Ctx.hoc")
+objref pc,cells,cell[1000],nc,nil,rpc = new ParallelContext()cells = new List()NCELL = 100TotalCellNum = 100CellNum = 100celsius = 31.0  
+tstop = 276000//276000 is for whole protocol length,              //32000 is for simulation with only HAB.
+{load_file("function_TimeMonitor.hoc")}dt = 0.05steps_per_ms= 20v_init = -70r = new Random()strdef FileLocationStr_InternalSynConnsFileLocationStr_InternalSynConns = "Syn_Matrix.txt"
+
+//////////////////////// Choose the cell type & cells applied Neuromodulation/////////////////////
+//// Read Cell_type.txt ////
+objref Cell_type_fileobjref Cell_type_recCell_type_file = new File()Cell_type_file.ropen("Cell_type.txt")Cell_type_rec = new Vector()Cell_type_rec.scanf(Cell_type_file)
+//// Read NM.txt ////   Randomly choosen number to decide whether cell has DA and NE or not
+objref NM_file
+objref NM_recNM_file = new File()NM_file.ropen("NM.txt")NM_rec = new Vector()NM_rec.scanf(NM_file)
+for(i=pc.id;i<NCELL;i+=pc.nhost) {              // Distribute the cells evenly among nodes	NM_ind = NM_rec.x[i]	if (i < 80){								// LAdd cell ratio A:B:C = 6:3:1		Cell_type_ind = Cell_type_rec.x[i]			if (Cell_type_ind <= 5){			if (NM_ind == 0){				cell = new Cell_A()			}else if (NM_ind == 1){				cell = new Cell_ADA()			}else if (NM_ind == 2){				cell = new Cell_ANE()			}else{				cell = new Cell_ADANE()			}		}else if(Cell_type_ind <= 8){			if (NM_ind == 0){				cell = new Cell_B()			}else if (NM_ind == 1){				cell = new Cell_BDA()			}else if (NM_ind == 2){				cell = new Cell_BNE()			}else{				cell = new Cell_BDANE()			}		}else{			if (NM_ind == 0){				cell = new Cell_C()			}else if (NM_ind == 1){				cell = new Cell_CDA()			}else if (NM_ind == 2){				cell = new Cell_CNE()			}else{				cell = new Cell_CDANE()			}		}	}else{		cell = new InterneuronCell()            // Create 20 Interneuron cells (cell 80 ~ cell 99) 	}	cells.append(cell)                          // Add this cell to the list (otherwise its lost!)	pc.set_gid2node(i, pc.id)                   // Associate with this node id												// nc = (create netcon object on cell)	nc = cell.connect2target(nil) 				// attach spike detector $	nc.delay = 2	nc.weight = 1	pc.cell(i, nc)								// associate gid i with spike detector												// Associate i with the netcon (so that the cluster 	 		                                    // knows where the spikes are coming from)													}
+//////////////////////////////////////////////////////////////
+//////////////  Connections for LA NET  //////////////////////
+//////////////////////////////////////////////////////////////
+tonetrial=44
+LAPtotal = 80
+IDcelltotal=20
+
+objref nclist, cellid,bgnclist,Inplistobjref tone2LAPsyn[1800],tone2LAPcon[1800][tonetrial],shock2LAPsyn[800],shock2LAPcon[1800],LAP2LAPsyn[100000],LAP2LAPcon[100000]objref tone2Isyn[2001],tone2Icon[2001][tonetrial],shock2Isyn[1001],shock2Icon[1001]
+objref bggen[10000]objref bg2LAPsyn[8000],bg2LAPcon[8000]objref bg2Isyn[10000],bg2Icon[10000]objref Tone_gen[2000]Inplist = new List()nclist = new List()bgnclist = new List()
+
+//// Read Cell_list--- list of files whose output,weight changes and ca+ concentration, will be printed ////
+	objref op_file	objref op_rec	op_file = new File()	op_file.ropen("Cell_list.txt")	op_rec = new Vector()	op_rec.scanf(op_file)	cell_plots = op_rec.size
+//// Read tone2LAd.txt ////      Randomly choosen cell numbers for Thalamic tone
+objref tone2LAd_fileobjref tone2LAd_rectone2LAd_file = new File()tone2LAd_file.ropen("tone2LAd.txt")tone2LAd_rec = new Vector()tone2LAd_rec.scanf(tone2LAd_file)	
+//// Read tone2LAd2.txt ////      Randomly choosen cell numbers for cortical tone
+objref tone2LAd2_fileobjref tone2LAd2_rectone2LAd2_file = new File()tone2LAd2_file.ropen("tone2LAd2.txt")tone2LAd2_rec = new Vector()tone2LAd2_rec.scanf(tone2LAd2_file)	
+//// Read shock2LAdd.txt ////      Randomly choosen cell numbers for shock
+objref shock2LAd_fileobjref shock2LAd_recshock2LAd_file = new File()shock2LAd_file.ropen("shock2LAd.txt")shock2LAd_rec = new Vector()shock2LAd_rec.scanf(shock2LAd_file)		
+/////////////////////////////////////////////////////////
+///////////////Pyramid cells connections/////////////////	
+/////////////////////////////////////////////////////////
+////////////////////// BACKGROUNG DATA FOR PYRAMIDAL CELLS //////////////////////
+for m = 0, 79{    if(!pc.gid_exists(m)) { continue }				// Can't connect to target if it doesn't exist 													// on the node ("continue") skips rest of code
+	bggen[m] = new BgGen(3,0,tstop,30,dt,m)	cellid = pc.gid2cell(m)                     	// get GID object from ID		cellid.soma bg2LAPsyn[m] = new bg2pyr(0.9)		bg2LAPcon[m] = new NetCon(bggen[m].intfire1,bg2LAPsyn[m],1,1,1)    bgnclist.append(bg2LAPcon[m])			}	
+	j = 0	k = 0	h = 0	l = 0	p = 0
+objref tone_vec[1000], tonelisttonelist = new List()///desgin thalamic toneobjref tonenstim_D[tonetrial]for i=0,9-1 {           			// declare object array nstimtonenstim_D[i]=new NetStim(0.9)			// Generates a train of presynaptic stimulitonenstim_D[i].interval=50	// ms (mean) time between spikestonenstim_D[i].number=10	    //(average) number of spikestonenstim_D[i].start=3500+4000*(i)		// ms (most likely) start time of first spiketonenstim_D[i].noise=0		// range 0 to 1. Fractional randomness.}for i=9,24-1 {           			// declare object array nstimtonenstim_D[i]=new NetStim(0.9)			// Generates a train of presynaptic stimulitonenstim_D[i].interval=50/2	// ms (mean) time between spikestonenstim_D[i].number=10*2	    //(average) number of spikestonenstim_D[i].start=3500+4000*(i)		// ms (most likely) start time of first spiketonenstim_D[i].noise=0		// range 0 to 1. Fractional randomness.}for i=24,tonetrial-1 {           			// declare object array nstimtonenstim_D[i]=new NetStim(0.9)			// Generates a train of presynaptic stimulitonenstim_D[i].interval=50/2	// ms (mean) time between spikestonenstim_D[i].number=10*2	    //(average) number of spikestonenstim_D[i].start=100000+3500+4000*(i)		// ms (most likely) start time of first spiketonenstim_D[i].noise=0		// range 0 to 1. Fractional randomness.}///for cortical toneobjref tonenstim_V[tonetrial]for i=0,14-1 {           			// declare object array nstimtonenstim_V[i]=new NetStim(0.9)			// Generates a train of presynaptic stimulitonenstim_V[i].interval=50	// ms (mean) time between spikestonenstim_V[i].number=10	    //(average) number of spikestonenstim_V[i].start=3500+4000*(i)		// ms (most likely) start time of first spiketonenstim_V[i].noise=0		// range 0 to 1. Fractional randomness.}for i=14,24-1 {           			// declare object array nstimtonenstim_V[i]=new NetStim(0.9)			// Generates a train of presynaptic stimulitonenstim_V[i].interval=50/2	// ms (mean) time between spikestonenstim_V[i].number=10*2	    //(average) number of spikestonenstim_V[i].start=3500+4000*(i)		// ms (most likely) start time of first spiketonenstim_V[i].noise=0		// range 0 to 1. Fractional randomness.}for i=24,tonetrial-1 {           			// declare object array nstimtonenstim_V[i]=new NetStim(0.9)			// Generates a train of presynaptic stimulitonenstim_V[i].interval=50/2	// ms (mean) time between spikestonenstim_V[i].number=10*2	    //(average) number of spikestonenstim_V[i].start=100000+3500+4000*(i)		// ms (most likely) start time of first spiketonenstim_V[i].noise=0		// range 0 to 1. Fractional randomness.}
+/////////////////// tone from Thalamic pathway //////////////////////
+for p = 0, tone2LAd_rec.size-1{	m = tone2LAd_rec.x[p]-1		if(!pc.gid_exists(m)) { continue }				// Can't connect to target if it doesn't exist 		r.MCellRan4(1000*(m+100))        Rdm_D = r.discunif(10, 20)			// random number generator for different delay     	NM_ind = NM_rec.x[m]		cellid = pc.gid2cell(m)                     	// get GID object from ID		cellid.soma tone2LAPsyn[m] = new tone2pyrD(0.9)		tone2LAPsyn[m].neuroM = NM_ind		tone2LAPsyn[m].postgid = m			for i=0,tonetrial-1{tone2LAPcon[m][i] = new NetCon(tonenstim_D[i],tone2LAPsyn[m],0.5,Rdm_D,1)}       Inplist.append(tone2LAPsyn[m])
+}
+	/////////////////// tone from Cortical pathway //////////////////////
+for p = 0, tone2LAd2_rec.size-1{	m = tone2LAd2_rec.x[p]-1	
+    if(!pc.gid_exists(m)) { continue }				// Can't connect to target if it doesn't exist     r.MCellRan4(1000*(m+1000))
+	Rdm_D = r.discunif(10, 20)						// random number generator for different delay									NM_ind = NM_rec.x[m]
+		cellid = pc.gid2cell(m)                     	// get GID object from ID		cellid.soma tone2LAPsyn[m+1000] = new tone2pyrD(0.9)                    tone2LAPsyn[m+1000].neuroM = NM_ind					tone2LAPsyn[m+1000].postgid = m+1000	for i=0,tonetrial-1{tone2LAPcon[m+1000][i] = new NetCon(tonenstim_V[i],tone2LAPsyn[m+1000],0.5,Rdm_D,1)}
+   Inplist.append(tone2LAPsyn[m+1000])
+}
+	
+/////////////////////// shock2pyr ///////////////////
+for p = 0, shock2LAd_rec.size-1{
+	m = shock2LAd_rec.x[p]-1	    if(!pc.gid_exists(m)) { continue }				// Can't connect to target if it doesn't exist     r.MCellRan4(1000*(m+100))
+		Rdm_D = r.discunif(10, 20)                 
+	cellid = pc.gid2cell(m)                     	// get GID object from ID
+	cellid.soma shock2LAPsyn[m] = new shock2pyrD(0.9)                shock2LAPsyn[m].postgid = m
+	shock2LAPcon[m] = new NetCon(shock,shock2LAPsyn[m],0.5,Rdm_D,1)	nclist.append(shock2LAPcon[m])}
+//////////////////////////////////////////////////////////////   Interneuroncell connection  ///////////////////////////////////////////////////////////////
+
+//////////////////////BACKGROUNG DATA FOR INTERNEURONS//////////////////////
+for m = 80, 99{
+    if(!pc.gid_exists(m)) { continue }				// Can't connect to target if it doesn't exist 													// on the node ("continue") skips rest of code		
+	bggen[m] = new BgGen(5,0,tstop,20,dt,m)	cellid = pc.gid2cell(m)                     	// get GID object from ID			cellid.dend bg2Isyn[m] = new bg2inter(0.9)	bg2Icon[m] = new NetCon(bggen[m].intfire1,bg2Isyn[m],1,1,1)    bgnclist.append(bg2Icon[m])	}objref bag_vec[1000], baglistbaglist = new List()proc Background() { local h	for i = 0,cell_plots-1 {		op = op_rec.x[i]		if(pc.gid_exists(op)){		 bag_vec[op] = new Vector() 		 if(op<=79) {		 h = bgnclist.index(bg2LAPcon[op])		 }else{		 h = bgnclist.index(bg2Icon[op])		 }		bgnclist.o[h].record(bag_vec[op])			 		baglist.append(bag_vec[op])  		}	}}Background()
+
+//// Read tone2Id.txt ////      Randomly choosen cell numbers for Thalamic tone
+objref tone2Id_fileobjref tone2Id_rectone2Id_file = new File()tone2Id_file.ropen("tone2Id.txt")tone2Id_rec = new Vector()tone2Id_rec.scanf(tone2Id_file)	
+//// Read tone2Id2.txt ////      Randomly choosen cell numbers for cortical tone
+objref tone2Id2_fileobjref tone2Id2_rectone2Id2_file = new File()tone2Id2_file.ropen("tone2Id2.txt")tone2Id2_rec = new Vector()tone2Id2_rec.scanf(tone2Id2_file)
+
+//// Read shock2Id.txt ////      Randomly choosen cell numbers for shock
+objref shock2Id_fileobjref shock2Id_recshock2Id_file = new File()shock2Id_file.ropen("shock2Id.txt")shock2Id_rec = new Vector()shock2Id_rec.scanf(shock2Id_file)		
+
+	////////////// tone&shock2Interneuron_D //////////////for p = 0, shock2Id_rec.size()-1{	m = shock2Id_rec.x[p]-1		    if(!pc.gid_exists(m)) { continue }				// Can't connect to target if it doesn't exist r.MCellRan4(1000*(m+100))
+	Rdm_D = r.discunif(10, 20)										cellid = pc.gid2cell(m)                     	// get GID object from ID	cellid.dend shock2Isyn[m] = new shock2interD(0.9)    shock2Isyn[m].postgid=m	shock2Icon[m] = new NetCon(shock,shock2Isyn[m],0.5,Rdm_D,1)	nclist.append(shock2Icon[m])
+}
+///////////// tone to interneurons in the thalamic pathway //////////////////for p = 0, tone2Id_rec.size()-1{	m = tone2Id_rec.x[p]-1	    if(!pc.gid_exists(m)) { continue }				// Can't connect to target if it doesn't exist r.MCellRan4(1000*(m+100))
+Rdm_D = r.discunif(10, 20)													// on the node ("continue") skips rest of code	NM_ind = NM_rec.x[m]	cellid = pc.gid2cell(m)                     	// get GID object from ID	cellid.dend tone2Isyn[m] = new tone2interD(0.9)		        tone2Isyn[m].neuroM = NM_ind                tone2Isyn[m].postgid = m			for i=0,tonetrial-1{tone2Icon[m][i] = new NetCon(tonenstim_D[i],tone2Isyn[m],0.5,Rdm_D,1)}	
+     Inplist.append(tone2Isyn[m])
+}
+///////////// tone to interneurons in the cortical pathway //////////////////
+for p = 0, tone2Id2_rec.size()-1{	m = tone2Id2_rec.x[p]-1			    if(!pc.gid_exists(m)) { continue }				// Can't connect to target if it doesn't exist r.MCellRan4(1000*(m+1000))
+Rdm_D = r.discunif(10, 20)							// on the node ("continue") skips rest of code
+	NM_ind = NM_rec.x[m]		cellid = pc.gid2cell(m)                     	// get GID object from ID		cellid.dend tone2Isyn[m+1000] = new tone2interD(0.9)		            tone2Isyn[m+1000].neuroM = NM_ind                    tone2Isyn[m+1000].postgid = m+1000			for i=0,tonetrial-1{tone2Icon[m+1000][i] = new NetCon(tonenstim_V[i],tone2Isyn[m+1000],0.5,Rdm_D,1)}	Inplist.append(tone2Isyn[m+1000])
+}
+
+objref saveMsaveM = new File()
+if(pc.id==0){     //"wopen" once by node 0 to clear the contents of the filesaveM.wopen("Matrix_NEW")saveM.close()}
+{load_file("function_ConnectTwoCells.hoc")}
+{load_file("function_ConnectInternal.hoc")}	
+for rank=0, pc.nhost-1 { // host 0 first, then 1, 2, etc.		if (rank==pc.id) {		saveM.aopen("Matrix_NEW")ConnectInternal()}pc.barrier()}objref tvec, idvec 										// will be Vectors that record all spike times (tvec)														// and the corresponding id numbers of the cells that spiked (idvec)
+proc spikerecord() {local i localobj nc, nil	tvec = new Vector()	idvec = new Vector()	for i=0, cells.count-1 {	  nc = cells.object(i).connect2target(nil)	  nc.record(tvec, idvec, nc.srcgid)														// the Vector will continue to record spike times even after the NetCon has been destroyed	}}
+spikerecord(){pc.set_maxstep(10)}stdinit(){pc.psolve(tstop)}////////////////////////////
+// Report simulation results// PROCEDURE TO SEND SPIKES TO A FILE "SPIKERASTER"---from PRC way-----------------------objref spikefile//sprint(fname,"%g/spikeraster",seed)spikefile = new File("data")if(pc.id==0){     //"wopen" once by node 0 to clear the contents of the filespikefile.wopen()spikefile.close()}proc spikefileout() { local i, rankpc.barrier() // wait for all hosts to get to this pointfor rank=0, pc.nhost-1 { // host 0 first, then 1, 2, etc.if (rank==pc.id) {for i=0, tvec.size-1 {spikefile.aopen()                               //"aopen" to append dataspikefile.printf("%8.4f\t %d\n", tvec.x[i], idvec.x[i])spikefile.close()}}pc.barrier() // wait for all hosts to get to this point}}spikefileout()
+{pc.runworker()}
+{pc.done()}

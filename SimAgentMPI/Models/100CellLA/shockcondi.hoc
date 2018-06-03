@@ -1,0 +1,34 @@
+/////////////////////
+// instrumentation //
+/////////////////////
+
+///////////// Shock 200 Hz ///////////////
+
+condistart = 32000
+
+objref shock
+shock = new NetStim(0)
+shock.start = 3901+condistart
+shock.noise = 0
+shock.number = 1e10
+shock.interval = 10 //5
+
+objref sonc
+sonc = new NetStim(0)
+sonc.start = 3901+condistart
+sonc.noise = 0
+sonc.number = 16
+sonc.interval = 4000
+
+objref soffc
+soffc = new NetStim(0)
+soffc.start = 4000+condistart
+soffc.noise = 0
+soffc.number = 16
+soffc.interval = 4000
+
+objref shockonc
+shockonc = new NetCon(sonc,shock, 0, 0, 1)
+
+objref shockoffc
+shockoffc = new NetCon(soffc,shock, 0, 0, -1)

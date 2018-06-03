@@ -1,0 +1,88 @@
+/////////////////////
+// Model Templates //
+/////////////////////
+
+begintemplate InterneuronCell
+	public soma, dend, connect2target, type
+	create soma, dend
+
+	public ncl, synlist
+	objref ncl, synlist
+	strdef type
+
+	proc init() {
+		synlist = new List()
+		ncl = new List()
+		type = "InterneuronCell"
+
+		/////// topology ////////
+		create soma, dend
+		connect dend(0), soma(1)
+
+		/////// geometry ////////
+		soma {
+			nseg=1
+			L=15		// (micrometer)
+			diam=15		// (micrometer)
+	    	}
+
+		dend {
+			nseg=1
+			L=150		// (micrometer)
+			diam=10		// (micrometer)
+		}
+
+		/////// biophysics //////
+		soma {
+			cm = 1		    // (microF/cm2)
+			Ra = 150*22.5	// (ohm-cm)
+			Rm = 20000	    // (ohm-cm2)
+			
+			insert leakinter
+			glbar_inter_leakinter = 1/Rm // (siemens/cm2)
+			el_leakinter = -70	// (mV)
+
+			insert nainter
+			insert kdrinter
+	    	}
+
+		dend {
+			cm = 1		// (microF/cm2)
+			Ra = 150	// (ohm-cm)
+			Rm = 20000	// (ohm-cm2)
+			
+			insert leakinter
+			glbar_inter_leakinter = 1/Rm // (siemens/cm2)
+			el_leakinter = -70	// (mV)
+
+			insert nainter
+			insert kdrinter
+		}
+		soma {
+			ena = 45		// (mV)
+			gnabar_nainter = 0.035	// (siemens/cm2)
+
+			ek = -80		// (mV)
+			gkdrbar_kdrinter = 0.008 // (siemens/cm2)
+			
+		}
+
+		dend {
+			ena = 45		// (mV)
+			gnabar_nainter = 0.010	// (siemens/cm2)
+
+			ek = -80		// (mV)
+			gkdrbar_kdrinter = 0.003 // (siemens/cm2)
+			
+			insert ca_ion
+			eca = 120
+		}
+	}
+
+obfunc connect2target() { localobj nc
+	soma nc = new NetCon(&v(0.5), $o1)
+	nc.threshold = 0
+	if (numarg() == 2) ($o2 = nc)
+	return nc
+	}
+endtemplate InterneuronCell
