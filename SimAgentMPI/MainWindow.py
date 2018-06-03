@@ -101,7 +101,7 @@ class MainWindow():
         
         self.sim_load = "./SimAgentMPI/Models/100CellLa/"
         self.sim_load = os.path.abspath(self.sim_load)
-        
+        jobs_page.force_use_directory(self.sim_load)
         #jobs_page.force_use_directory("C:\\Users\\Tyler\\Desktop\\CG - Jing\\GC-lv123-newest\\CG Code\\HOC Code")
         jobs_page.set_threads(self.threads)
         #para_sweep_page.set_threads(self.threads)
