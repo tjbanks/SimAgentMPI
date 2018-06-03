@@ -12,6 +12,7 @@ from SimAgentMPI.tktable import Table
 import datetime
 from PIL import ImageTk, Image
 import os, time, enum
+import subprocess
 
 import SimAgentMPI
 from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File
@@ -494,7 +495,7 @@ class Dir_Loader(tk.Frame):
         #self.b_tool_exclude.grid(pady=5, padx=5, column=2, row=0, sticky="E")
         #self.b_tool_exclude.config(state=tk.DISABLED)
         
-        self.b_git_exclude = tk.Button(self.directory_frame, text="Gitignore Results", command=self.add_to_git_ignore, width=self.button_width)
+        self.b_git_exclude = tk.Button(self.directory_frame, text="Open Folder", command=self.open_folder, width=self.button_width)
         self.b_git_exclude.grid(pady=5, padx=5, column=2, row=0, sticky="E")
         self.b_git_exclude.config(state=tk.DISABLED)
         
@@ -534,6 +535,11 @@ class Dir_Loader(tk.Frame):
         if(messagebox.askquestion("Add to .gitignore", "Do you want to add \"" + SimDirectory.results_folder_name +"/\" to the .gitignore file in " + self.sim_dir.sim_directory + "? If a .gitignore does not exist one will be created.", icon='warning') == 'yes'):
             self.sim_dir.add_results_to_gitignore()
         return
+    
+    def open_folder(self):
+        if self.sim_dir:
+            subprocess.call("start \"\" \""+self.sim_dir.sim_directory+"\"", shell=True)
+            
             
     def load_dir(self, btn=False, directory=None):
         dir_ = None
