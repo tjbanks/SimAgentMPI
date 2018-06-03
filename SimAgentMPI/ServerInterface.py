@@ -425,7 +425,9 @@ class ServerInterface(object):
                             simjob.status = ServerInterface.nsg_status[2]
                             
                         except Exception as e:
-                            simjob.append_log("Error extracting tar file, the job may not have completed. " + e)
+                            simjob.append_log("Error extracting tar file.")
+                            simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
+                            simjob.append_log("The job was marked as completed but may not have finished within the specified 'Max Runtime' before it could produce results. See 'Server Output' or 'Server Error' for more information.")
                             simjob.status = ServerInterface.nsg_status[3]
                         
                         simjob.write_properties()
