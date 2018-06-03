@@ -4,7 +4,7 @@ Created on Sun May 20 16:46:40 2018
 
 @author: Tyler
 """
-from SimAgentMPI.Utils import Autoresized_Notebook
+from SimAgentMPI.Utils import Autoresized_Notebook,CreateToolTip
 
 import tkinter as tk
 from tkinter import messagebox,ttk,filedialog,OptionMenu
@@ -13,6 +13,7 @@ import datetime
 from PIL import ImageTk, Image
 import os, time, enum
 
+import SimAgentMPI
 from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File
 from SimAgentMPI.NewServerConfig import ServerEntryBox,SelectServerEditBox
 from SimAgentMPI.SimDirectory import SimDirectory
@@ -89,16 +90,18 @@ class MainWindow():
         page1 = ttk.Frame(nb)
         page2 = ttk.Frame(nb)
         
-        nb.add(page1, text='Single Jobs')
-        nb.add(page2, text='Parametric Sweep')
+        nb.add(page1, text='Manage Jobs')
+        #nb.add(page2, text='Parametric Sweep')
+        nb.add(page2, text='Parameter Tuning')
         
         #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
         jobs_page = self.bind_page(page1, Jobs_Page)
-        para_sweep_page = self.bind_page(page2, PS_Page)
+        #para_sweep_page = self.bind_page(page2, PS_Page)
+        tuning_page = self.bind_page(page2, Tuning_Page)
         
         #jobs_page.force_use_directory("C:\\Users\\Tyler\\Desktop\\CG - Jing\\GC-lv123-newest\\CG Code\\HOC Code")
         jobs_page.set_threads(self.threads)
-        para_sweep_page.set_threads(self.threads)
+        #para_sweep_page.set_threads(self.threads)
         
         self.threads.append(jobs_page.start_refresh_thread())
         #self.threads.append(para_sweep_page.start_refresh_thread())
@@ -262,6 +265,93 @@ class MainWindow():
             Batch_File(bat).write_demo()
         except Exception as e:
             messagebox.showerror("Error", "Unable to write " + bat + "\n" + e)
+        return
+    
+class Row(tk.Frame):
+        def __init__(self, parent, *args, **kwargs):
+            tk.Frame.__init__(self, parent, *args, **kwargs)
+            self.parent = parent
+            self.root = tk.Frame(self.parent)
+            return
+        
+        def configure(self, file_name, variable, search_for, comment):
+            self.v_value = tk.StringVar(self.root)
+            self.original_value = tk.StringVar(self.root)
+            
+            line = SimAgentMPI.Utils.get_line_with(file_name,search_for)
+            if line:
+                line = line.replace(search_for,"").rstrip("\n\r").rstrip("\r").rstrip("\n").split("#")[0].strip()
+                self.original_value.set(line)
+                self.v_value.set(line)
+                self.v_value.trace("w", self.save_)
+             
+            #self.v_value.set(variable)#Not correct
+            
+            self.search_for = search_for
+            
+            self.file_name = file_name
+            
+            frame = tk.Frame(self.root)
+            var = tk.Label(frame, text="{} ({})".format(variable,os.path.basename(file_name)) ,width=30,background='light gray',anchor=tk.W)
+            var.config(relief=tk.GROOVE)
+            var.grid(column=0, row=0, padx=5, sticky='WE') 
+            
+            val = tk.Entry(frame,textvariable=self.v_value,width=50)
+            val.grid(column=1, row=0, sticky='E')
+            
+            but = tk.Button(frame,text="Reset", command=self.reset)
+            but.grid(column=2, row=0, sticky='WE')
+            
+            CreateToolTip(var,comment)
+            frame.pack()
+            #self.root.grid(row=0, column=0)
+            return self
+        
+        def pack(self,*args,**kwargs):
+            super(Row,self).pack(*args,**kwargs)
+            self.root.pack(*args,**kwargs)
+        
+        def grid(self,*args,**kwargs):
+            super(Row,self).grid(*args,**kwargs)
+            self.root.grid(*args,**kwargs)
+            
+        def reset(self, *args):
+            self.v_value.set(self.original_value.get())
+            return
+        def save_(self, *args):
+            #SimAgentMPI.Utils.replace(self.file_name, "#SBATCH -p " + "(.*)", "{}{}".format("#SBATCH -p ", simjob.server_mpi_partition),unix_end=True)
+            SimAgentMPI.Utils.replace(self.file_name, self.search_for + "(.*)", "{}{}".format(self.search_for, self.v_value.get()),unix_end=True)
+    
+
+class Tuning_Page(tk.Frame):
+
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.root = tk.Frame(self.parent)
+        self.threads = None
+        self.sim_load = "./SimAgentMPI/Models/100CellLa/"
+        self.sim_load = os.path.abspath(self.sim_load)
+        print(self.sim_load)
+        self.create_widgets()
+        return
+        
+    def create_widgets(self):
+        self.left_frame = tk.Frame(self.root)
+        
+        params_frame = tk.LabelFrame(self.left_frame,text="Parameters")
+                
+        Row(params_frame).configure(os.path.join(self.sim_load,"main.hoc"), "tstop", "tstop = ", "tstop").grid(row=0,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"bg2pyr.mod"), "initW", "\tinitW = ", "Background to pyramidal initial weights").grid(row=1,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"bg2inter.mod"), "initW", "\tinitW = ", "Background to interneuron initial weights").grid(row=2,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"tone2pyrD_new.mod"), "initW", "\tinitW = ", "Tone to pyramidal initial weights").grid(row=3,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"tone2interD_new.mod"), "initW", "\tinitW = ", "Tone to interneuron initial weights").grid(row=4,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Pyramidal to pyramidal initial weights").grid(row=5,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2interD_STFD.mod"), "initW", "\tinitW = ", "Background to Interneurons initial weights").grid(row=6,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"interD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Interneurons to pyramidal initial weights").grid(row=7,pady=10)
+        
+        params_frame.grid(row=0,column=0,rowspan=100)
+        self.left_frame.grid(row=0,column=0)
         return
     
     
