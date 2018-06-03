@@ -332,7 +332,6 @@ class Tuning_Page(tk.Frame):
         self.threads = None
         self.sim_load = "./SimAgentMPI/Models/100CellLa/"
         self.sim_load = os.path.abspath(self.sim_load)
-        print(self.sim_load)
         self.create_widgets()
         return
         
@@ -353,6 +352,14 @@ class Tuning_Page(tk.Frame):
         params_frame.grid(row=0,column=0,rowspan=100)
         self.left_frame.grid(row=0,column=0)
         return
+    
+    def pack(self,*args,**kwargs):
+        super(Tuning_Page,self).pack(*args,**kwargs)
+        self.root.pack(*args,**kwargs)
+            
+    def grid(self,*args,**kwargs):
+        super(Tuning_Page,self).grid(*args,**kwargs)
+        self.root.grid(*args,**kwargs)
     
     
 class Jobs_Page(tk.Frame):
