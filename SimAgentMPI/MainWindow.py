@@ -435,7 +435,13 @@ class Jobs_Page(tk.Frame):
                 while not self.stopped():
                     #print("Update status thread running")
                     if(self.ref.dir_loader.sim_dir and self.ref.dir_loader.sim_dir.is_update_enabled()):
-                        self.ref.dir_loader.sim_dir.update_all_jobs()
+                        try:
+                            self.ref.dir_loader.sim_dir.update_all_jobs()
+                        except Exception as e:
+                            print('*** Caught exception: {}: {}'.format(e.__class__, e))
+                            print('If this error occurs many times you may want to stop the job causing it')
+                            pass # We just want to keep the main update loop going 
+                            
                         for i in range(self.ref.table.table.number_of_rows):
                            self.ref.table.update_row_info(row=i)
                     #print("sleeping for {} seconds".format(self.refresh_time))
