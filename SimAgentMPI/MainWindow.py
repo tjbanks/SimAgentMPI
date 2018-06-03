@@ -28,7 +28,7 @@ import threading
 class MainWindow():
     def __init__(self):
         self.root = tk.Tk()
-        self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - [Tyler Banks])"
+        self.window_title = "1000 Cell BLA Gamma Oscillations Lab (University of Missouri - Nair Neural Engineering Laboratory) [Sim Agent MPI by Tyler Banks]"
         self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
         self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of accidental data deletion, always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
         self.window_size = '1580x725'
@@ -99,7 +99,7 @@ class MainWindow():
         #para_sweep_page = self.bind_page(page2, PS_Page)
         tuning_page = self.bind_page(page2, Tuning_Page)
         
-        self.sim_load = "./SimAgentMPI/Models/100CellLa/"
+        self.sim_load = "./SimAgentMPI/Models/BLA/"
         self.sim_load = os.path.abspath(self.sim_load)
         jobs_page.force_use_directory(self.sim_load)
         #jobs_page.force_use_directory("C:\\Users\\Tyler\\Desktop\\CG - Jing\\GC-lv123-newest\\CG Code\\HOC Code")
@@ -333,7 +333,7 @@ class Tuning_Page(tk.Frame):
         self.parent = parent
         self.root = tk.Frame(self.parent)
         self.threads = None
-        self.sim_load = "./SimAgentMPI/Models/100CellLa/"
+        self.sim_load = "./SimAgentMPI/Models/BLA/"
         self.sim_load = os.path.abspath(self.sim_load)
         self.create_widgets()
         return
@@ -343,14 +343,14 @@ class Tuning_Page(tk.Frame):
         
         params_frame = tk.LabelFrame(self.left_frame,text="Parameters")
                 
-        Row(params_frame).configure(os.path.join(self.sim_load,"main.hoc"), "tstop", "tstop = ", "tstop").grid(row=0,pady=10)
-        Row(params_frame).configure(os.path.join(self.sim_load,"bg2pyr.mod"), "initW", "\tinitW = ", "Background to pyramidal initial weights").grid(row=1,pady=10)
-        Row(params_frame).configure(os.path.join(self.sim_load,"bg2inter.mod"), "initW", "\tinitW = ", "Background to interneuron initial weights").grid(row=2,pady=10)
-        Row(params_frame).configure(os.path.join(self.sim_load,"tone2pyrD_new.mod"), "initW", "\tinitW = ", "Tone to pyramidal initial weights").grid(row=3,pady=10)
-        Row(params_frame).configure(os.path.join(self.sim_load,"tone2interD_new.mod"), "initW", "\tinitW = ", "Tone to interneuron initial weights").grid(row=4,pady=10)
-        Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Pyramidal to pyramidal initial weights").grid(row=5,pady=10)
-        Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2interD_STFD.mod"), "initW", "\tinitW = ", "Background to Interneurons initial weights").grid(row=6,pady=10)
-        Row(params_frame).configure(os.path.join(self.sim_load,"interD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Interneurons to pyramidal initial weights").grid(row=7,pady=10)
+        #Row(params_frame).configure(os.path.join(self.sim_load,"main.hoc"), "tstop", "tstop = ", "tstop").grid(row=0,pady=10)
+        #Row(params_frame).configure(os.path.join(self.sim_load,"bg2pyr.mod"), "initW", "\tinitW = ", "Background to pyramidal initial weights").grid(row=1,pady=10)
+        #Row(params_frame).configure(os.path.join(self.sim_load,"bg2inter.mod"), "initW", "\tinitW = ", "Background to interneuron initial weights").grid(row=2,pady=10)
+        #Row(params_frame).configure(os.path.join(self.sim_load,"tone2pyrD_new.mod"), "initW", "\tinitW = ", "Tone to pyramidal initial weights").grid(row=3,pady=10)
+        #Row(params_frame).configure(os.path.join(self.sim_load,"tone2interD_new.mod"), "initW", "\tinitW = ", "Tone to interneuron initial weights").grid(row=4,pady=10)
+        #Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Pyramidal to pyramidal initial weights").grid(row=5,pady=10)
+        #Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2interD_STFD.mod"), "initW", "\tinitW = ", "Background to Interneurons initial weights").grid(row=6,pady=10)
+        #Row(params_frame).configure(os.path.join(self.sim_load,"interD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Interneurons to pyramidal initial weights").grid(row=7,pady=10)
         
         params_frame.grid(row=0,column=0,rowspan=100)
         self.left_frame.grid(row=0,column=0)

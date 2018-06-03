@@ -1,71 +1,0 @@
-//By Pirate Henry 2011 and modified by DKobjref IntsynListIntsynList = new List()
-
-proc ConnectTwoCells() { local targetid,sourceid,type,initW,delay,threshold localobj target,syn,nc,synlist,nclist
-	sourceid = $1
-	targetid = $2
-	type = $3
-//	initW = $4
-	delay = $4
-//	threshold = $6
-	synlist = $o5  //$o7
-	nclist = $o6   //$o8
-	if (!pc.gid_exists(targetid)) { continue }				// Can't connect to target if it doesn't exist 
-		cellid = pc.gid2cell(targetid)
-		if ( sourceid <= 39 ) { if (type == 1 || type == 2) {cellid.soma syn = new pyrD2pyrD_STFD(0.9)    		                                                                  syn.neuroM = 0}
-							     if (type == 3 || type == 4) {cellid.soma syn = new pyrD2pyrD_STFD(0.9)     								                                              syn.neuroM = 1}
-   								 if (type == 5 || type == 6) {cellid.soma syn = new pyrD2pyrD_STFD(0.9)								                                            syn.neuroM = 0}                  
-							     if (type == 7 || type == 8) {cellid.soma syn = new pyrD2pyrD_STFD(0.9)    								                                             syn.neuroM = 1}	            					 
-								 if (type == 9 || type == 10) {
-																cellid.dend syn = new pyrD2interD_STFD(0.9)
-																              syn.neuroM = 0}
-								 if (type == 11 || type == 12) {
-																cellid.dend syn = new pyrD2interD_STFD(0.9)
-															                   syn.neuroM = 0}
-								 }								 
-								 
-		if ( sourceid >= 40 && sourceid <=79 ) { if (type == 1 || type == 2) {cellid.soma syn = new pyrD2pyrD_STFD(0.9)  		                                                                                  syn.neuroM = 0}
-												   if (type == 3 || type == 4) {cellid.soma syn = new pyrD2pyrD_STFD(0.9)   												                                           syn.neuroM = 1}  
-												   if (type == 5 || type == 6) {cellid.soma syn = new pyrD2pyrD_STFD(0.9)     												                                            syn.neuroM = 0 }  
-												   if (type == 7 || type == 8) {cellid.soma syn = new pyrD2pyrD_STFD(0.9)    												                                             syn.neuroM = 1 }
-												   if (type == 9 || type == 10) {
-																				cellid.dend syn = new pyrD2interD_STFD(0.9)
-																				              syn.neuroM = 0}
-												   if (type == 11 || type == 12) {
-																				cellid.dend syn = new pyrD2interD_STFD(0.9)
-																			                   syn.neuroM = 0}
-												}	
-												   
-		if ( sourceid >= 80 && sourceid <=90 ) { if (type == 1) {cellid.soma syn = new interD2pyrD_STFD(0.9)    		                                                                             syn.neuroM = 0}                     
-												   if (type == 2) {cellid.soma syn = new interD2pyrD_STFD(0.9)												                                      syn.neuroM = 2}	          
-												   if (type == 3) {cellid.soma syn = new interD2pyrD_STFD(0.9)												                                      syn.neuroM = 1}             
-												   if (type == 4) {cellid.soma syn = new interD2pyrD_STFD(0.9)												                                       syn.neuroM = 3}			  	
-												   if (type == 5 || type == 6) {cellid.soma syn = new interD2pyrD_STFD(0.9)  												                                        syn.neuroM = 0}	               	
-												   if (type == 7 || type == 8) {cellid.soma syn = new interD2pyrD_STFD(0.9)												                                        syn.neuroM = 1}              												   												   }	
-												   
-		if ( sourceid >= 91 ) { if (type == 1) {cellid.soma syn = new interD2pyrD_STFD(0.9)		                                                                syn.neuroM = 0 }
-							     if (type == 2) {cellid.soma syn = new interD2pyrD_STFD(0.9)								                                        syn.neuroM = 2 }	
-								 if (type == 3) {cellid.soma syn = new interD2pyrD_STFD(0.9)								                                        syn.neuroM = 1 }
-								 if (type == 4) {cellid.soma syn = new interD2pyrD_STFD(0.9)								                                        syn.neuroM = 3 }				
-								 if (type == 5 || type == 6) {cellid.soma syn = new interD2pyrD_STFD(0.9)								                                         syn.neuroM = 0}			
-								 if (type == 7 || type == 8) {cellid.soma syn = new interD2pyrD_STFD(0.9)								                                          syn.neuroM = 1}								                                         }
-						 
-		syn.pregid = sourceid
-		syn.postgid = targetid
-		
-		cellid.synlist.append(syn)   // To save synapse data, weight and ca+ concentration
-		syn.srcid= sourceid
-		syn.destid= targetid
-		
-		
-		nc = pc.gid_connect(sourceid,syn)
-		nc.weight = 1
-		nc.delay = delay
-		nc.threshold = -10
-		
-														
-		//printf("%d %d %d %d %d %d\n" ,syn.postgid,syn.pregid, syn.initW, nc.delay, nc.threshold, type)		
-		saveM.printf("%d %d %f %d %d %d %d\n" ,syn.postgid, syn.pregid, syn.initW, nc.delay, nc.threshold, type, syn.neuroM)		        //saveM.close()
-		synlist.append(syn)
-		nclist.append(nc) IntsynList.append(syn)
-		//{pc.barrier()}	
-}objref intwgtfilestrdef intwgtfilenamesprint(intwgtfilename,"allfinalwgtInt.dat")intwgtfile = new File()intwgtfile.wopen(intwgtfilename)intwgtfile.close()proc SaveInternal() { local i	for rank=0, pc.nhost-1 { // host 0 first, then 1, 2, etc.	if (rank==pc.id) {			for i=0, IntsynList.count()-1 {			intwgtfile.aopen(intwgtfilename)			intwgtfile.printf("%d\t %d\t %7.2f\t %7.2f\n", IntsynList.o(i).pregid, IntsynList.o(i).postgid,IntsynList.o(i).initW,IntsynList.o(i).W)			}			intwgtfile.close()		}		pc.barrier() // wait for all hosts to get to this point}}

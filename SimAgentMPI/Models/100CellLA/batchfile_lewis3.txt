@@ -1,7 +1,0 @@
-#!/bin/sh
-#SBATCH --job-name=[1000LA]  
-#SBATCH -o  1000LA.o%j.txt
-#SBATCH -e  1000LA.e%j.txt
-#SBATCH -p all
-#SBATCH -n 60
-mpirun nrniv -mpi LA_model_main_file_norecording.hoc

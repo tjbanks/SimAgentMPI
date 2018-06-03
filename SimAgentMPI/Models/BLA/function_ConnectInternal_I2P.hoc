@@ -1,0 +1,103 @@
+//By Pirate Henry 2011 and modified by Dongbeom
+
+
+//objref InternalSynMatrix_gj
+//InternalSynMatrix_gj = new Matrix()
+//InternalThrMatrix = new Matrix()
+//InternalWgtMatrix = new Matrix()
+//InternalDelMatrix = new Matrix()
+
+//InternalSynMatrix_gj = LoadMatrix(gj_matrix,CellNum_interneuron,CellNum_interneuron)
+
+//InternalThrMatrix = LoadMatrix(FileLocationStr_InternalThrConns,TotalCellNum,TotalCellNum)
+//InternalWgtMatrix = LoadMatrix(FileLocationStr_InternalWgtConns,TotalCellNum,TotalCellNum)
+objref precell,postcell,rC_I2P_general,rC_P2I_general,rC_P2II2P_bi
+prob_I2P_general=34
+seed=123
+//{rC_I2P_general = new Random(seed)} 
+//{rC_P2I_general = new Random(seed)} 
+//{rC_P2II2P_bi = new Random(seed)} 
+proc ConnectInternal_I2P_general() { local i,j,postid,preid,postid_real,preid_real,delay localobj nc,syn
+	{pc.barrier()}
+	for j = 0,CellNum_p-1 {
+
+        cellgid=j
+		if(!pc.gid_exists(cellgid)) { continue }
+        {rC_I2P_general = new Random(cellgid+1000)} 
+          //postcell = pc.gid2cell(postid_real) 
+          
+          for i = 0,CellNum_interneuron-1 {
+		if (i!=j && rC_I2P_general.uniform(0,100) < prob_I2P_general) {
+            
+		    preid=i+CellNum_p
+			synid=3
+            wgt=rC_I2P_general.lognormal(5,2)
+            del=rC_I2P_general.uniform(0.5,5)
+            ConnectTwoCells(preid,cellgid,synid,wgt,del,InternalsynList,InternalncList)
+            
+		    //postcell.connect_gap(precell) 
+            //precell.connect_gap(postcell)	
+            }
+			}
+		}
+     {pc.barrier()}
+	}
+    
+    
+   prob_P2I_general=12 
+    proc ConnectInternal_P2I_general() { local i,j,postid,preid,postid_real,preid_real,delay localobj nc,syn
+	{pc.barrier()}
+	for j = 0,CellNum_interneuron-1 {
+
+        cellgid=j+CellNum_p
+		if(!pc.gid_exists(cellgid)) { continue }
+        {rC_P2I_general = new Random(cellgid+1000)} 
+          //postcell = pc.gid2cell(postid_real) 
+          
+          for i = 0,CellNum_p-1 {
+		if (i!=j && rC_P2I_general.uniform(0,100) < prob_P2I_general) {
+            
+		    preid=i
+			synid=2
+            wgt=rC_P2I_general.lognormal(3,2)
+            del=rC_P2I_general.uniform(0.5,5)
+            ConnectTwoCells(preid,cellgid,synid,wgt,del,InternalsynList,InternalncList)
+            
+		    //postcell.connect_gap(precell) 
+            //precell.connect_gap(postcell)	
+            }
+			}
+		}
+     {pc.barrier()}
+	}
+
+prob_P2II2P_bi=16 
+    proc ConnectInternal_P2II2P_bi() { local i,j,postid,preid,postid_real,preid_real,delay localobj nc,syn
+	{pc.barrier()}
+	for j = 0,CellNum_interneuron-1 {
+
+        cellgid=j+CellNum_p
+		if(!pc.gid_exists(cellgid)) { continue }
+          //postcell = pc.gid2cell(postid_real) 
+          
+          for i = 0,CellNum_p-1 {
+		if (i!=j && rC_I2I_general.uniform(0,100) < prob_P2II2P_bi) {
+            
+		    preid=i
+			synid=2
+            wgt=rC_P2II2P_bi.lognormal(3,2)
+            del=rC_P2II2P_bi.uniform(0.5,5)
+            ConnectTwoCells(preid,cellgid,synid,wgt,del,InternalsynList,InternalncList)
+            
+			synid=3
+            wgt=rC_P2II2P_bi.lognormal(5,2)
+            del=rC_P2II2P_bi.uniform(0.5,5)
+            ConnectTwoCells(cellgid,preid,synid,wgt,del,InternalsynList,InternalncList)
+            
+		    //postcell.connect_gap(precell) 
+            //precell.connect_gap(postcell)	
+            }
+			}
+		}
+     {pc.barrier()}
+	}
