@@ -295,7 +295,7 @@ class Row(tk.Frame):
             self.file_name = file_name
             
             frame = tk.Frame(self.root)
-            var = tk.Label(frame, text="{} ({})".format(variable,os.path.basename(file_name)) ,width=30,background='light gray',anchor=tk.W)
+            var = tk.Label(frame, text="({}) {}".format(variable, search_for) ,width=30,background='light gray',anchor=tk.W)
             var.config(relief=tk.GROOVE)
             var.grid(column=0, row=0, padx=5, sticky='WE') 
             
@@ -305,7 +305,7 @@ class Row(tk.Frame):
             but = tk.Button(frame,text="Reset", command=self.reset)
             but.grid(column=2, row=0, sticky='WE')
             
-            CreateToolTip(var,comment)
+            CreateToolTip(var,os.path.basename(file_name))
             frame.pack()
             #self.root.grid(row=0, column=0)
             return self
@@ -343,15 +343,12 @@ class Tuning_Page(tk.Frame):
         
         params_frame = tk.LabelFrame(self.left_frame,text="Parameters")
                 
-        #Row(params_frame).configure(os.path.join(self.sim_load,"main.hoc"), "tstop", "tstop = ", "tstop").grid(row=0,pady=10)
-        #Row(params_frame).configure(os.path.join(self.sim_load,"bg2pyr.mod"), "initW", "\tinitW = ", "Background to pyramidal initial weights").grid(row=1,pady=10)
-        #Row(params_frame).configure(os.path.join(self.sim_load,"bg2inter.mod"), "initW", "\tinitW = ", "Background to interneuron initial weights").grid(row=2,pady=10)
-        #Row(params_frame).configure(os.path.join(self.sim_load,"tone2pyrD_new.mod"), "initW", "\tinitW = ", "Tone to pyramidal initial weights").grid(row=3,pady=10)
-        #Row(params_frame).configure(os.path.join(self.sim_load,"tone2interD_new.mod"), "initW", "\tinitW = ", "Tone to interneuron initial weights").grid(row=4,pady=10)
-        #Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Pyramidal to pyramidal initial weights").grid(row=5,pady=10)
-        #Row(params_frame).configure(os.path.join(self.sim_load,"pyrD2interD_STFD.mod"), "initW", "\tinitW = ", "Background to Interneurons initial weights").grid(row=6,pady=10)
-        #Row(params_frame).configure(os.path.join(self.sim_load,"interD2pyrD_STFD_new.mod"), "initW", "\tinitW = ", "Interneurons to pyramidal initial weights").grid(row=7,pady=10)
-        
+        Row(params_frame).configure(os.path.join(self.sim_load,"function_ConnectInputs_invivo.hoc"), "E2P Strength", "wgt = rc_E2P.lognormal", "").grid(row=0,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"function_ConnectInternal_simplify_online.hoc"), "P2P Strength", "wgt = rc_E2E.lognormal", "").grid(row=1,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"function_ConnectInternal_simplify_online.hoc"), "P2I Strength", "wgt = rc_E2I.lognormal", "").grid(row=2,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"function_ConnectInternal_simplify_online.hoc"), "I2P Strength", "wgt = rc_I2E.lognormal", "").grid(row=3,pady=10)
+        Row(params_frame).configure(os.path.join(self.sim_load,"function_ConnectInternal_simplify_online.hoc"), "I2I Strength", "wgt = rc_I2I.lognormal", "").grid(row=4,pady=10)
+
         params_frame.grid(row=0,column=0,rowspan=100)
         self.left_frame.grid(row=0,column=0)
         return
