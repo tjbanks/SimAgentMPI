@@ -30,6 +30,7 @@ class JobEntryBox:
             self.oncomplete_callback = oncomplete_callback
             self.edit_job = edit_job
             self.clone_mode = clone_mode
+            self.valid_message = "Unspecified error, see console output"
             
             
             if(not job_name):
@@ -132,7 +133,8 @@ class JobEntryBox:
                 servers = ServersFile()
                 s = servers.get_server_byname(server_name)
                 #get the connection and check if it's a ssh / nsg
-                on_server_type_change(s.type)
+                if s:
+                    on_server_type_change(s.type)
                 
             def change_dropdown_nsg_tool(*args):
                 return
@@ -357,6 +359,56 @@ class JobEntryBox:
             if (' ' in self.name.get()) == True:
                 self.valid_message = "Name cannot contain spaces. (Issues with paths)"
                 return False
+            if self.server_connector.get() == '':
+                self.valid_message = "Select a valid Server Connection."
+                return False
+            
+            servers = ServersFile()
+            s = servers.get_server_byname(self.server_connector.get())
+            #get the connection and check if it's a ssh / nsg
+            if not s:
+                self.valid_message = "Server Connection not found, select or create a new one."
+                return False
+            type_ = s.type
+            if type_ == "":
+                self.valid_message = "Server Connection invalid, edit connector."
+                return False
+            
+            if type_ == "nsg":
+                if self.server_nsg_tool.get() == '':
+                    self.valid_message = "Select a valid NSG Tool."
+                    return False
+            
+                if self.batch_file.get() == '':
+                    self.valid_message = "Select a valid Main Run File."
+                    return False
+                    
+            if type_ == "ssh":
+            
+                if self.server_ssh_tool.get() == '':
+                    self.valid_message = "Select a valid Tool."
+                    return False
+                if self.batch_file.get() == '':
+                    self.valid_message = "Select a valid Batch File."
+                    return False
+                if self.server_mpi_partition.get() == '':
+                    self.valid_message = "Enter a valid MPI Partition."
+                    return False
+            
+            
+            if self.server_nodes.get() == '' or self.server_nodes.get() == '0':
+                self.valid_message = "Number of server nodes invalid, choose a number greater than 0."
+                return False
+            
+            if self.server_cores.get() == '' or self.server_cores.get() == '0':
+                self.valid_message = "Number of server cores invalid, choose a number greater than 0."
+                return False
+            
+            if self.server_max_runtime.get() == '' or self.server_max_runtime.get() == '0':
+                self.valid_message = "Max Run time invalid, chose a max run time greater than 0."
+                return False
+                
+            
             return True
         
         
