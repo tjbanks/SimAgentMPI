@@ -109,7 +109,7 @@ class JobEntryBox:
                 return
             
             def select_batch():
-                self.batch_file.set(os.path.basename(filedialog.askopenfilename()))
+                self.batch_file.set(os.path.basename(filedialog.askopenfilename(initialdir=self.sim_directory.sim_directory)))
                 self.top.lift()
                 return
             
