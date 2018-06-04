@@ -92,15 +92,15 @@ class MainWindow():
         page2 = ttk.Frame(nb)
         
         nb.add(page1, text='Single Jobs')
-        #nb.add(page2, text='Parametric Sweep')
+        nb.add(page2, text='Parametric Sweep')
         
         #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
         jobs_page = self.bind_page(page1, Jobs_Page)
-        #para_sweep_page = self.bind_page(page2, PS_Page)
+        para_sweep_page = self.bind_page(page2, PS_Page)
         
         #jobs_page.force_use_directory("C:\\Users\\Tyler\\Desktop\\CG - Jing\\GC-lv123-newest\\CG Code\\HOC Code")
         jobs_page.set_threads(self.threads)
-        #para_sweep_page.set_threads(self.threads)
+        para_sweep_page.set_threads(self.threads)
         
         self.threads.append(jobs_page.start_refresh_thread())
         #self.threads.append(para_sweep_page.start_refresh_thread())
