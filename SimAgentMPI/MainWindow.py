@@ -27,9 +27,11 @@ import threading
 class MainWindow():
     def __init__(self):
         self.root = tk.Tk()
-        self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory - [Tyler Banks])"
+        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        self.root.iconbitmap(r'{}'.format(icon))
+        self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory) [Tyler Banks]"
         self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
-        self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of accidental data deletion, always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
+        self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of any problem that may occur, including accidental data deletion. Always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
         self.window_size = '1580x725'
         self.default_status = "Status: Ready"
         self.status_timer = 4.0
@@ -90,15 +92,15 @@ class MainWindow():
         page2 = ttk.Frame(nb)
         
         nb.add(page1, text='Single Jobs')
-        nb.add(page2, text='Parametric Sweep')
+        #nb.add(page2, text='Parametric Sweep')
         
         #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
         jobs_page = self.bind_page(page1, Jobs_Page)
-        para_sweep_page = self.bind_page(page2, PS_Page)
+        #para_sweep_page = self.bind_page(page2, PS_Page)
         
         #jobs_page.force_use_directory("C:\\Users\\Tyler\\Desktop\\CG - Jing\\GC-lv123-newest\\CG Code\\HOC Code")
         jobs_page.set_threads(self.threads)
-        para_sweep_page.set_threads(self.threads)
+        #para_sweep_page.set_threads(self.threads)
         
         self.threads.append(jobs_page.start_refresh_thread())
         #self.threads.append(para_sweep_page.start_refresh_thread())

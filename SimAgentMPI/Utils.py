@@ -74,15 +74,17 @@ class UpdateWindow:
         
     def display(self):
         top = self.top = tk.Toplevel(self.parent)
-        top.geometry('300x400')
-        top.resizable(1,1)
+        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        self.top.iconbitmap(r'{}'.format(icon))
+        top.geometry('300x300')
+        top.resizable(0,0)
         top.title(self.window_title)
         
         
         self.branch = tk.StringVar(top)
         
-        tk.Label(top,width=40,wraplength=250, fg = 'red',text='WARNING: This feature is EXTREMELY experimental.').grid(columnspan=2,row=0,column=0,pady=5,padx=5)
-        tk.Label(top,width=40,wraplength=250, text='Most of the time you\'re better off re-downloading from https://tjbanks.github.io/SimAgentMPI/.\n\n You may need to re-download or re-extract SimAgentMPI (from the downloaded zip) if things go wrong. \n\n A backup copy of SimAgent\'s working files will be stored, if you want to return to a previous version, delete the folder SimAgentMPI and rename SimAgentMPI-old to SimAgentMPI in your install directory.').grid(columnspan=2,row=1,column=0,pady=5,padx=5)
+        tk.Label(top,width=40,wraplength=250, fg = 'red',text='WARNING: This feature is experimental.').grid(columnspan=2,row=0,column=0,pady=5,padx=5)
+        tk.Label(top,width=40,wraplength=250, text='If problems occur re-download from https://tjbanks.github.io/SimAgentMPI/. \n\n A backup copy of SimAgent\'s working files will be stored, if you want to return to a previous version, delete the folder SimAgentMPI and rename SimAgentMPI-old to SimAgentMPI in your install directory.').grid(columnspan=2,row=1,column=0,pady=5,padx=5)
         
         tk.Label(top,width=40,wraplength=250, fg='blue', text="Choose a branch. Type 'master' (without quotes) to get the latest and greatest. Type 'release' for something a little more stable.").grid(columnspan=2,row=2,column=0,pady=5,padx=5)
         tk.Label(top, text='Branch',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)

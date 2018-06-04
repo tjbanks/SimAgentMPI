@@ -20,7 +20,7 @@ Created on Sun May 20 16:46:40 2018
 """
 import tkinter as tk
 from tkinter import IntVar,filedialog,OptionMenu,messagebox
-import time, datetime
+import time, datetime, os
 
 from SimAgentMPI.SimServer import SimServer,ServersFile
 
@@ -35,6 +35,8 @@ class SelectServerEditBox:
         
     def display(self):
         top = self.top = tk.Toplevel(self.parent)
+        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        self.top.iconbitmap(r'{}'.format(icon))
         top.geometry('240x75')
         top.resizable(0,0)
         top.title(self.window_title)
@@ -80,6 +82,8 @@ class ServerEntryBox:
     
     def display(self, server_id=None):            
         top = self.top = tk.Toplevel(self.parent)
+        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        self.top.iconbitmap(r'{}'.format(icon))
         top.geometry('315x385')
         top.resizable(0,0)
         

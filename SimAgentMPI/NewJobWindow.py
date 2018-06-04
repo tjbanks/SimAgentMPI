@@ -42,6 +42,8 @@ class JobEntryBox:
             self.simjob = None
             
             top = self.top = tk.Toplevel(self.parent)
+            icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+            self.top.iconbitmap(r'{}'.format(icon))
             self.name = tk.StringVar(top)
             self.name.set(self.job_name)
             
