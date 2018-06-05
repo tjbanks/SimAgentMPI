@@ -944,7 +944,10 @@ class Job_Table(tk.Frame):
             elif jobtype == "nsg":
                 part_tool = job.server_nsg_tool
         else:
-            part_tool = ""
+            orr = ""
+            if job.server_nsg_tool and job.server_mpi_partition:
+                orr = " or "
+            part_tool = "{}{}{}".format(job.server_nsg_tool,orr,job.server_mpi_partition)
             
         #datetime.datetime.fromtimestamp(float(str(time.time()))).strftime('%y%m%d-%H%M%S')
         #Out[22]: '180524-203332'
