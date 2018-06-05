@@ -82,16 +82,18 @@ class UpdateWindow:
         
         
         self.branch = tk.StringVar(top)
+        self.branch.set("master")
         
         tk.Label(top,width=40,wraplength=250, fg = 'red',text='WARNING: This feature is experimental.').grid(columnspan=2,row=0,column=0,pady=5,padx=5)
         tk.Label(top,width=40,wraplength=250, text='If problems occur re-download from https://tjbanks.github.io/SimAgentMPI/. \n\n A backup copy of SimAgent\'s working files will be stored, if you want to return to a previous version, delete the folder SimAgentMPI and rename SimAgentMPI-old to SimAgentMPI in your install directory.').grid(columnspan=2,row=1,column=0,pady=5,padx=5)
         
-        tk.Label(top,width=40,wraplength=250, fg='blue', text="Choose a branch. Type 'master' (without quotes) to get the latest and greatest. Type 'release' for something a little more stable.").grid(columnspan=2,row=2,column=0,pady=5,padx=5)
+        tk.Label(top,width=40,wraplength=250, fg='blue', text="Choose a branch. Type 'master' (without quotes) to get the latest and greatest. Type 'release' for a stable release.").grid(columnspan=2,row=2,column=0,pady=5,padx=5)
         tk.Label(top, text='Branch',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
         #popupMenu = OptionMenu(top, self.server_selected, *names)
         #popupMenu.grid(row = 0, column =1)
-        self.branch = tk.Entry(top,width=25,textvariable=self.branch)
-        self.branch.grid(row=3,column=1,padx=5)
+        self.branch_e = tk.Entry(top,width=25,textvariable=self.branch)
+        self.branch_e.grid(row=3,column=1,padx=5)
+        
         
         b = tk.Button(top, text="Ok", command=self.ok)
         b.grid(pady=5, padx=5, column=0, row=9, sticky="WE")

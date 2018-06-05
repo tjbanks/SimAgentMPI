@@ -863,15 +863,15 @@ class Job_Table(tk.Frame):
                 
         class StartJobThread(StoppableThread):
             def run(self):
-                job.status == ServerInterface.ssh_status[0]
-                job.write_properties()
-                self.ref.update_row_info()
                 job.run()
                 self.ref.update_row_info()
                 return
         
         job = self.sim_dir.get_job(self.selected_job_name)
         if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run. The display may freeze for a few moments.", icon='warning') == 'yes'):
+            job.status == ServerInterface.ssh_status[0]
+            job.write_properties()
+            self.update_row_info(self.selected_row_num)
             start_thread = StartJobThread(ref=self)
             start_thread.setDaemon(True)
             if self.threads:

@@ -221,7 +221,7 @@ class ServerInterface(object):
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -N" + "(.*)", "{}{}".format("#SBATCH -N", simjob.server_nodes),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH --nodes=" + "(.*)", "{}{}".format("#SBATCH --nodes=", simjob.server_nodes),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -n" + "(.*)", "{}{}".format("#SBATCH -n", simjob.server_cores),unix_end=True)
-        SimAgentMPI.Utils.replace(batch_file, "#SBATCH --ntasks=" + "(.*)", "{}{}".format("#SBATCH -ntasks=", simjob.server_cores),unix_end=True)
+        SimAgentMPI.Utils.replace(batch_file, "#SBATCH --ntasks=" + "(.*)", "{}{}".format("#SBATCH --ntasks=", simjob.server_cores),unix_end=True)
         #SBATCH --time 0-23:00
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH --time=" + "(.*)", "{}0-{}:00".format("#SBATCH --time=", simjob.server_max_runtime),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -t" + "(.*)", "{}0-{}:00".format("#SBATCH -t", simjob.server_max_runtime),unix_end=True)
@@ -320,6 +320,11 @@ class ServerInterface(object):
                 done = True
                 for line in lines:
                     if(simjob.server_remote_identifier in line):
+                        if "(PartitionTimeLimit)" in line:
+                            simjob.append_log("SSH job exceeds time limit permitted, cancelling.")
+                            self.stop_ssh(simjob,server,ssh_connection)
+                        if "(Priority)" in line:
+                            simjob.append_log("SSH job waiting in queue for resources...")
                         done = False
                 if done:
                     simjob.append_log("SSH Job Completed")
@@ -362,11 +367,9 @@ class ServerInterface(object):
         
         return
     
-    def stop_ssh(self, simjob, server):
+    def stop_ssh(self, simjob, server, ssh_connection=None):
         
-        try:
-            client = self.connect_ssh(server,simjob)
-            
+        def stop_ssh_():
             if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
                 command = 'scancel ' + simjob.server_remote_identifier
                 lines = self.exec_ssh_command(client, command, simjob, server)
@@ -381,16 +384,29 @@ class ServerInterface(object):
                     simjob.write_properties()
                 else:
                     simjob.append_log("Trouble finding job to cancel")
-            client.close()
-        except Exception as e:
-                simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
-                #traceback.print_exc()
-                try:
-                    client.close()
-                except:
-                    pass
+        
+        if not ssh_connection:
+            try:
+                client = self.connect_ssh(server,simjob)
+                stop_ssh_()
+                
+                client.close()
+            except Exception as e:
+                    simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
+                    #traceback.print_exc()
+                    try:
+                        client.close()
+                    except:
+                        pass
+        else: 
+            client = ssh_connection
+            stop_ssh_()
                 
         return
+    
+    
+    
+    
     
     
     def download_nsg(self, simjob, server,nsg_job_list=None):
@@ -537,10 +553,19 @@ class ServerInterface(object):
                 local_err = os.path.join(simjob.job_directory_absolute,simjob.stderr_file)
                 rem_out = "./"+self.remote_dir+"/"+simjob.sim_name+"/"+simjob.sim_name+"/"+simjob.server_stdout_file
                 rem_err = "./"+self.remote_dir+"/"+simjob.sim_name+"/"+simjob.sim_name+"/"+simjob.server_stderr_file
-                ftp_client=client.open_sftp()
-                ftp_client.get(rem_out,local_out)
-                ftp_client.get(rem_err,local_err)
-                ftp_client.close()
+                
+                try:
+                    ftp_client=client.open_sftp()
+                    ftp_client.get(rem_out,local_out)
+                    ftp_client.get(rem_err,local_err)
+                    ftp_client.close()
+                except IOError as e: #No such file, probably doesn't exist, which is ok
+                    try:
+                        ftp_client.close()
+                    except Exception as e:
+                        pass
+                    pass
+                
         
         if not ssh_connection:
             #the outfiles are in the simjob now
