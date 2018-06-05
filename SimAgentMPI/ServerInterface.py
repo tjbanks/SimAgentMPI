@@ -217,13 +217,13 @@ class ServerInterface(object):
         ##Edit batch file
         batch_file = os.path.join(simjob.job_directory_absolute,simjob.sim_name,simjob.sim_name,simjob.batch_file)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -p" + "(.*)", "{}{}".format("#SBATCH -p", simjob.server_mpi_partition),unix_end=True)
-        SimAgentMPI.Utils.replace(batch_file, "#SBATCH --partition=" + "(.*)", "{}{}".format("#SBATCH --partition", simjob.server_mpi_partition),unix_end=True)
+        SimAgentMPI.Utils.replace(batch_file, "#SBATCH --partition=" + "(.*)", "{}{}".format("#SBATCH --partition=", simjob.server_mpi_partition),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -N" + "(.*)", "{}{}".format("#SBATCH -N", simjob.server_nodes),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH --nodes=" + "(.*)", "{}{}".format("#SBATCH --nodes=", simjob.server_nodes),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -n" + "(.*)", "{}{}".format("#SBATCH -n", simjob.server_cores),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH --ntasks=" + "(.*)", "{}{}".format("#SBATCH -ntasks=", simjob.server_cores),unix_end=True)
         #SBATCH --time 0-23:00
-        SimAgentMPI.Utils.replace(batch_file, "#SBATCH --time " + "(.*)", "{}0-{}:00".format("#SBATCH --time ", simjob.server_max_runtime),unix_end=True)
+        SimAgentMPI.Utils.replace(batch_file, "#SBATCH --time=" + "(.*)", "{}0-{}:00".format("#SBATCH --time=", simjob.server_max_runtime),unix_end=True)
         SimAgentMPI.Utils.replace(batch_file, "#SBATCH -t" + "(.*)", "{}0-{}:00".format("#SBATCH -t", simjob.server_max_runtime),unix_end=True)
         ##
         os.remove(snapzip)
