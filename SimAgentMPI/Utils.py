@@ -76,7 +76,7 @@ class UpdateWindow:
         top = self.top = tk.Toplevel(self.parent)
         icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
         self.top.iconbitmap(r'{}'.format(icon))
-        top.geometry('300x300')
+        #top.geometry('300x300')
         top.resizable(0,0)
         top.title(self.window_title)
         

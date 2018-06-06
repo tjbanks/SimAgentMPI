@@ -1066,7 +1066,7 @@ class Edit_dir_tool(object):
     
     def display(self, server_id=None):            
         top = self.top = tk.Toplevel(self.parent)
-        top.geometry('300x140')
+        #top.geometry('300x140')
         top.resizable(0,0)
         
         self.tool = tk.StringVar(top)

@@ -37,7 +37,7 @@ class SelectServerEditBox:
         top = self.top = tk.Toplevel(self.parent)
         icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
         self.top.iconbitmap(r'{}'.format(icon))
-        top.geometry('240x75')
+        #top.geometry('240x75')
         top.resizable(0,0)
         top.title(self.window_title)
         
@@ -73,6 +73,7 @@ class ServerEntryBox:
         
     def __init__(self, parent, server_id=None, display=True, confirm_callback=None):
         self.parent = parent
+        self.window_title = "Server Entry (Sim Agent MPI)"
         self.confirm_callback = confirm_callback
         self.valid_message = "Unspecified error, see console output"
                     
@@ -84,8 +85,9 @@ class ServerEntryBox:
         top = self.top = tk.Toplevel(self.parent)
         icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
         self.top.iconbitmap(r'{}'.format(icon))
-        top.geometry('315x385')
+        #top.geometry('315x385')
         top.resizable(0,0)
+        top.title(self.window_title)
         
         
         self.name = tk.StringVar(top)
