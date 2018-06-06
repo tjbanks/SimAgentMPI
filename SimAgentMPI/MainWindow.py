@@ -345,7 +345,7 @@ class Jobs_Page(tk.Frame):
                         try:
                             self.ref.dir_loader.sim_dir.update_all_jobs()
                         except Exception as e:
-                            print('*** Caught exception: {}: {}'.format(e.__class__, e))
+                            print('MainWindow.start_refresh_thread.RefreshThread Caught exception: {}: {}'.format(e.__class__, e))
                             print('If this error occurs many times you may want to stop the job causing it')
                             pass # We just want to keep the main update loop going 
                             
@@ -388,32 +388,38 @@ class Dir_Loader(tk.Frame):
     def create_widgets(self):
         self.directory_frame = tk.Frame(self.root)
         self.b_select = tk.Button(self.directory_frame, text="Select Directory", command=lambda btn=True:self.load_dir(btn=btn), width=self.button_width)
-        self.b_select.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
+        self.b_select.grid(pady=5, padx=5, column=0, row=0, sticky="WE",rowspan=2)
         
         self.sim_dir_var = tk.StringVar(self.root)
         self.sim_dir_var.set("Select a project folder to get started.")
         self.sim_dir_label = tk.Label(self.directory_frame, fg="blue",textvariable=self.sim_dir_var,anchor=tk.W,width=75)
-        self.sim_dir_label.grid(column=1,row=0,sticky='news',padx=10,pady=5)
+        self.sim_dir_label.grid(column=1,row=0,sticky='news',padx=10,pady=5,rowspan=2)
         
         #self.b_tool_exclude = tk.Button(self.directory_frame, text="Exclude Folders", command=self.exclude_folders_tool, width=self.button_width)
         #self.b_tool_exclude.grid(pady=5, padx=5, column=2, row=0, sticky="E")
         #self.b_tool_exclude.config(state=tk.DISABLED)
         
         self.b_git_exclude = tk.Button(self.directory_frame, text="Gitignore Results", command=self.add_to_git_ignore, width=self.button_width)
-        self.b_git_exclude.grid(pady=5, padx=5, column=2, row=0, sticky="E")
+        self.b_git_exclude.grid(pady=5, padx=5, column=2, row=0, sticky="E",rowspan=2)
         self.b_git_exclude.config(state=tk.DISABLED)
         
         #filemenu.add_command(label="Add Results Folder to .gitignore", command=self.add_to_git_ignore)#Original
         
         self.b_tool_edit = tk.Button(self.directory_frame, text="Edit Custom Tool", command=self.edit_dir_tool, width=self.button_width)
-        self.b_tool_edit.grid(pady=5, padx=5, column=3, row=0, sticky="E")
+        self.b_tool_edit.grid(pady=5, padx=5, column=3, row=0, sticky="E",rowspan=2)
         self.b_tool_edit.config(state=tk.DISABLED)
         
         self.update_status = tk.BooleanVar()
-        self.b_update_check = tk.Checkbutton(self.directory_frame, text="Auto-Update", variable=self.update_status)
-        self.b_update_check.grid(row=0,column=4, sticky="we")
+        self.b_update_check = tk.Checkbutton(self.directory_frame, text="Auto-Update Job Status", variable=self.update_status)
+        self.b_update_check.grid(row=0,column=4, sticky="w")
         self.update_status.trace("w",self.update_button_enabled)
         self.b_update_check.config(state=tk.DISABLED)
+        
+        self.update_status_server = tk.BooleanVar()
+        self.b_update_check_server = tk.Checkbutton(self.directory_frame, text="Auto-Update Server Output", variable=self.update_status_server)
+        self.b_update_check_server.grid(row=1,column=4, sticky="w")
+        self.update_status_server.trace("w",self.update_button_enabled_server)
+        self.b_update_check_server.config(state=tk.DISABLED)
         
         self.directory_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5,columnspan=2)
     
@@ -424,6 +430,10 @@ class Dir_Loader(tk.Frame):
     def update_button_enabled(self, *args):
         self.sim_dir.set_update_enabled(self.update_status.get())
         return    
+    
+    def update_button_enabled_server(self, *args):
+        self.sim_dir.set_update_enabled_server(self.update_status_server.get())
+        return   
     
     def exclude_folders_tool(self):
         return
@@ -456,6 +466,7 @@ class Dir_Loader(tk.Frame):
             self.sim_dir = SimDirectory(dir_,initialize=True)
             self.sim_dir_var.set(self.sim_dir.sim_directory)
             self.update_status.set(self.sim_dir.is_update_enabled())
+            self.update_status_server.set(self.sim_dir.update_server_output)
             #if self.job_table:
             #    self.job_table.reload_table(dir_=self.sim_dir)
             if self.on_load_callback:
@@ -463,6 +474,7 @@ class Dir_Loader(tk.Frame):
             self.b_git_exclude.config(state=tk.NORMAL)
             self.b_tool_edit.config(state=tk.NORMAL)
             self.b_update_check.config(state=tk.NORMAL)
+            self.b_update_check_server.config(state=tk.NORMAL)
             self.refresh_time = self.sim_dir.update_interval_seconds            
                 
         except Exception as e:

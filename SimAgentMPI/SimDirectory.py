@@ -50,11 +50,13 @@ class SimDirectory(object):
         self.propname_version = "version"
         self.propname_custom_tool = "custom_tool"
         self.propname_update_enabled = "update_enabled"
+        self.propname_update_server_output = "update_server_output"
         self.propname_update_interval = "update_interval_seconds"
         
         self.version_num = SimDirectory.version
         self.custom_tool = ""     
         self.update_enabled = "1"
+        self.update_server_output = False
         self.update_interval_seconds = 60
         
         
@@ -155,14 +157,14 @@ class SimDirectory(object):
                         ssh_conn = ServerInterface().connect_ssh(server,job)
                         ssh_conns[job.server_connector] = ssh_conn
                     except Exception as e:
-                        job.append_log('*** Caught exception: %s: %s' % (e.__class__, e))
+                        job.append_log('SimDirectory.update_all_jobs() Caught exception: %s: %s' % (e.__class__, e))
                         #traceback.print_exc()
                         try:
                             ssh_conn.close()
                         except:
                             pass
                         
-                job.update(ssh_connection=ssh_conn)
+                job.update(ssh_connection=ssh_conn, update_server_output=self.update_server_output)
                 job.read_properties()
             
             if(job.status==ServerInterface.nsg_status[0]):
@@ -173,7 +175,7 @@ class SimDirectory(object):
                     nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
                     nsg_job_lists[job.server_connector] = nsg.listJobs()
                 
-                job.update(nsg_job_list=nsg_list)
+                job.update(nsg_job_list=nsg_list, update_server_output=self.update_server_output)
                 job.read_properties()
                      
         
@@ -181,7 +183,7 @@ class SimDirectory(object):
             try:
                 ssh_conn.close()
             except Exception as e:
-                print('*** Caught exception while attempting to close connections: %s: %s' % (e.__class__, e))
+                print('SimDirectory.update_all_jobs() Caught exception while attempting to close connections: %s: %s' % (e.__class__, e))
                 pass
             
         
@@ -196,6 +198,7 @@ class SimDirectory(object):
                 self.version_num = data[self.propname_version]
                 self.update_enabled = data[self.propname_update_enabled]
                 self.update_interval_seconds = data[self.propname_update_interval]
+                self.update_server_output = data.get(self.propname_update_server_output, False)
         return
 
     def write_properties(self):
@@ -204,6 +207,7 @@ class SimDirectory(object):
         data[self.propname_version] = self.version_num
         data[self.propname_update_enabled] = self.update_enabled
         data[self.propname_update_interval] = self.update_interval_seconds
+        data[self.propname_update_server_output] = self.update_server_output
         with open(self.full_properties_path, 'w') as outfile:  
             json.dump(data, outfile)
             
@@ -221,6 +225,10 @@ class SimDirectory(object):
             self.update_enabled = "1"
         else:
             self.update_enabled = "0"
+        self.write_properties()
+    
+    def set_update_enabled_server(self, val):
+        self.update_server_output = val
         self.write_properties()
     
     def add_results_to_gitignore(self):

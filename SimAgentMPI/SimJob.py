@@ -338,17 +338,16 @@ class SimJob(object):
         ServerInterface.download_status_simjob(self)
         return
     
-    def update(self, nsg_job_list=None, ssh_connection=None):
-        if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]:
-            
+    def update(self, nsg_job_list=None, ssh_connection=None, update_server_output=True):
+        if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]: 
             ServerInterface().update_for_completion(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
-            ServerInterface().download_status_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
+            if update_server_output:
+                ServerInterface().download_status_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
             self.sim_last_update_time = time.time()
             self.write_properties()
             
         if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1]:
             ServerInterface().download_results_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
-            #ServerInterface().download_status_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)#We would have just called download status before previous call
             if self.sim_delete_remote_on_finish:
                 self.delete_remote_results(self,nsg_job_list=nsg_job_list, ssh_connection=ssh_connection)            
             self.sim_last_update_time = time.time()
