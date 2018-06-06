@@ -24,9 +24,9 @@ Directory structure
 """
 
 from SimAgentMPI.SimJob import SimJob
-from SimAgentMPI.ParametricSweep import ParametricSweep
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.nsg.nsgclient import Client
+from SimAgentMPI.ParametricSweep import ParametricSweep
 import os,errno
 import zipfile
 import json
@@ -40,12 +40,14 @@ class SimDirectory(object):
     properties_file = "dir.properties"
     version = "1.0"
      
-    def __init__(self, directory, initialize=False):
+    def __init__(self, directory, initialize=False,prompt=True, init_results= True, init_sweeps=False):
         self.sim_directory = directory
         self.sim_directory_relative = os.path.basename(self.sim_directory)
         self.sim_jobs = []
+        self.sim_sweeps = []
         
         self.sim_results_dir = os.path.join(self.sim_directory, SimDirectory.results_folder_name)
+        self.sim_sweeps_dir = os.path.join(self.sim_results_dir, ParametricSweep.sweeps_folder_name)
         
         self.propname_version = "version"
         self.propname_custom_tool = "custom_tool"
@@ -68,28 +70,54 @@ class SimDirectory(object):
         #If the directory isn't there we want to create it, can check with is_valid.. by callers
         if(not os.path.isdir(self.sim_results_dir)):
             self.is_valid_sim_directory = False
-            if(initialize):
-                if(messagebox.askquestion("", "SimAgent has not used this directory before. Do you want to initialize it? This will create an empty folder named "+SimDirectory.results_folder_name+" to store results in.", icon='warning') == 'yes'):
+            if initialize:
+                if prompt:
+                    if(messagebox.askquestion("", "SimAgent has not used this directory before. Do you want to initialize it? This will create an empty folder named "+SimDirectory.results_folder_name+" to store results in.", icon='warning') == 'yes'):
+                        self.initialize()
+                else:
                     self.initialize()
             else:
                 return
         
         """ CREATE JOBS """
         #Grab all the data we need
+        if init_results:
+            results_dir_files = os.listdir(self.sim_results_dir)
+            results_dir_folder_names = []
+            for file in results_dir_files:
+                if(os.path.isdir(os.path.join(self.sim_results_dir,file))):
+                    if(file != ParametricSweep.sweeps_folder_name):
+                        results_dir_folder_names.append(file)
+            
+            #Initialize all jobs
+            for job_folder in results_dir_folder_names:
+                try:
+                    self.add_new_job(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
+                    print("loaded dir")
+                    print(os.path.join(self.sim_results_dir, job_folder))
+                except Exception as e:
+                    messagebox.showinfo("Load Error","Could not load simjob " + job_folder + ". See the console for info. Continuing...")
+                    print(e)
+                
         
-        results_dir_files = os.listdir(self.sim_results_dir)
-        results_dir_folder_names = []
-        for file in results_dir_files:
-            if(os.path.isdir(os.path.join(self.sim_results_dir,file))):
-                results_dir_folder_names.append(file)
-        
-        #Initialize all jobs
-        for job_folder in results_dir_folder_names:
-            try:
-                self.add_new_job(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
-            except Exception as e:
-                messagebox.showinfo("Load Error","Could not load simjob " + job_folder + ". See the console for info. Continuing...")
-                print(e)
+        """ CREATE SWEEPS """
+        if init_sweeps and os.path.isdir(self.sim_sweeps_dir):
+            sweep_dir_files = os.listdir(self.sim_sweeps_dir)
+            sweep_dir_folder_names = []
+            for file in sweep_dir_files:
+                if(os.path.isdir(os.path.join(self.sim_sweeps_dir,file))):
+                    if(file != ParametricSweep.sweeps_folder_name):
+                        sweep_dir_folder_names.append(file)
+            
+            
+            for sweep_folder in sweep_dir_folder_names:
+                try:
+                    self.add_new_sweep(ParametricSweep(self, sweep_folder))
+                    print("loaded sweep:")
+                    print(os.path.join(self.sim_sweeps_dir, sweep_folder))
+                except Exception as e:
+                    messagebox.showinfo("Load Error","Could not load sweep " + sweep_folder + ". See the console for info. Continuing...")
+                    print(e)
         
         self.read_properties()
         
@@ -113,7 +141,7 @@ class SimDirectory(object):
                 dir_ = root.split(self.sim_directory_relative, 1)[-1]
                 if(len(dir_) and dir_[0] == "\\"):
                     dir_ = dir_[1:]
-                if(dir_.startswith(SimDirectory.results_folder_name) or dir_.startswith(ParametricSweep.sweeps_folder_name) or dir_.startswith(".git")):#only want files in root dir and not results
+                if(dir_.startswith(SimDirectory.results_folder_name) or dir_.startswith(".git")):#only want files in root dir and not results
                     continue
                 #print(os.path.join(self.sim_directory_relative,dir_,file))
                 ziph.write(os.path.join(root, file), arcname=os.path.join(foldername,dir_,file))
@@ -131,6 +159,22 @@ class SimDirectory(object):
         self.zipdir(dir_path, zipf, foldername=os.path.basename(save_to_file)) #must be in format file.zip -> file (folder) -> sim stuff
         zipf.close()
         return
+    
+    def add_new_sweep(self,sweep):
+        self.sim_sweeps.append(sweep)
+        return
+    
+    def get_sweep_names(self):
+        sweeps = []
+        for s in self.sim_sweeps:
+            sweeps.append(s.name)
+        return sweeps
+    
+    def get_sweep(self, sweep_name):
+        for sweep in self.sim_sweeps:
+            if sweep.name == sweep_name:
+                return sweep
+        return None
     
     def add_new_job(self,simjob):
         self.sim_jobs.append(simjob)
@@ -241,7 +285,6 @@ class SimDirectory(object):
         if not SimDirectory.results_folder_name in open(gitignore_file).read():
             f = open(gitignore_file, 'a')
             f.write("\n" + SimDirectory.results_folder_name + "/\n")
-            f.write(ParametricSweep.sweeps_folder_name + "/\n")
             f.close()
             
         return

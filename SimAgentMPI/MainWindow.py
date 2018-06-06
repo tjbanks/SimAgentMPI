@@ -375,12 +375,14 @@ class Jobs_Page(tk.Frame):
 class Dir_Loader(tk.Frame):
 
     #def __init__(self, parent, job_table = None, button_width = 15, *args, **kwargs):
-    def __init__(self, parent, on_load_callback = None, button_width = 15, *args, **kwargs):
+    def __init__(self, parent, on_load_callback = None, button_width = 15, display_dir_options=True, sweeps_only=False,*args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.root = tk.Frame(self.parent)
         self.on_load_callback = on_load_callback
         self.button_width = button_width
+        self.display_dir_options = display_dir_options
+        self.sweeps_only = sweeps_only
         self.sim_dir = None
         self.create_widgets()
         return
@@ -411,15 +413,18 @@ class Dir_Loader(tk.Frame):
         
         self.update_status = tk.BooleanVar()
         self.b_update_check = tk.Checkbutton(self.directory_frame, text="Auto-Update Job Status", variable=self.update_status)
-        self.b_update_check.grid(row=0,column=4, sticky="w")
         self.update_status.trace("w",self.update_button_enabled)
         self.b_update_check.config(state=tk.DISABLED)
         
         self.update_status_server = tk.BooleanVar()
         self.b_update_check_server = tk.Checkbutton(self.directory_frame, text="Auto-Update Server Output", variable=self.update_status_server)
-        self.b_update_check_server.grid(row=1,column=4, sticky="w")
         self.update_status_server.trace("w",self.update_button_enabled_server)
         self.b_update_check_server.config(state=tk.DISABLED)
+        
+        if self.display_dir_options:
+            self.b_update_check.grid(row=0,column=4, sticky="w")
+            self.b_update_check_server.grid(row=1,column=4, sticky="w")
+        
         
         self.directory_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5,columnspan=2)
     
@@ -463,7 +468,7 @@ class Dir_Loader(tk.Frame):
         if not dir_:
             return
         try:
-            self.sim_dir = SimDirectory(dir_,initialize=True)
+            self.sim_dir = SimDirectory(dir_,initialize=True,init_results=not self.sweeps_only, init_sweeps=self.sweeps_only)
             self.sim_dir_var.set(self.sim_dir.sim_directory)
             self.update_status.set(self.sim_dir.is_update_enabled())
             self.update_status_server.set(self.sim_dir.update_server_output)
@@ -1152,7 +1157,6 @@ class Parametric_Sweep_Managment(tk.Frame):
         self.button_width = button_width
         
         self.sim_dir = None
-        self.sweep_sim_dir = None
         
         self.create_widgets()
         return
@@ -1186,7 +1190,7 @@ class Parametric_Sweep_Managment(tk.Frame):
         self.reload_old_sweeps()
         
         self.b_load = tk.Button(self.buttons_frame_inner_ps, text="Load", command=self.load_ps, width=button_width,state=tk.DISABLED)
-        self.b_load.grid(pady=0, padx=5, column=2, row=1, sticky="WE")
+        #self.b_load.grid(pady=0, padx=5, column=2, row=1, sticky="WE")
         
         self.b_delete = tk.Button(self.buttons_frame_inner_ps, text="Delete", command=self.delete_ps, width=button_width,state=tk.DISABLED)
         self.b_delete.grid(pady=0, padx=5, column=3, row=1, sticky="WE")
@@ -1220,8 +1224,16 @@ class Parametric_Sweep_Managment(tk.Frame):
         self.b_run_cust.grid(pady=0, padx=5, column=8, row=0, sticky="WE")
 
     def load_sweeps(self):
+        
+        if not self.sim_dir:
+            return
+        
         self.sweep_choices.clear()
-        self.sweep_choices.append("yep")
+        self.sweep_picked.set(self.sweep_picked_default)
+        self.sweep_choices.append("")
+        for s in self.sim_dir.get_sweep_names():
+            self.sweep_choices.append(s)
+            
         return
     
     def reload_old_sweeps(self):
@@ -1248,6 +1260,7 @@ class Parametric_Sweep_Managment(tk.Frame):
     def new_ps(self):
         if self.sim_dir:
             self.ps = ParametricSweep(self.sim_dir,"testsweep",external_state_var=self.parametric_sweep_state)
+            self.sweep_picked.set("testsweep")
         return
     
     def on_sweep_changed(self, *args):
@@ -1266,9 +1279,11 @@ class Parametric_Sweep_Managment(tk.Frame):
     def load_ps(self):
         if self.sim_dir:
             if self.sweep_picked.get() != "" and self.sweep_picked.get() != self.sweep_picked_default:
-                self.ps = ParametricSweep(self.sim_dir,self.sweep_picked.get(),external_state_var=self.parametric_sweep_state)
+                self.ps = self.sim_dir.get_sweep(self.sweep_picked.get())
+                if not self.ps: 
+                    return
                 if self.on_load_callback:
-                    self.on_load_callback(SimDirectory(self.ps.sweep_dir_working,initialize=True))
+                    self.on_load_callback()
             else:
                 #clear all options/windows
                 pass
@@ -1453,9 +1468,8 @@ class PS_Page(tk.Frame):
         
         
         """=PS Frame========================================"""
-        def load_ps_callback(sim_dir):
-            if sim_dir:
-                self.table.reload_table(dir_=sim_dir)
+        def load_ps_callback():
+            self.table.reload_table(dir_=self.para_sweeper.ps.sweep_project_dir)
             
         self.para_sweeper = Parametric_Sweep_Managment(self.ps_frame, on_load_callback=load_ps_callback, button_width=button_width)
         self.para_sweeper.grid(column=0,row=0)
@@ -1467,7 +1481,7 @@ class PS_Page(tk.Frame):
                 self.para_sweeper.set_current_sim_dir(sim_dir)
                 self.para_sweeper.load_ps()
             
-        self.dir_loader = Dir_Loader(self.directory_frame, on_load_callback=load_callback, button_width=button_width)
+        self.dir_loader = Dir_Loader(self.directory_frame, on_load_callback=load_callback, button_width=button_width, display_dir_options=False, sweeps_only=True)
         self.dir_loader.grid(column=0,row=0)
         
         

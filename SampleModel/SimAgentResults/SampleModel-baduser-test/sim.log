@@ -67,3 +67,21 @@
 18-05-25 00:28:24 > Validating job build with NSG...
 18-05-25 00:28:24 > Error validating NSG template: HTTP Code: 401, Authentication Error
 18-05-25 00:28:24 > Job stopped
+18-06-06 10:11:01 > Run initiated
+18-06-06 10:11:01 > Creating directory snapshot
+18-06-06 10:11:01 > SampleModel-baduser-test.zip created
+18-06-06 10:11:01 > Loading server nsg-tbg28
+18-06-06 10:11:01 > Server connection not found
+18-06-06 10:11:01 > ERROR: Can't start job... not a valid server connector
+18-06-06 10:17:18 > Run initiated
+18-06-06 10:17:18 > Creating directory snapshot
+18-06-06 10:17:18 > SampleModel-baduser-test.zip created
+18-06-06 10:17:18 > Loading server nsg-tbg28
+18-06-06 10:17:18 > Server connection not found
+18-06-06 10:17:18 > ERROR: Can't start job... not a valid server connector
+18-06-06 10:19:29 > Run initiated
+18-06-06 10:19:29 > Creating directory snapshot
+18-06-06 10:19:29 > SampleModel-baduser-test.zip created
+18-06-06 10:19:29 > Loading server nsg-tbg28
+18-06-06 10:19:29 > Server connection not found
+18-06-06 10:19:29 > ERROR: Can't start job... not a valid server connector
