@@ -30,7 +30,7 @@ class MainWindow():
         icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
         self.root.iconbitmap(r'{}'.format(icon))
         self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory) [Tyler Banks]"
-        self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbg28@mail.missouri.edu with questions"
+        self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbanks@mail.missouri.edu with questions"
         self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of any problem that may occur, including accidental data deletion. Always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
         self.window_size = '1580x725'
         self.default_status = "Status: Ready"
@@ -832,20 +832,22 @@ class Job_Table(tk.Frame):
                 self.b_update.config(state=tk.DISABLED)
             
         else:
-            self.b_clone.config(state=tk.DISABLED)
-            self.b_edit.config(state=tk.DISABLED)
-            self.b_start.config(state=tk.DISABLED)
-            self.b_stop.config(state=tk.DISABLED)
-            self.b_update.config(state=tk.DISABLED)
-            self.b_open.config(state=tk.DISABLED)
-            self.b_run_cust.config(state=tk.DISABLED)
-            self.b_promote.config(state=tk.DISABLED)
-            self.b_down_remote.config(state=tk.DISABLED)
-            self.b_del_remote.config(state=tk.DISABLED)
-            self.b_del_all.config(state=tk.DISABLED)
+            self.disable_all_job_buttons()
       
         #print(str(self.table.row(row)))
-    
+    def disable_all_job_buttons(self):
+        self.b_clone.config(state=tk.DISABLED)
+        self.b_edit.config(state=tk.DISABLED)
+        self.b_start.config(state=tk.DISABLED)
+        self.b_stop.config(state=tk.DISABLED)
+        self.b_update.config(state=tk.DISABLED)
+        self.b_open.config(state=tk.DISABLED)
+        self.b_run_cust.config(state=tk.DISABLED)
+        self.b_promote.config(state=tk.DISABLED)
+        self.b_down_remote.config(state=tk.DISABLED)
+        self.b_del_remote.config(state=tk.DISABLED)
+        self.b_del_all.config(state=tk.DISABLED)
+            
     def new_job(self):
         JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.reload_table)
     
@@ -872,6 +874,7 @@ class Job_Table(tk.Frame):
             job.status == ServerInterface.ssh_status[0]
             job.write_properties()
             self.update_row_info(self.selected_row_num)
+            self.disable_all_job_buttons()
             start_thread = StartJobThread(ref=self)
             start_thread.setDaemon(True)
             if self.threads:
@@ -974,7 +977,8 @@ class Job_Table(tk.Frame):
                     timedif = timedif+"{}s".format(int(s))
                     
                 #timedif = "{}d {}h {}m {}s".format(int(d),int(h),int(m),int(s))
-                
+                if timedif == "":
+                    timedif = "0s"
         except Exception:
             pass #just blank timedif
         data = [job.status, job.sim_name, job.server_connector, part_tool , job.server_nodes, job.server_cores, timeofstart, timedif,job.server_remote_identifier]

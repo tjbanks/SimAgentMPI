@@ -13,7 +13,7 @@ from SimAgentMPI.SimServer import ServersFile
 from SimAgentMPI.NewServerConfig import ServerEntryBox
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
-from SimAgentMPI.Utils import AutocompleteEntry
+from SimAgentMPI.Utils import AutocompleteEntry,CreateToolTip
 import SimAgentMPI
 
 class JobEntryBox:
@@ -64,7 +64,10 @@ class JobEntryBox:
             self.server_max_runtime = tk.StringVar(top)
             self.server_max_runtime.set("1")
             #self.server_email = tk.StringVar(top)
-            self.server_status_email = tk.IntVar(top)
+            self.server_status_email = tk.BooleanVar(top)
+            self.server_status_email.set(True)
+            self.server_delete_remote_on_finish = tk.BooleanVar(top)
+            self.server_delete_remote_on_finish.set(True)
             self.confirm = tk.BooleanVar(top)
             self.confirm.set(False)
             
@@ -83,6 +86,8 @@ class JobEntryBox:
                 self.server_nsg_python.set(edit_job.server_nsg_python)
                 self.server_mpi_partition.set(edit_job.server_mpi_partition)
                 self.server_max_runtime.set(edit_job.server_max_runtime)
+                self.server_status_email.set(edit_job.server_status_email)
+                self.server_delete_remote_on_finish.set(edit_job.sim_delete_remote_on_finish)
                 
                 if clone_mode:
                     self.name.set(edit_job.sim_name+"_clone")
@@ -93,7 +98,7 @@ class JobEntryBox:
         
         def display(self):            
             top = self.top
-            top.geometry('375x435')
+            #top.geometry('375x435')
             top.resizable(0,0)
             top.title(self.window_title)
            
@@ -228,6 +233,11 @@ class JobEntryBox:
             self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_max_runtime)
             self.name_e.grid(row=6,column=1,padx=5,columnspan=1)
             
+            tk.Label(conn_option_frame, text='Delete Remote Files',width=15, background='light gray',relief=tk.GROOVE).grid(row=7,column=0,pady=5,padx=5)
+            dcb1 = tk.Checkbutton(conn_option_frame, text="", variable=self.server_delete_remote_on_finish)
+            dcb1.grid(row=7,column=1,padx=5, sticky='W')
+            #CreateToolTip(dcb1,text="Delete the files on the remote server upon completion. This is a recommended setting")
+            
                         
             ####NSG###
             
@@ -259,7 +269,12 @@ class JobEntryBox:
             
             tk.Label(nsgconn_option_frame, text='Send Status Emails',width=15, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
             tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email).grid(row=8,column=1,padx=5, sticky='W')
-             
+            
+            
+            tk.Label(nsgconn_option_frame, text='Delete Remote Files',width=15, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
+            dcb = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_delete_remote_on_finish)
+            dcb.grid(row=8,column=1,padx=5, sticky='W')
+            #CreateToolTip(dcb,text="Delete the files on the remote server upon completion. This is a recommended setting")
             #Return
                         
             button_frame = tk.Frame(top)
@@ -449,6 +464,8 @@ class JobEntryBox:
             simjob.server_nsg_python = str(self.server_nsg_python.get())
             simjob.server_mpi_partition = self.server_mpi_partition.get()
             simjob.server_max_runtime = self.server_max_runtime.get()
+            simjob.server_status_email = self.server_status_email.get()
+            simjob.sim_delete_remote_on_finish = self.server_delete_remote_on_finish.get()
                                     
             return simjob
         
@@ -493,7 +510,7 @@ class Create_Batch_File(object):
         
     def display(self):
         top = self.top = tk.Toplevel(self.parent)
-        top.geometry('340x175')
+        #top.geometry('340x175')
         top.resizable(1,1)
         top.title(self.window_title)
         

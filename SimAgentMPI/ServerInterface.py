@@ -23,7 +23,7 @@ class ServerInterface(object):
         return
     
     def get_server(self, simjob):
-        simjob.append_log("Loading server " + simjob.server_connector)
+        #simjob.append_log("Loading server " + simjob.server_connector)
         servers = ServersFile()
         server = servers.get_server_byname(simjob.server_connector) #will return Mone if not found
         if not server:
@@ -36,6 +36,7 @@ class ServerInterface(object):
         ts = time.time()
         #st = datetime.datetime.fromtimestamp(ts).strftime('%y%m%d-%H%M%S')
         simjob.sim_start_time = ts
+        simjob.sim_last_update_time = ts
         simjob.write_properties()
         
         if server:#check to make sure we have a valid server
@@ -97,13 +98,13 @@ class ServerInterface(object):
         
         return
         
-    def delete_remote_results(self, simjob):
+    def delete_remote_results(self, simjob, nsg_job_list=None, ssh_connection=None):
         server = self.get_server(simjob)
         if server:#check to make sure we have a valid server
             if(server.type == "nsg"):
-                self.delete_nsg(simjob, server)
+                self.delete_nsg(simjob, server, nsg_job_list=nsg_job_list)
             elif(server.type == "ssh"):
-                self.delete_ssh(simjob, server)
+                self.delete_ssh(simjob, server, ssh_connection=ssh_connection)
         else:
             simjob.append_log("ERROR: Can't delete results... not a valid server connector")
             
@@ -487,6 +488,7 @@ class ServerInterface(object):
                 simjob.append_log("Results saved to: {}".format(results_dir_absolute))
                 simjob.status = ServerInterface.ssh_status[2]
                 simjob.write_properties()
+                
         
         if not ssh_connection:
             try:
@@ -606,9 +608,13 @@ class ServerInterface(object):
                     pass
         return
             
-    def delete_nsg(self, simjob, server):
+    def delete_nsg(self, simjob, server, nsg_job_list=None):
         nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
-        for job in nsg.listJobs():
+        
+        if not nsg_job_list: #Just save a couple calls to their server
+            nsg_job_list = nsg.listJobs()
+            
+        for job in nsg_job_list:
             if job.jobUrl == simjob.server_remote_identifier:
                 #job.update()
                 job.delete()
@@ -618,11 +624,9 @@ class ServerInterface(object):
                     simjob.write_properties()
         return
     
-    def delete_ssh(self, simjob, server):
+    def delete_ssh(self, simjob, server, ssh_connection=None):
         
-        try:
-            client = self.connect_ssh(server,simjob)
-            
+        def delete_ssh_():
             if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
                 simjob.append_log("Deleting remote ssh files files")
                 zip_dir = simjob.file_snapshotzip.split(".zip")[0]
@@ -631,15 +635,25 @@ class ServerInterface(object):
                 if simjob.status == ServerInterface.ssh_status[0] or simjob.status == ServerInterface.ssh_status[2]:
                     simjob.status = ServerInterface.ssh_status[3]
                     simjob.write_properties()
-                    
-            client.close()
-        except Exception as e:
-                simjob.append_log('*** Caught exception: {}: {}'.format(e.__class__, e))
-                #traceback.print_exc()
-                try:
-                    client.close()
-                except:
-                    pass
+                
+                
+        if not ssh_connection:
+            #the outfiles are in the simjob now
+            try:
+                client = self.connect_ssh(server,simjob)
+                delete_ssh_()    
+                client.close()
+            except Exception as e:
+                    simjob.append_log('ServerInterface.delete_ssh() Caught exception: {}: {}'.format(e.__class__, e))
+                    #traceback.print_exc()
+                    try:
+                        client.close()
+                    except:
+                        pass
+        else:
+            client = ssh_connection
+            delete_ssh_()
+            
         return
     
     

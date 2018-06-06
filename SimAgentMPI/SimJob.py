@@ -77,6 +77,7 @@ class SimJob(object):
         self.propname_server_remote_identifier = "server_remote_identifier"
         self.propname_sim_start_time = "sim_start_time"
         self.propname_sim_last_update_time = "sim_last_update_time"
+        self.propname_sim_delete_remote_on_finish = "sim_delete_remote_on_finish"
         
         self.file_snapshotzip = ""
         self.file_resultszip = ""
@@ -101,10 +102,11 @@ class SimJob(object):
         self.server_stderr_file = "stderr.txt"
         self.server_max_runtime = "1"
         self.server_email = ""
-        self.server_status_email = "false"
+        self.server_status_email = False
         self.server_remote_identifier = ""
         self.sim_start_time = ""
         self.sim_last_update_time = ""
+        self.sim_delete_remote_on_finish = True
         
         self.full_properties_path = os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties)
         
@@ -248,6 +250,7 @@ class SimJob(object):
                 self.server_remote_identifier = data[self.propname_server_remote_identifier]
                 self.sim_start_time = data[self.propname_sim_start_time]
                 self.sim_last_update_time = data[self.propname_sim_last_update_time]
+                self.sim_delete_remote_on_finish = data.get(self.propname_sim_delete_remote_on_finish,True)
         else:
             self.write_properties()
             self.append_log("")
@@ -280,6 +283,7 @@ class SimJob(object):
         data[self.propname_server_remote_identifier] = self.server_remote_identifier
         data[self.propname_sim_start_time] = self.sim_start_time
         data[self.propname_sim_last_update_time] = self.sim_last_update_time
+        data[self.propname_sim_delete_remote_on_finish] = self.sim_delete_remote_on_finish
         
         with open(os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties), 'w') as outfile:  
             json.dump(data, outfile)
@@ -345,6 +349,8 @@ class SimJob(object):
         if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1]:
             ServerInterface().download_results_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
             #ServerInterface().download_status_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)#We would have just called download status before previous call
+            if self.sim_delete_remote_on_finish:
+                self.delete_remote_results(self,nsg_job_list=nsg_job_list, ssh_connection=ssh_connection)            
             self.sim_last_update_time = time.time()
             self.write_properties()
         
