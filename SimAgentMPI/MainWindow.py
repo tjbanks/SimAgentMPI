@@ -1269,7 +1269,10 @@ class Parametric_Sweep_Managment(tk.Frame):
             parswee = ParametricSweep(self.sim_dir,"testsweep",external_state_var=self.parametric_sweep_state)
             self.ps = parswee
             self.sim_dir.add_new_sweep(parswee)
+            self.load_sweeps()
+            self.reload_old_sweeps()
             self.sweep_picked.set("testsweep")
+            self.sweep_popupMenu.config(state=tk.NORMAL)
         return
     
     def on_sweep_changed(self, *args):

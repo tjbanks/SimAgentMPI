@@ -166,7 +166,8 @@ class SimDirectory(object):
         return
     
     def add_new_sweep(self,sweep):
-        self.sim_sweeps.append(sweep)
+        if not self.get_sweep(sweep.name):
+            self.sim_sweeps.append(sweep)
         return
     
     def get_sweep_names(self):
@@ -192,7 +193,8 @@ class SimDirectory(object):
         
     
     def add_new_job(self,simjob):
-        self.sim_jobs.append(simjob)
+        if not self.get_job(simjob.sim_name):
+            self.sim_jobs.append(simjob)
         return
     
     def get_job(self, job_name):
