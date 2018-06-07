@@ -1003,23 +1003,30 @@ class Job_Table(tk.Frame):
     
     def reload_table(self, dir_=None):
         
-        if dir_:
-            self.sim_dir = dir_
+        if self.sim_dir == dir_ == None:
+            return
+        
+        self.sim_dir = dir_
         
         self.table.grid_forget()
         self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
         self.table.grid(row=1,column=0,padx=10,pady=10)
         #self.table.set_data([[""],[""],[""],[""]])
-        self.sim_dir.sim_jobs.sort(key=lambda x: float(x.created), reverse=True)
         
-        if len(self.sim_dir.sim_jobs):
+        if self.sim_dir:
+            self.sim_dir.sim_jobs.sort(key=lambda x: float(x.created), reverse=True)
+        
+        if self.sim_dir and len(self.sim_dir.sim_jobs):
             for job in self.sim_dir.sim_jobs:
                 data = self.row_of_data(job)
                 self.table.insert_row(data)#,index=0)
         else:
             self.table.set_data([[""],[""],[""],[""]])
         
-        self.b_new.config(state=tk.NORMAL)
+        if self.sim_dir:
+            self.b_new.config(state=tk.NORMAL)
+        else:
+            self.b_new.config(state=tk.DISABLED)
         
         self.select_row(None)
             
@@ -1220,7 +1227,7 @@ class Parametric_Sweep_Managment(tk.Frame):
         self.b_open = tk.Button(ps_buttons_frame_inner_1, text="Open Sweep Folder", command=self.open_sweep_folder, width=button_width,state=tk.DISABLED)
         self.b_open.grid(pady=0, padx=5, column=7, row=0, sticky="WE")
         
-        self.b_run_cust = tk.Button(ps_buttons_frame_inner_1, text="Run Custom Tool", command=self.custom_run, width=button_width,state=tk.DISABLED)
+        self.b_run_cust = tk.Button(ps_buttons_frame_inner_1, text="Sweep Custom Tool", command=self.custom_run, width=button_width,state=tk.DISABLED)
         self.b_run_cust.grid(pady=0, padx=5, column=8, row=0, sticky="WE")
 
     def load_sweeps(self):
@@ -1259,20 +1266,22 @@ class Parametric_Sweep_Managment(tk.Frame):
     
     def new_ps(self):
         if self.sim_dir:
-            self.ps = ParametricSweep(self.sim_dir,"testsweep",external_state_var=self.parametric_sweep_state)
+            parswee = ParametricSweep(self.sim_dir,"testsweep",external_state_var=self.parametric_sweep_state)
+            self.ps = parswee
+            self.sim_dir.add_new_sweep(parswee)
             self.sweep_picked.set("testsweep")
         return
     
     def on_sweep_changed(self, *args):
-        #print(self.sweep_picked.get())
         if self.sweep_picked.get() != "" and self.sweep_picked.get() != self.sweep_picked_default:
             self.b_load.config(state=tk.NORMAL)
             self.b_delete.config(state=tk.NORMAL)
-            #self.load_ps() #IF YOU DON'T WANT TO MANUALLY RELOAD UNCOMMENT THIS
         else:
             self.b_load.config(state=tk.DISABLED)
             self.b_delete.config(state=tk.DISABLED)
             self.parametric_sweep_state.set("")
+            
+        self.load_ps() #IF YOU DON'T WANT TO MANUALLY RELOAD UNCOMMENT THIS
         
         return
     
@@ -1280,16 +1289,29 @@ class Parametric_Sweep_Managment(tk.Frame):
         if self.sim_dir:
             if self.sweep_picked.get() != "" and self.sweep_picked.get() != self.sweep_picked_default:
                 self.ps = self.sim_dir.get_sweep(self.sweep_picked.get())
-                if not self.ps: 
-                    return
-                if self.on_load_callback:
-                    self.on_load_callback()
+                
+                if self.ps: 
+                    self.ps.set_external_state_var(self.parametric_sweep_state)
             else:
-                #clear all options/windows
-                pass
+                self.ps = None
+                self.b_load.config(state=tk.DISABLED)
+                self.b_delete.config(state=tk.DISABLED)
+                self.parametric_sweep_state.set("")
+            
+            if self.on_load_callback:
+                self.on_load_callback()
+                    
         return
     
     def delete_ps(self):
+        
+        if self.sim_dir:
+            self.sim_dir.delete_sweep(self.sweep_picked.get())
+            self.load_ps()
+            self.load_sweeps()
+            self.reload_old_sweeps()
+            self.sweep_picked.set(self.sweep_picked_default)
+            self.sweep_popupMenu.config(state=tk.NORMAL)
         return
     
     def edit_ps(self):
@@ -1298,13 +1320,19 @@ class Parametric_Sweep_Managment(tk.Frame):
         return
     
     def build_ps(self):
+        def build_ps_callback():
+            self.load_ps()
+            
         if self.ps:
-            self.ps.build()
+            self.ps.build(callback=build_ps_callback)
         return
     
     def decon_ps(self):
+        def decon_ps_callback():
+            self.load_ps()
+            
         if self.ps:
-            self.ps.deconstruct()
+            self.ps.deconstruct(callback=decon_ps_callback)
         return
     
     def start_ps(self):
@@ -1469,7 +1497,11 @@ class PS_Page(tk.Frame):
         
         """=PS Frame========================================"""
         def load_ps_callback():
-            self.table.reload_table(dir_=self.para_sweeper.ps.sweep_project_dir)
+            if self.para_sweeper.ps:
+                psdir = self.para_sweeper.ps.sweep_project_dir
+            else:
+                psdir = None
+            self.table.reload_table(dir_=psdir)
             
         self.para_sweeper = Parametric_Sweep_Managment(self.ps_frame, on_load_callback=load_ps_callback, button_width=button_width)
         self.para_sweeper.grid(column=0,row=0)
@@ -1479,7 +1511,6 @@ class PS_Page(tk.Frame):
         def load_callback(sim_dir):
             if sim_dir:
                 self.para_sweeper.set_current_sim_dir(sim_dir)
-                self.para_sweeper.load_ps()
             
         self.dir_loader = Dir_Loader(self.directory_frame, on_load_callback=load_callback, button_width=button_width, display_dir_options=False, sweeps_only=True)
         self.dir_loader.grid(column=0,row=0)

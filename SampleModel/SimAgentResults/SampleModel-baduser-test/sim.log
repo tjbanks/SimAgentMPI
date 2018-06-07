@@ -85,3 +85,8 @@
 18-06-06 10:19:29 > Loading server nsg-tbg28
 18-06-06 10:19:29 > Server connection not found
 18-06-06 10:19:29 > ERROR: Can't start job... not a valid server connector
+18-06-06 20:20:54 > Run initiated
+18-06-06 20:20:54 > Creating directory snapshot
+18-06-06 20:20:54 > SampleModel-baduser-test.zip created
+18-06-06 20:20:54 > Server connection not found
+18-06-06 20:20:54 > ERROR: Can't start job... not a valid server connector

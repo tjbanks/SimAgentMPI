@@ -152,6 +152,11 @@ class SimDirectory(object):
         self.sim_jobs.remove(job)
         return
     
+    def delete_all_jobs(self):
+        for j in self.sim_jobs:
+            self.delete_job(j)
+        return
+    
     def take_snapshotzip(self, save_to_file):
         #Zip up everything except results foldername
         zipf = zipfile.ZipFile(save_to_file+".zip", 'w', zipfile.ZIP_DEFLATED)
@@ -173,8 +178,18 @@ class SimDirectory(object):
     def get_sweep(self, sweep_name):
         for sweep in self.sim_sweeps:
             if sweep.name == sweep_name:
+                sweep.reload()
                 return sweep
         return None
+    
+    def delete_sweep(self, sweep_name):
+        s = self.get_sweep(sweep_name)
+        if not s:
+            return
+        
+        shutil.rmtree(s.sweep_dir)
+        self.sim_sweeps.remove(s)
+        
     
     def add_new_job(self,simjob):
         self.sim_jobs.append(simjob)
