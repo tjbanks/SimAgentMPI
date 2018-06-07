@@ -574,45 +574,196 @@ class Create_Batch_File(object):
         
         return
     
+
+class SweepEditor():
+    def __init__(self, parent,callback=None,button_width=15):
+        self.window_title = "Create Range"
+        self.top = tk.Toplevel(parent)
+        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        self.top.iconbitmap(r'{}'.format(icon))
+        self.confirm = False
+        self.callback=callback  
+        self.button_width = button_width
+        
+        self.display()
+        return
+    
+    def display(self):   
+        #top.geometry('375x435')
+        self.top.resizable(1,1)
+        
+        #tk.Label(self.top, text='New Value Range',fg="blue").grid(row=9,column=0,pady=5,padx=5,columnspan=2)
+        #tk.Label(self.top, text='Start',width=15, background='light gray',relief=tk.GROOVE).grid(row=10,column=0,pady=5,padx=5)
+        #self.start_e = tk.Entry(self.top,width=25,textvariable=self.start)
+        #self.start_e.grid(row=10,column=1,padx=5)
+        
+        #tk.Label(self.top, text='End',width=15, background='light gray',relief=tk.GROOVE).grid(row=11,column=0,pady=5,padx=5)
+        #self.end_e = tk.Entry(self.top,width=25,textvariable=self.end)
+        #self.end_e.grid(row=11,column=1,padx=5)
+        
+        #tk.Label(self.top, text='Stride',width=15, background='light gray',relief=tk.GROOVE).grid(row=12,column=0,pady=5,padx=5)
+        #self.stride_e = tk.Entry(self.top,width=25,textvariable=self.stride)
+        #self.stride_e.grid(row=12,column=1,padx=5)
+        
+        self.b_submit = tk.Button(self.top, text="New Parameter Range", command=self.new_param)
+        self.b_submit.grid(pady=5, padx=5, column=0, row=12, sticky="WE",rowspan=1)
+        self.b_submit.config(state=tk.NORMAL)
+        
+        self.b_submit = tk.Button(self.top, text="Ok", command=self.ok, width=self.button_width)
+        self.b_submit.grid(pady=5, padx=5, column=0, row=13, sticky="WE",rowspan=1)
+        self.b_submit.config(state=tk.NORMAL)
+        
+        self.b_cancel = tk.Button(self.top, text="Cancel", command=self.cancel, width=self.button_width)
+        self.b_cancel.grid(pady=5, padx=5, column=1, row=13, sticky="WE",rowspan=1)
+        self.b_cancel.config(state=tk.NORMAL)
+            
+    
+    def new_param(self):
+        """ TESTING START """
+        file_read = filedialog.askopenfilename()
+        file_read = os.path.abspath(file_read)
+        def c(*args):
+            print(p.selected_params)
+        p = ParameterSelectTextBox(self.top, file_read, callback=c)
+        """ TESTING END """
+        
+    def ok(self):
+        self.confirm = True
+        self.parse_params()
+        self.top.destroy()
+        if self.callback:
+            self.callback()
+        
+    def cancel(self):
+        self.top.destroy()
+        
     
 class ParameterSelectTextBox():
     
-    def __init__(self, parent, file_, oncomplete_callback=None, edit_select=None, button_width=15):
+    class Ranger():
+        def __init__(self, parent, callback=None, button_width=15):
+            self.window_title = "Create Range"
+            self.top = tk.Toplevel(parent)
+            icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+            self.top.iconbitmap(r'{}'.format(icon))
+            self.confirm = False
+            self.start = tk.StringVar(self.top)
+            self.end = tk.StringVar(self.top)
+            self.stride = tk.StringVar(self.top)
+            self.stride.set("1")
+            
+            self.callback = callback
+            self.button_width=button_width
+            
+            self.display()
+            
+        def display(self):   
+            #top.geometry('375x435')
+            self.top.resizable(1,1)
+            tk.Label(self.top, text='New Value Range',fg="blue").grid(row=9,column=0,pady=5,padx=5,columnspan=2)
+            tk.Label(self.top, text='Start',width=15, background='light gray',relief=tk.GROOVE).grid(row=10,column=0,pady=5,padx=5)
+            self.start_e = tk.Entry(self.top,width=25,textvariable=self.start)
+            self.start_e.grid(row=10,column=1,padx=5)
+            
+            tk.Label(self.top, text='End',width=15, background='light gray',relief=tk.GROOVE).grid(row=11,column=0,pady=5,padx=5)
+            self.end_e = tk.Entry(self.top,width=25,textvariable=self.end)
+            self.end_e.grid(row=11,column=1,padx=5)
+            
+            tk.Label(self.top, text='Stride',width=15, background='light gray',relief=tk.GROOVE).grid(row=12,column=0,pady=5,padx=5)
+            self.stride_e = tk.Entry(self.top,width=25,textvariable=self.stride)
+            self.stride_e.grid(row=12,column=1,padx=5)
+            
+            self.b_submit = tk.Button(self.top, text="Ok", command=self.ok, width=self.button_width)
+            self.b_submit.grid(pady=5, padx=5, column=0, row=13, sticky="WE",rowspan=1)
+            self.b_submit.config(state=tk.NORMAL)
+            
+            self.b_cancel = tk.Button(self.top, text="Cancel", command=self.cancel, width=self.button_width)
+            self.b_cancel.grid(pady=5, padx=5, column=1, row=13, sticky="WE",rowspan=1)
+            self.b_cancel.config(state=tk.NORMAL)
+            
+        def ok(self):
+            self.top.destroy()
+            if self.callback:
+                self.callback()
+        
+        def cancel(self):
+            self.top.destroy()
+            
+    
+    def __init__(self, parent, file_, callback=None, edit_select=None, button_width=15):
         self.window_title = "New Parameter"
         if edit_select:
             self.window_title = "Edit Parameter Selection"
             
         self.parent = parent
         self.file_ = file_
-        self.oncomplete_callback = oncomplete_callback
+        self.callback = callback
         self.edit_select = edit_select
         self.button_width = button_width
         self.valid_message = "Unspecified error, see console output"
+        
+        self.selected_text = ""
+        self.selected_start = -1
+        self.selected_end = -1
+        self.selected_params = []
         
         self.top = tk.Toplevel(self.parent)
         icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
         self.top.iconbitmap(r'{}'.format(icon))
             
+        self.confirm = False
         self.display()
         return
         
     def display(self):   
         #top.geometry('375x435')
-        self.top.resizable(0,0)
+        self.top.resizable(1,1)
+        self.top.rowconfigure(2, weight=1)
+        self.top.columnconfigure(0, weight=1)
         self.top.title(self.window_title)
         
         self.manage_frame = tk.LabelFrame(self.top, text="Management")
-        self.text_frame = tk.LabelFrame(self.top, text="Text Selection")
+        self.manage_frame.rowconfigure(0, weight=1)
+        self.manage_frame.columnconfigure(1, weight=2)
+        self.manage_frame.columnconfigure(2, weight=2)
+        
+        self.text_frame = tk.LabelFrame(self.top, text=os.path.basename(self.file_),fg="blue")
+        self.text_frame.rowconfigure(1, weight=1)
+        self.text_frame.columnconfigure(0, weight=1)
         
         """ MANAGE FRAME """
-        self.b_get_select = tk.Button(self.manage_frame, text="Get Selection", command=self.get_selection, width=self.button_width)
-        self.b_get_select.grid(pady=5, padx=5, column=0, row=0, sticky="E",rowspan=2)
-        self.b_get_select.config(state=tk.NORMAL)
+        self.b_get_select = tk.Button(self.manage_frame, text="Mark Selection", command=self.get_selection, width=self.button_width)
+        self.b_get_select.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
+        self.b_get_select.config(state=tk.NORMAL,fg="white",bg="blue")
+        
+        self.params_var = tk.StringVar(self.top)
+        tk.Label(self.manage_frame, text='Parameters to be used during sweep. Separate with commas.').grid(row=0,column=1,pady=5,padx=5,columnspan=2)
+        self.params_e = tk.Entry(self.manage_frame,textvariable=self.params_var,width=2*self.button_width)
+        self.params_e.grid(row=1,column=1,padx=5,columnspan=2,sticky="WE")
+        
+        self.b_new_list = tk.Button(self.manage_frame, text="New List", command=self.ok, width=self.button_width)
+        #self.b_new_list.grid(pady=5, padx=5, column=0, row=1, sticky="WE",rowspan=1)
+        self.b_new_list.config(state=tk.NORMAL)
+        
+        self.b_new_range = tk.Button(self.manage_frame, text="New Range", command=self.new_range, width=self.button_width)
+        self.b_new_range.grid(pady=5, padx=5, column=0, row=1, sticky="WE",rowspan=1)
+        self.b_new_range.config(state=tk.NORMAL)
+        
+        
+        self.b_submit = tk.Button(self.manage_frame, text="Finish", command=self.ok, width=self.button_width)
+        self.b_submit.grid(pady=5, padx=5, column=4, row=0, sticky="WE",rowspan=1)
+        self.b_submit.config(state=tk.DISABLED)
+        
+        self.b_cancel = tk.Button(self.manage_frame, text="Cancel", command=self.cancel, width=self.button_width)
+        self.b_cancel.grid(pady=5, padx=5, column=4, row=1, sticky="WE",rowspan=1)
+        self.b_cancel.config(state=tk.NORMAL)
         
         """ TEXT FRAME """
+        tk.Label(self.text_frame, text='Hightlight area to be replaced during parameter search and click \'Mark Selection\'.').grid(row=0,column=0,pady=5,padx=5,columnspan=1)
+        
         self.text_console = tk.Text(self.text_frame)
-        self.text_console.config(width= 50, height=18, bg='white',fg='black')
-        self.text_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        self.text_console.config( bg='white',fg='black')
+        self.text_console.grid(column=0, row=1, padx=5, pady=5, sticky='NEWS')
         
         self.text_console.config(state=tk.NORMAL)
         text = self.get_file_text()
@@ -620,30 +771,70 @@ class ParameterSelectTextBox():
         self.text_console.insert(tk.END, text)
         self.text_console.config(state=tk.DISABLED)
         
-        self.manage_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5,columnspan=2)
-        self.text_frame.grid(column=0,row=1,sticky='news',padx=5,pady=5,columnspan=2)
+        self.load_other_highlights()
+        
+        
+        self.manage_frame.grid(column=0,row=1,sticky='news',padx=5,pady=5,columnspan=2)
+        self.text_frame.grid(column=0,row=2,sticky='news',padx=5,pady=5,columnspan=2)
+        
 
     def get_selection(self):
-        selected_text = ""
-        start = -1
-        end = -1
-        
+        tag = "currenthighlight"
         try:
-            selected_text = self.text_console.selection_get()
-            start = self.text_console.index(tk.SEL_FIRST)
-            end = self.text_console.index(tk.SEL_LAST)
+            self.selected_text = self.text_console.selection_get()
+            self.selected_start = self.text_console.index(tk.SEL_FIRST)
+            self.selected_end = self.text_console.index(tk.SEL_LAST)
+            
+            self.text_console.tag_delete(tag)
+            self.text_console.tag_add(tag, self.selected_start, self.selected_end)
+            self.text_console.tag_config(tag, background="blue", foreground="white")
+            
+            self.b_submit.config(state=tk.NORMAL)
+            
         except Exception as e:
             pass
-        print(selected_text)
-        print(start)
-        print(end)
         
-        #self.text_console.tag_config("highlighted", background="white", foreground="black")
-        self.text_console.tag_add("highlighted", start, end)
-        self.text_console.tag_config("highlighted", background="blue", foreground="white")
+    def new_range(self):
+        def cb(*args):
+            comma = ""
+            if self.params_var.get() != "":
+                comma = ","
+                
+            try:
+                r_vals = ""
+                rn = range(int(ranger.start.get()),int(ranger.end.get()),int(ranger.stride.get()))
+                for i, r in enumerate(rn):
+                    if i == 0:
+                        r_vals = str(r)
+                    else:
+                        r_vals = r_vals + "," + str(r)
+                self.params_var.set(self.params_var.get()+comma+r_vals)
+            except Exception as e:
+                messagebox.showwarning("Error", "Range formatted improperly")
+            
+            self.top.lift()
+        
+        ranger = ParameterSelectTextBox.Ranger(self.top,callback=cb)
         
     def get_file_text(self):
         f = open(self.file_,"r")
         string = f.read()
         f.close()
         return string
+    
+    def load_other_highlights(self):
+        return
+    
+    def parse_params(self):
+        self.selected_params = self.params_var.get().split(",")
+        return
+    
+    def ok(self):
+        self.confirm = True
+        self.parse_params()
+        self.top.destroy()
+        if self.callback:
+            self.callback()
+        
+    def cancel(self):
+        self.top.destroy()

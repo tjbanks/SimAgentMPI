@@ -13,7 +13,7 @@ import datetime
 from PIL import ImageTk, Image
 import os, time, enum
 
-from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File, ParameterSelectTextBox
+from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File, ParameterSelectTextBox, SweepEditor
 from SimAgentMPI.NewServerConfig import ServerEntryBox,SelectServerEditBox
 from SimAgentMPI.SimDirectory import SimDirectory
 from SimAgentMPI.ServerInterface import ServerInterface
@@ -72,11 +72,6 @@ class MainWindow():
         except Exception:
             print('Style loaded previously. Continuing.')
         
-        """ TESTING START """
-        file_read = "./README.md"
-        file_read = os.path.abspath(file_read)
-        ParameterSelectTextBox(self.root, file_read)
-        """ TESTING END """
         
         frame1 = tk.Frame(self.root)
         frame1.grid(row=0,column=0,sticky='news')
@@ -1325,7 +1320,7 @@ class Parametric_Sweep_Managment(tk.Frame):
     
     def edit_ps(self):
         if self.ps:
-            pass
+            se = SweepEditor(self.root)
         return
     
     def build_ps(self):
