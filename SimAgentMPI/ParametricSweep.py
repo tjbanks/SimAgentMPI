@@ -133,7 +133,7 @@ class ParametricSweep(object):
             elif state == ParametricSweep.state[6]: #If we're cancelling check all jobs state, if any still running stop
                 state = ParametricSweep.state[7]
                     
-        print("Parametric sweep {} now in state {}".format(self.name, state))
+        #print("Parametric sweep {} now in state {}".format(self.name, state))
         self.state = state
         if self.external_state_var:
             self.external_state_var.set(self.state)

@@ -93,8 +93,6 @@ class SimDirectory(object):
             for job_folder in results_dir_folder_names:
                 try:
                     self.add_new_job(SimJob(self, os.path.join(self.sim_results_dir, job_folder)))
-                    print("loaded dir")
-                    print(os.path.join(self.sim_results_dir, job_folder))
                 except Exception as e:
                     messagebox.showinfo("Load Error","Could not load simjob " + job_folder + ". See the console for info. Continuing...")
                     print(e)
@@ -113,8 +111,6 @@ class SimDirectory(object):
             for sweep_folder in sweep_dir_folder_names:
                 try:
                     self.add_new_sweep(ParametricSweep(self, sweep_folder))
-                    print("loaded sweep:")
-                    print(os.path.join(self.sim_sweeps_dir, sweep_folder))
                 except Exception as e:
                     messagebox.showinfo("Load Error","Could not load sweep " + sweep_folder + ". See the console for info. Continuing...")
                     print(e)

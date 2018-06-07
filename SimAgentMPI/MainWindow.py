@@ -13,7 +13,7 @@ import datetime
 from PIL import ImageTk, Image
 import os, time, enum
 
-from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File
+from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File, ParameterSelectTextBox
 from SimAgentMPI.NewServerConfig import ServerEntryBox,SelectServerEditBox
 from SimAgentMPI.SimDirectory import SimDirectory
 from SimAgentMPI.ServerInterface import ServerInterface
@@ -72,6 +72,12 @@ class MainWindow():
         except Exception:
             print('Style loaded previously. Continuing.')
         
+        """ TESTING START """
+        file_read = "./README.md"
+        file_read = os.path.abspath(file_read)
+        ParameterSelectTextBox(self.root, file_read)
+        """ TESTING END """
+        
         frame1 = tk.Frame(self.root)
         frame1.grid(row=0,column=0,sticky='news')
         frame1.columnconfigure(0,weight=1)
@@ -92,7 +98,7 @@ class MainWindow():
         page2 = ttk.Frame(nb)
         
         nb.add(page1, text='Single Jobs')
-        nb.add(page2, text='Parametric Sweep')
+        nb.add(page2, text='Parameter Search')
         
         #Alternatively you could do parameters_page(page1), but wouldn't get scrolling
         jobs_page = self.bind_page(page1, Jobs_Page)

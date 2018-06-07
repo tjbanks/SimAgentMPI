@@ -575,5 +575,75 @@ class Create_Batch_File(object):
         return
     
     
+class ParameterSelectTextBox():
     
-    
+    def __init__(self, parent, file_, oncomplete_callback=None, edit_select=None, button_width=15):
+        self.window_title = "New Parameter"
+        if edit_select:
+            self.window_title = "Edit Parameter Selection"
+            
+        self.parent = parent
+        self.file_ = file_
+        self.oncomplete_callback = oncomplete_callback
+        self.edit_select = edit_select
+        self.button_width = button_width
+        self.valid_message = "Unspecified error, see console output"
+        
+        self.top = tk.Toplevel(self.parent)
+        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        self.top.iconbitmap(r'{}'.format(icon))
+            
+        self.display()
+        return
+        
+    def display(self):   
+        #top.geometry('375x435')
+        self.top.resizable(0,0)
+        self.top.title(self.window_title)
+        
+        self.manage_frame = tk.LabelFrame(self.top, text="Management")
+        self.text_frame = tk.LabelFrame(self.top, text="Text Selection")
+        
+        """ MANAGE FRAME """
+        self.b_get_select = tk.Button(self.manage_frame, text="Get Selection", command=self.get_selection, width=self.button_width)
+        self.b_get_select.grid(pady=5, padx=5, column=0, row=0, sticky="E",rowspan=2)
+        self.b_get_select.config(state=tk.NORMAL)
+        
+        """ TEXT FRAME """
+        self.text_console = tk.Text(self.text_frame)
+        self.text_console.config(width= 50, height=18, bg='white',fg='black')
+        self.text_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        
+        self.text_console.config(state=tk.NORMAL)
+        text = self.get_file_text()
+        self.text_console.delete('1.0', tk.END)
+        self.text_console.insert(tk.END, text)
+        self.text_console.config(state=tk.DISABLED)
+        
+        self.manage_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5,columnspan=2)
+        self.text_frame.grid(column=0,row=1,sticky='news',padx=5,pady=5,columnspan=2)
+
+    def get_selection(self):
+        selected_text = ""
+        start = -1
+        end = -1
+        
+        try:
+            selected_text = self.text_console.selection_get()
+            start = self.text_console.index(tk.SEL_FIRST)
+            end = self.text_console.index(tk.SEL_LAST)
+        except Exception as e:
+            pass
+        print(selected_text)
+        print(start)
+        print(end)
+        
+        #self.text_console.tag_config("highlighted", background="white", foreground="black")
+        self.text_console.tag_add("highlighted", start, end)
+        self.text_console.tag_config("highlighted", background="blue", foreground="white")
+        
+    def get_file_text(self):
+        f = open(self.file_,"r")
+        string = f.read()
+        f.close()
+        return string
