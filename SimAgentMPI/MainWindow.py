@@ -52,6 +52,8 @@ class MainWindow():
         self.exitapp = False
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
+        SweepEditor(self.root)
+        
         print('Starting. Please wait...')
         self.style = ttk.Style()
         try:

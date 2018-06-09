@@ -14,6 +14,7 @@ from SimAgentMPI.NewServerConfig import ServerEntryBox
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
 from SimAgentMPI.Utils import AutocompleteEntry,CreateToolTip
+from SimAgentMPI.ParametricSweep import ParameterContainer
 import SimAgentMPI
 
 class JobEntryBox:
@@ -621,10 +622,13 @@ class SweepEditor():
     def new_param(self):
         """ TESTING START """
         file_read = filedialog.askopenfilename()
+        if not file_read:
+            return
+        
         file_read = os.path.abspath(file_read)
-        def c(*args):
-            print(p.selected_params)
-        p = ParameterSelectTextBox(self.top, file_read, callback=c)
+        def c(parameter_container):
+            print(parameter_container.to_json())
+        ParameterSelectTextBox(self.top, file_read, callback=c)
         """ TESTING END """
         
     def ok(self):
@@ -637,7 +641,12 @@ class SweepEditor():
     def cancel(self):
         self.top.destroy()
         
-    
+class ParameterTable():
+    def __init__(self):
+        return
+    def dispaly(self):
+        return
+        
 class ParameterSelectTextBox():
     
     class Ranger():
@@ -832,9 +841,10 @@ class ParameterSelectTextBox():
     def ok(self):
         self.confirm = True
         self.parse_params()
+        cont = ParameterContainer().init(self.file_,"",self.selected_start,self.selected_end,self.selected_params)
         self.top.destroy()
         if self.callback:
-            self.callback()
+            self.callback(cont)
         
     def cancel(self):
         self.top.destroy()

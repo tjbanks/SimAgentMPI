@@ -59,11 +59,14 @@ class ParametricSweep(object):
         self.propname_maxjobs = "maxjobs"
         self.propname_version = "version"
         self.propname_state = "state"
+        self.propname_parameters = "parameters"
+        self.propname_is_and_sweep = "is_and_sweep"
         
         self.maxjobs = 1
-        self.server = None
-        
+        self.model_server = None
+        self.model_job = None
         self.parameters = []#objects of some sort
+        self.is_and_sweep = True #Sweep can either be an or (p1.1 * p2.1 * pn.m) or an and (p1.1 + p2.1 + pn)
         
         self.current_running_jobs = 0
         self.completed_jobs = 0
@@ -79,6 +82,10 @@ class ParametricSweep(object):
             
         self.init(init_callback)
          
+        return
+    
+    def add_parameter(self, container):
+        self.parameters.append(container)
         return
     
     def set_external_state_var(self, external_state_var):
@@ -258,6 +265,11 @@ class ParametricSweep(object):
                 self.maxjobs = data[self.propname_maxjobs] 
                 self.version_num = data[self.propname_version]
                 self._set_state(data[self.propname_state], from_cold=from_cold)
+                self.is_and_sweep = data.get(self.propname_is_and_sweep,True)
+                params = data.get(self.propname_parameters,[])
+                for p in params:
+                    self.parameters.append(ParameterContainer().from_json(p))
+                
         return
 
     def write_properties(self):
@@ -265,10 +277,44 @@ class ParametricSweep(object):
         data[self.propname_maxjobs] = self.maxjobs      
         data[self.propname_version] = self.version
         data[self.propname_state] = self.state
+        params = []
+        for p in self.parameters:
+            params.append(p.to_json())
+        data[self.propname_parameters] = params
+        data[self.propname_is_and_sweep] = self.is_and_sweep
         
         with open(self.full_properties_path, 'w') as outfile:  
             json.dump(data, outfile)
             
         return
     
+class ParameterContainer():
+    def __init__(self):
+        self.init("","","","",[])
+        return
     
+    def init(self, fn, fh, ls, le, p):
+        self.filename = fn
+        self.filehash = fh
+        self.location_start = ls
+        self.location_end = le
+        self.parameters = p
+        return self
+    
+    def to_json(self):
+        data = {}
+        data["filename"] = self.filename
+        data["filehash"] = self.filehash
+        data["location_start"] = self.location_start
+        data["location_end"] = self.location_end
+        data["parameters"] = self.parameters
+        return data
+    
+    def from_json(self,data):
+        self.filename = data.get("filename","")
+        self.filehash = data.get("filehash","")
+        self.location_start = data.get("location_start", "")
+        self.location_end = data.get("location_end","")
+        self.parameters = data.get("parameters",[])
+        return self
+        

@@ -1,0 +1,21 @@
+Task label=REST v1
+Task ID=5913
+Tool=NEURON75_TG
+created on=2018-05-31 16:21:39.0
+JobHandle=NGBW-JOB-NEURON75_TG-8D85277CA6DF43C3BCD978E59CC19D9E
+resource=comet
+User ID=1216
+User Name=tbg28
+email=tbg28@mail.missouri.edu
+
+Output=(outputfile,*.tar.gz,UNKNOWN,UNKNOWN,UNKNOWN)
+JOBID=16593068
+
+job_properties ({'Task': 'ID=5913', 'resource': 'comet', 'created': 'on=2018-05-31 16:21:39.0', 'Tool': 'NEURON75_TG', 'JobHandle': 'NGBW-JOB-NEURON75_TG-8D85277CA6DF43C3BCD978E59CC19D9E', 'JOBID': '16593068', 'User': 'Name=tbg28', 'Output': '(outputfile,*.tar.gz,UNKNOWN,UNKNOWN,UNKNOWN)', 'email': 'tbg28@mail.missouri.edu'})
+
+gatewayuser (tbg28)
+
+gateway_submit_attributes=/opt/ctss/gateway_submit_attributes/gateway_submit_attributes -gateway_user tbg28@nsgportal.org -submit_time "`date '+%F %T %:z'`" -jobid 16593068
+
+gateway_submit_attributes retval (0) output (Gateway attributes [ gateway_user = tbg28@nsgportal.org; submit_time = 2018-05-31 16:21:50 -0700; jobid = 16593068 ] from comet-ln3.sdsc.edu submitted successfully.
+)
