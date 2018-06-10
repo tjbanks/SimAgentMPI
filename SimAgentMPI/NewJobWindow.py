@@ -14,7 +14,7 @@ from SimAgentMPI.NewServerConfig import ServerEntryBox
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
 from SimAgentMPI.Utils import AutocompleteEntry,CreateToolTip
-from SimAgentMPI.ParametricSweep import ParameterContainer
+from SimAgentMPI.ParametricSweep import ParameterContainer, ParametricSweep
 import SimAgentMPI
 
 class JobEntryBox:
@@ -577,30 +577,47 @@ class Create_Batch_File(object):
     
 
 class SweepEditor():
-    def __init__(self, parent,callback=None,button_width=15):
+    def __init__(self, parent,sim_dir,parameter_sweep,callback=None,button_width=15):
         self.window_title = "Create Range"
         self.top = tk.Toplevel(parent)
+        self.parent = parent
+        self.sim_dir = sim_dir
+        self.parameter_sweep = parameter_sweep
         icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
         self.top.iconbitmap(r'{}'.format(icon))
         self.confirm = False
         self.callback=callback  
         self.button_width = button_width
+        self.verify_message = ""
         
         self.display()
+        self.fill_fields()
         return
     
     def display(self):   
         #top.geometry('375x435')
         self.top.resizable(1,1)
         
+        self.name = tk.StringVar(self.top)
+        self.maxjobs = tk.StringVar(self.top)
+        
         #tk.Label(self.top, text='New Value Range',fg="blue").grid(row=9,column=0,pady=5,padx=5,columnspan=2)
         #tk.Label(self.top, text='Start',width=15, background='light gray',relief=tk.GROOVE).grid(row=10,column=0,pady=5,padx=5)
         #self.start_e = tk.Entry(self.top,width=25,textvariable=self.start)
         #self.start_e.grid(row=10,column=1,padx=5)
         
-        #tk.Label(self.top, text='End',width=15, background='light gray',relief=tk.GROOVE).grid(row=11,column=0,pady=5,padx=5)
-        #self.end_e = tk.Entry(self.top,width=25,textvariable=self.end)
-        #self.end_e.grid(row=11,column=1,padx=5)
+        tk.Label(self.top, text='Name',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
+        self.name_e = tk.Entry(self.top,width=25,textvariable=self.name)
+        self.name_e.grid(row=2,column=1,padx=5)
+        
+        tk.Label(self.top, text='Max Jobs',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
+        self.maxjobs_e = tk.Entry(self.top,width=25,textvariable=self.maxjobs)
+        self.maxjobs_e.grid(row=3,column=1,padx=5)
+        
+        tk.Label(self.top, text='Job Template',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5)
+        self.b_edit_job = tk.Button(self.top, text="Edit", command=self.edit_job)
+        self.b_edit_job.grid(pady=5, padx=5, column=1, row=4, sticky="WE",rowspan=1)
+        
         
         #tk.Label(self.top, text='Stride',width=15, background='light gray',relief=tk.GROOVE).grid(row=12,column=0,pady=5,padx=5)
         #self.stride_e = tk.Entry(self.top,width=25,textvariable=self.stride)
@@ -618,25 +635,61 @@ class SweepEditor():
         self.b_cancel.grid(pady=5, padx=5, column=1, row=13, sticky="WE",rowspan=1)
         self.b_cancel.config(state=tk.NORMAL)
             
+        if self.parameter_sweep: #Editor mode shouldn't be able to change the name
+            self.name_e.config(state=tk.DISABLED)
+        
+    def fill_fields(self):
+        if self.parameter_sweep:
+            self.name.set(self.parameter_sweep.name)
+        else:
+            self.name.set("")
+            
+        return
+    
+    def edit_job(self):
+        return
     
     def new_param(self):
         """ TESTING START """
         file_read = filedialog.askopenfilename()
         if not file_read:
+            self.top.lift()
             return
         
         file_read = os.path.abspath(file_read)
         def c(parameter_container):
             print(parameter_container.to_json())
+            self.top.lift()
         ParameterSelectTextBox(self.top, file_read, callback=c)
-        """ TESTING END """
         
+        """ TESTING END """
+
+    def verify(self):
+        
+        if self.name.get() == "":
+            self.verify_message = "Enter a valid name."
+            return False
+        
+        return True
+    def write_ps(self):
+        if not self.parameter_sweep:
+            self.parameter_sweep = ParametricSweep(self.sim_dir, self.name.get())
+                
+        return
+    
     def ok(self):
+        if not self.verify():
+            messagebox.showerror("Validation Error", self.verify_message)
+            self.top.lift()
+            return
+        else:
+            self.write_ps()
+        self.parameter_sweep.write_properties()
+        
         self.confirm = True
-        self.parse_params()
         self.top.destroy()
         if self.callback:
-            self.callback()
+            self.callback(self.parameter_sweep)
         
     def cancel(self):
         self.top.destroy()
@@ -653,6 +706,7 @@ class ParameterSelectTextBox():
         def __init__(self, parent, callback=None, button_width=15):
             self.window_title = "Create Range"
             self.top = tk.Toplevel(parent)
+            self.parent = parent
             icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
             self.top.iconbitmap(r'{}'.format(icon))
             self.confirm = False

@@ -63,7 +63,6 @@ class ParametricSweep(object):
         self.propname_is_and_sweep = "is_and_sweep"
         
         self.maxjobs = 1
-        self.model_server = None
         self.model_job = None
         self.parameters = []#objects of some sort
         self.is_and_sweep = True #Sweep can either be an or (p1.1 * p2.1 * pn.m) or an and (p1.1 + p2.1 + pn)
