@@ -575,12 +575,73 @@ class Create_Batch_File(object):
         
         return
     
-
+class SweepNew():
+    
+    def __init__(self, parent,sim_dir,callback=None,button_width=15):
+        self.window_title = "Create Range"
+        self.top = tk.Toplevel(parent)
+        self.parent = parent
+        
+        self.sim_dir = sim_dir
+        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        self.top.iconbitmap(r'{}'.format(icon))
+        self.confirm = False
+        self.callback=callback  
+        self.button_width = button_width
+        self.verify_message = ""
+        
+        self.display()
+        return
+    
+    def display(self):   
+        #top.geometry('375x435')
+        self.top.resizable(1,1)
+        
+        self.name = tk.StringVar(self.top)
+        
+        tk.Label(self.top, text='Name',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
+        self.name_e = tk.Entry(self.top,width=25,textvariable=self.name)
+        self.name_e.grid(row=2,column=1,padx=5)
+        
+        self.b_submit = tk.Button(self.top, text="Ok", command=self.ok, width=self.button_width)
+        self.b_submit.grid(pady=5, padx=5, column=0, row=13, sticky="WE",rowspan=1)
+        self.b_submit.config(state=tk.NORMAL)
+        
+        self.b_cancel = tk.Button(self.top, text="Cancel", command=self.cancel, width=self.button_width)
+        self.b_cancel.grid(pady=5, padx=5, column=1, row=13, sticky="WE",rowspan=1)
+        self.b_cancel.config(state=tk.NORMAL)
+        
+    def verify(self):
+        if self.name.get() == "":
+            self.verify_message = "Enter a valid name."
+            return False
+        return True
+    
+    def ok(self):
+        if not self.verify():
+            messagebox.showerror("Validation Error", self.verify_message)
+            self.top.lift()
+            return
+        if(messagebox.askquestion("Creating Sweep", "This will create a snapshot of your directory as it is and any edits to the original code will not be propagated. Ensure your code is how you want it. Create sweep?", icon='warning') == 'yes'):
+            self.parameter_sweep = ParametricSweep(self.sim_dir, self.name.get())
+            self.parameter_sweep.write_properties()
+            
+            self.confirm = True
+            self.top.destroy()
+            if self.callback:
+                self.callback(self.parameter_sweep)
+        
+    def cancel(self):
+        self.top.destroy()
+    
 class SweepEditor():
+    job_template_name = "_template_"
+    
     def __init__(self, parent,sim_dir,parameter_sweep,callback=None,button_width=15):
         self.window_title = "Create Range"
         self.top = tk.Toplevel(parent)
         self.parent = parent
+        
         self.sim_dir = sim_dir
         self.parameter_sweep = parameter_sweep
         icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
@@ -646,7 +707,20 @@ class SweepEditor():
             
         return
     
+    
     def edit_job(self):
+        def edit_job_():
+            return
+        sj = self.sim_dir.get_job(SweepEditor.job_template_name)
+        if sj:
+            sj.append_log("Template edited")
+            JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir, oncomplete_callback=edit_job_, edit_job=sj)
+        else:
+            sj = SimJob(self.sim_dir,SweepEditor.job_template_name)
+            sj.write_properties()
+            sj.append_log("Template created")
+            self.sim_dir.add_new_job(sj)
+            JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir,oncomplete_callback=edit_job_,edit_job=sj)
         return
     
     def new_param(self):

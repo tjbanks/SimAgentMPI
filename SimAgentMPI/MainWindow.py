@@ -13,7 +13,7 @@ import datetime
 from PIL import ImageTk, Image
 import os, time, enum
 
-from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File, SweepEditor
+from SimAgentMPI.NewJobWindow import JobEntryBox, Create_Batch_File, SweepEditor, SweepNew
 from SimAgentMPI.NewServerConfig import ServerEntryBox,SelectServerEditBox
 from SimAgentMPI.SimDirectory import SimDirectory
 from SimAgentMPI.ServerInterface import ServerInterface
@@ -1273,16 +1273,22 @@ class Parametric_Sweep_Managment(tk.Frame):
             parameter_sweep.set_external_state_var(self.parametric_sweep_state)
             self.ps = parameter_sweep
             self.sim_dir.add_new_sweep(parameter_sweep)
+            parameter_sweep.initialize_sweep()
+            
             self.load_sweeps()
             self.reload_old_sweeps()
             self.sweep_picked.set(parameter_sweep.name)
             self.sweep_popupMenu.config(state=tk.NORMAL)
+            
+            if self.ps:
+                SweepEditor(self.root,self.sim_dir,self.ps)
+            
             return
         
         if self.sim_dir:
             #parswee = ParametricSweep(self.sim_dir,"testsweep",external_state_var=self.parametric_sweep_state)
             #self.ps = parswee
-            SweepEditor(self.root,self.sim_dir,None,callback=new_ps_)    
+            SweepNew(self.root,self.sim_dir,callback=new_ps_) 
         return
         
     

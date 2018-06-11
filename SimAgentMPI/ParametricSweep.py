@@ -182,6 +182,10 @@ class ParametricSweep(object):
         if os.path.isfile(self.sweep_dir_original+".zip"):
             os.remove(self.sweep_dir_original+".zip")
     
+    def initialize_sweep(self):
+        self.take_project_snapshot()
+        self.sweep_project_dir = SimAgentMPI.SimDirectory.SimDirectory(self.sweep_dir_working, initialize=True,prompt=False)
+        return
     """
     Create snapshot of project_dir
     Create all simjobs in the sweep_dir
@@ -191,8 +195,7 @@ class ParametricSweep(object):
             self.is_in_working_state = True
             self._set_state(ParametricSweep.state[1])  #We're now building
             #Threaded stuff here
-            self.take_project_snapshot()
-            self.sweep_project_dir = SimAgentMPI.SimDirectory.SimDirectory(self.sweep_dir_working, initialize=True,prompt=False)
+            
             
             simjob = SimJob(self.sweep_project_dir, "{}-run".format(1))
             self.sweep_project_dir.add_new_job(simjob)
