@@ -38,6 +38,7 @@ from pathlib import Path
 class SimDirectory(object):
     results_folder_name = "SimAgentResults"
     properties_file = "dir.properties"
+    ignore_file = ".simignore"
     version = "1.0"
      
     def __init__(self, directory, initialize=False,prompt=True, init_results= True, init_sweeps=False):
@@ -63,6 +64,7 @@ class SimDirectory(object):
         
         
         self.full_properties_path = os.path.join(self.sim_results_dir,SimDirectory.properties_file)
+        self.full_ignore_path = os.path.join(self.sim_directory,SimDirectory.ignore_file)
         
         """ DETECTION """
         #Determine what files are present in the directory
@@ -129,8 +131,13 @@ class SimDirectory(object):
         self.is_valid_sim_directory = True
         
         return
-    
-    def zipdir(self, path, ziph, foldername):
+    def do_ignore(self, dir_, ignore):
+        for f in ignore:
+            if dir_.startswith(f):
+                return True
+        return False
+                        
+    def zipdir(self, path, ziph, foldername,ignore=[]):
         # ziph is zipfile handle
         for root, dirs, files in os.walk(path):
             for file in files:
@@ -139,6 +146,10 @@ class SimDirectory(object):
                     dir_ = dir_[1:]
                 if(dir_.startswith(SimDirectory.results_folder_name) or dir_.startswith(".git")):#only want files in root dir and not results
                     continue
+                
+                if self.do_ignore(dir_,ignore):
+                    continue
+                        
                 #print(os.path.join(self.sim_directory_relative,dir_,file))
                 ziph.write(os.path.join(root, file), arcname=os.path.join(foldername,dir_,file))
         return
@@ -154,10 +165,18 @@ class SimDirectory(object):
         return
     
     def take_snapshotzip(self, save_to_file):
+        ignoref = []
+        if(os.path.isfile(self.full_ignore_path)):
+            with open(self.full_ignore_path) as ignore_file:
+                ifile = ignore_file.readlines()
+                print(ifile)
+                for i in ifile:
+                    ignoref.append(i.strip())
+                    
         #Zip up everything except results foldername
         zipf = zipfile.ZipFile(save_to_file+".zip", 'w', zipfile.ZIP_DEFLATED)
         dir_path = self.sim_directory
-        self.zipdir(dir_path, zipf, foldername=os.path.basename(save_to_file)) #must be in format file.zip -> file (folder) -> sim stuff
+        self.zipdir(dir_path, zipf, foldername=os.path.basename(save_to_file),ignore=ignoref) #must be in format file.zip -> file (folder) -> sim stuff
         zipf.close()
         return
     

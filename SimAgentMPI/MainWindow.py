@@ -1004,12 +1004,14 @@ class Job_Table(tk.Frame):
         data = [job.status, job.sim_name, job.server_connector, part_tool , job.server_nodes, job.server_cores, timeofstart, timedif,job.server_remote_identifier]
         return data
     
+    
     def reload_table(self, dir_=None):
         
         if self.sim_dir == dir_ == None:
             return
         
-        self.sim_dir = dir_
+        if dir_:
+            self.sim_dir = dir_
         
         self.table.grid_forget()
         self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
