@@ -58,7 +58,7 @@ PARAMETER {
 	Beta1 = 0.001  (/ms) : 1/decay time for neuromodulators
 	Beta2 = 0.0001  (/ms)	
 	
-	initW = 1.11
+	initW = 0.1
 
 	lambda1 = 40 : 60 : 70: 20 : 15
 	lambda2 = .04 : .0 : 0.03
