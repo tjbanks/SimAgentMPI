@@ -48,6 +48,7 @@ class ServerInterface(object):
         else:
             simjob.append_log("ERROR: Can't start job... not a valid server connector")
             
+            
         return 
     
     def update_for_completion(self, simjob, nsg_job_list=None,ssh_connection=None): 

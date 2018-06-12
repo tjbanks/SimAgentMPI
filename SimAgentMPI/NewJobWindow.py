@@ -710,12 +710,12 @@ class SweepEditor():
     def edit_job(self):
         def edit_job_():
             return
-        sj = self.sim_dir.get_job(ParametricSweep.job_template_name)
+        sj = self.parameter_sweep.sweep_project_dir.get_job(ParametricSweep.job_template_name)
         if sj:
             sj.append_log("Template edited")
             JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir, oncomplete_callback=edit_job_, edit_job=sj)
         else:
-            sj = SimJob(self.sim_dir,ParametricSweep.job_template_name)
+            sj = SimJob(self.parameter_sweep.sweep_project_dir,ParametricSweep.job_template_name)
             sj.write_properties()
             sj.append_log("Template created")
             self.sim_dir.add_new_job(sj)
