@@ -63,7 +63,7 @@ PARAMETER {
 	threshold2 = 0.4 : 0.45 :  0.5 :0.6 (uM)
 
 	:AMPA Weight
-	initW = 1.5 : 1.5 : 2 : 0.1:3 : 2 :3
+	initW = 1.5
 
 	fmax = 4 : 8 : 5: 4 :3
 	fmin = .8	

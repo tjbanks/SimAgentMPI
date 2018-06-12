@@ -20,7 +20,7 @@ UNITS {
 PARAMETER {
 
 	:W
-	initW = 1.0:1.332 : 0.4*3.33 : 7.5/2.25 : 8 : 6.3 : 8 :7
+	initW = 1.0
 
 	:NMDA
 	taun1 = 5 (ms)

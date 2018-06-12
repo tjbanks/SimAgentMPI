@@ -20,7 +20,7 @@ UNITS {
 PARAMETER {
 
 	:W
-	initW =  8 : 5 : 10: 13
+	initW = 8
 
 	:NMDA
 	taun1 = 5 (ms)
