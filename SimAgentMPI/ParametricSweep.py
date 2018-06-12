@@ -30,6 +30,7 @@ class ParametricSweep(object):
     properties_file = "sweep.properties"
     original_extension = ""
     working_extension = "-working"
+    job_template_name = "_template_"
     version = 1
     
     """
@@ -55,6 +56,8 @@ class ParametricSweep(object):
         self.sweep_dir_original = os.path.join(self.parent_sweep_dir, self.name, self.origdir)
         self.sweep_dir_working = os.path.join(self.parent_sweep_dir, self.name, self.workdir)
         self.full_properties_path = os.path.join(self.sweep_dir, ParametricSweep.properties_file)
+        
+        self.snapzip = self.sweep_dir_original + ".zip"
         
         self.propname_maxjobs = "maxjobs"
         self.propname_version = "version"
@@ -155,9 +158,9 @@ class ParametricSweep(object):
     def take_project_snapshot(self):
         self.project_dir.take_snapshotzip(self.sweep_dir_original)
         
-        snapzip = self.sweep_dir_original + ".zip"
+        
         #unzip
-        zip_ref = zipfile.ZipFile(snapzip, 'r')
+        zip_ref = zipfile.ZipFile(self.snapzip, 'r')
         #zip_ref.extractall(self.sweep_dir_original)
         zip_ref.extractall(self.sweep_dir_working)
         zip_ref.close()
@@ -179,8 +182,13 @@ class ParametricSweep(object):
     def delete_project_snapshot_results(self):
         if os.path.isdir(self.sweep_dir_working):
             shutil.rmtree(self.sweep_dir_working, ignore_errors=True)
-        if os.path.isfile(self.sweep_dir_original+".zip"):
-            os.remove(self.sweep_dir_original+".zip")
+        if os.path.isfile(self.snapzip):
+            os.remove(self.snapzip)
+            
+    def rm_all_jobs(self):
+        template_job = self.sweep_project_dir.get_job(ParametricSweep.job_template_name)
+        self.sweep_project_dir.delete_all_jobs(exclude=[template_job])
+        return
     
     def initialize_sweep(self):
         self.take_project_snapshot()
@@ -214,8 +222,9 @@ class ParametricSweep(object):
             self.is_in_working_state = True
             self._set_state(ParametricSweep.state[3])   #We're now deconstructing
             #Threaded stuff here
-            self.delete_project_snapshot_results()
-            self.sweep_project_dir = None
+            #self.delete_project_snapshot_results()
+            self.rm_all_jobs()
+            #self.sweep_project_dir = None
             
             self._set_state(ParametricSweep.state[0])  #Deconstructing complete
             self.is_in_working_state = False

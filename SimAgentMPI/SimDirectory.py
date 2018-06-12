@@ -136,6 +136,21 @@ class SimDirectory(object):
             if dir_.startswith(f):
                 return True
         return False
+    
+    def get_displayable_jobs(self):
+        ret = []
+        exclude = []
+        
+        template = self.get_job(ParametricSweep.job_template_name)
+        
+        if template:
+            exclude.append(template)
+            
+        for j in self.sim_jobs:
+            if j not in exclude:
+                ret.append(j)
+            
+        return ret
                         
     def zipdir(self, path, ziph, foldername,ignore=[]):
         # ziph is zipfile handle
@@ -159,9 +174,10 @@ class SimDirectory(object):
         self.sim_jobs.remove(job)
         return
     
-    def delete_all_jobs(self):
+    def delete_all_jobs(self,exclude=[]):
         for j in self.sim_jobs:
-            self.delete_job(j)
+            if j not in exclude:
+                self.delete_job(j)
         return
     
     def take_snapshotzip(self, save_to_file):

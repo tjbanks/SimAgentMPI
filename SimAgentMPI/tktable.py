@@ -508,7 +508,8 @@ class Table(Frame):
 
             j = 0
             while j <self.number_of_columns:
-                row_of_vars_1[j].set(row_of_vars_2[j])
+                row_of_vars_1[j].set(row_of_vars_2[j].get())
+                j += 1
 
             i += 1
 

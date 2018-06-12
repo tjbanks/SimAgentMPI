@@ -891,7 +891,7 @@ class Job_Table(tk.Frame):
         
         job = self.sim_dir.get_job(self.selected_job_name)
         if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run. The display may freeze for a few moments.", icon='warning') == 'yes'):
-            job.status == ServerInterface.ssh_status[0]
+            job.status = ServerInterface.ssh_status[0]
             job.write_properties()
             self.update_row_info(self.selected_row_num)
             self.disable_all_job_buttons()
@@ -1016,13 +1016,17 @@ class Job_Table(tk.Frame):
         self.table.grid_forget()
         self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
         self.table.grid(row=1,column=0,padx=10,pady=10)
+        #for i in range(self.table._number_of_rows):
+            #print(i)
+            #self.table.delete_row(i)
         #self.table.set_data([[""],[""],[""],[""]])
         
         if self.sim_dir:
             self.sim_dir.sim_jobs.sort(key=lambda x: float(x.created), reverse=True)
         
-        if self.sim_dir and len(self.sim_dir.sim_jobs):
-            for job in self.sim_dir.sim_jobs:
+        if self.sim_dir and len(self.sim_dir.get_displayable_jobs()):
+            for job in self.sim_dir.get_displayable_jobs(): #Double call like this is ouchy
+            #for job in self.sim_dir.sim_jobs:
                 data = self.row_of_data(job)
                 self.table.insert_row(data)#,index=0)
         else:

@@ -272,9 +272,9 @@ class JobEntryBox:
             tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email).grid(row=8,column=1,padx=5, sticky='W')
             
             
-            tk.Label(nsgconn_option_frame, text='Delete Remote Files',width=15, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
+            tk.Label(nsgconn_option_frame, text='Delete Remote Files',width=15, background='light gray',relief=tk.GROOVE).grid(row=9,column=0,pady=5,padx=5)
             dcb = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_delete_remote_on_finish)
-            dcb.grid(row=8,column=1,padx=5, sticky='W')
+            dcb.grid(row=9,column=1,padx=5, sticky='W')
             #CreateToolTip(dcb,text="Delete the files on the remote server upon completion. This is a recommended setting")
             #Return
                         
@@ -635,7 +635,6 @@ class SweepNew():
         self.top.destroy()
     
 class SweepEditor():
-    job_template_name = "_template_"
     
     def __init__(self, parent,sim_dir,parameter_sweep,callback=None,button_width=15):
         self.window_title = "Create Range"
@@ -711,12 +710,12 @@ class SweepEditor():
     def edit_job(self):
         def edit_job_():
             return
-        sj = self.sim_dir.get_job(SweepEditor.job_template_name)
+        sj = self.sim_dir.get_job(ParametricSweep.job_template_name)
         if sj:
             sj.append_log("Template edited")
             JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir, oncomplete_callback=edit_job_, edit_job=sj)
         else:
-            sj = SimJob(self.sim_dir,SweepEditor.job_template_name)
+            sj = SimJob(self.sim_dir,ParametricSweep.job_template_name)
             sj.write_properties()
             sj.append_log("Template created")
             self.sim_dir.add_new_job(sj)
@@ -733,6 +732,7 @@ class SweepEditor():
         file_read = os.path.abspath(file_read)
         def c(parameter_container):
             print(parameter_container.to_json())
+            self.parameter_sweep.add_parameter(parameter_container)
             self.top.lift()
         ParameterSelectTextBox(self.top, file_read, callback=c)
         
