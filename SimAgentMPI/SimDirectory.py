@@ -156,16 +156,17 @@ class SimDirectory(object):
         # ziph is zipfile handle
         for root, dirs, files in os.walk(path):
             for file in files:
-                dir_ = root.split(self.sim_directory_relative, 1)[-1]
+                dir_ = root.split(self.sim_directory, 1)[-1]
                 if(len(dir_) and dir_[0] == "\\"):
                     dir_ = dir_[1:]
+                    
                 if(dir_.startswith(SimDirectory.results_folder_name) or dir_.startswith(".git")):#only want files in root dir and not results
                     continue
                 
                 if self.do_ignore(dir_,ignore):
                     continue
-                        
-                #print(os.path.join(self.sim_directory_relative,dir_,file))
+                
+                #print(os.path.join(foldername,dir_,file))
                 ziph.write(os.path.join(root, file), arcname=os.path.join(foldername,dir_,file))
         return
     
@@ -185,7 +186,6 @@ class SimDirectory(object):
         if(os.path.isfile(self.full_ignore_path)):
             with open(self.full_ignore_path) as ignore_file:
                 ifile = ignore_file.readlines()
-                print(ifile)
                 for i in ifile:
                     ignoref.append(i.strip())
                     
