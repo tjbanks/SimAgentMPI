@@ -620,7 +620,7 @@ class ServerInterface(object):
                 #job.update()
                 job.delete()
                 simjob.append_log("NSG Job Deleted on remote server")
-                if simjob.status == ServerInterface.nsg_status[0] or simjob.status == ServerInterface.nsg_status[2]:
+                if simjob.status == ServerInterface.nsg_status[0]:
                     simjob.status = ServerInterface.nsg_status[3]
                     simjob.write_properties()
         return
@@ -633,7 +633,7 @@ class ServerInterface(object):
                 zip_dir = simjob.file_snapshotzip.split(".zip")[0]
                 command = 'rm -rf '+self.remote_dir+'/'+zip_dir+'*'
                 self.exec_ssh_command(client,command,simjob,server)
-                if simjob.status == ServerInterface.ssh_status[0] or simjob.status == ServerInterface.ssh_status[2]:
+                if simjob.status == ServerInterface.ssh_status[0]:
                     simjob.status = ServerInterface.ssh_status[3]
                     simjob.write_properties()
                 

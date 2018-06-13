@@ -349,7 +349,7 @@ class SimJob(object):
         if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1]:
             ServerInterface().download_results_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
             if self.sim_delete_remote_on_finish:
-                self.delete_remote_results(self,nsg_job_list=nsg_job_list, ssh_connection=ssh_connection)            
+                ServerInterface().delete_remote_results(self,nsg_job_list=nsg_job_list, ssh_connection=ssh_connection)            
             self.sim_last_update_time = time.time()
             self.write_properties()
         
