@@ -226,7 +226,7 @@ class JobEntryBox:
             self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_nodes)
             self.name_e.grid(row=4,column=1,padx=5,columnspan=1)
             
-            tk.Label(conn_option_frame, text='Cores',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(conn_option_frame, text='Cores per Node',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
             self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_cores)
             self.name_e.grid(row=5,column=1,padx=5,columnspan=1)
             
@@ -257,7 +257,7 @@ class JobEntryBox:
             self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nodes)
             self.name_e.grid(row=4,column=1,padx=5,columnspan=1)
             
-            tk.Label(nsgconn_option_frame, text='Cores',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(nsgconn_option_frame, text='Cores per Node',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
             self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_cores)
             self.name_e.grid(row=5,column=1,padx=5,columnspan=1)
             
