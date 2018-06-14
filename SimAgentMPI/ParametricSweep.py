@@ -9,6 +9,7 @@ import os
 import errno
 import zipfile
 import shutil
+import datetime, time
 import SimAgentMPI
 from SimAgentMPI.SimJob import SimJob
 
@@ -89,6 +90,26 @@ class ParametricSweep(object):
     def add_parameter(self, container):
         self.parameters.append(container)
         return
+    
+    def update_parameter(self, container):
+        old_cont = self.get_parameter(container.id)
+        if not old_cont:
+            return
+        old_cont.filename = container.filename
+        old_cont.filehash = container.filehash
+        old_cont.location_start = container.location_start
+        old_cont.location_end = container.location_end
+        old_cont.parameters = container.parameters
+        self.write_properties()
+    
+    def del_parameter(self, container):
+        self.parameters.remove(container)
+        return
+    
+    def get_parameter(self, id_):
+        for p in self.parameters:
+            if p.id == id_:
+                return p
     
     def set_external_state_var(self, external_state_var):
         self.external_state_var = external_state_var
@@ -278,6 +299,7 @@ class ParametricSweep(object):
                 self._set_state(data[self.propname_state], from_cold=from_cold)
                 self.is_and_sweep = data.get(self.propname_is_and_sweep,True)
                 params = data.get(self.propname_parameters,[])
+                self.parameters.clear()
                 for p in params:
                     self.parameters.append(ParameterContainer().from_json(p))
                 
@@ -305,6 +327,9 @@ class ParameterContainer():
         return
     
     def init(self, fn, fh, ls, le, p):
+        ts = time.time()
+        st = datetime.datetime.fromtimestamp(ts).strftime('%H%M%S')
+        self.id = st
         self.filename = fn
         self.filehash = fh
         self.location_start = ls
@@ -314,6 +339,7 @@ class ParameterContainer():
     
     def to_json(self):
         data = {}
+        data["id"] = self.id
         data["filename"] = self.filename
         data["filehash"] = self.filehash
         data["location_start"] = self.location_start
@@ -322,6 +348,7 @@ class ParameterContainer():
         return data
     
     def from_json(self,data):
+        self.id = data.get("id","")
         self.filename = data.get("filename","")
         self.filehash = data.get("filehash","")
         self.location_start = data.get("location_start", "")

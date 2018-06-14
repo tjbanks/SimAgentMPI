@@ -4,7 +4,7 @@ Created on Sun May 20 16:46:40 2018
 
 @author: Tyler
 """
-import os
+import os, enum
 import tkinter as tk
 from tkinter import filedialog,OptionMenu,messagebox
 import time, datetime
@@ -14,6 +14,7 @@ from SimAgentMPI.NewServerConfig import ServerEntryBox
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimJob import SimJob
 from SimAgentMPI.Utils import AutocompleteEntry,CreateToolTip
+from SimAgentMPI.tktable import Table
 from SimAgentMPI.ParametricSweep import ParameterContainer, ParametricSweep
 import SimAgentMPI
 
@@ -661,6 +662,8 @@ class SweepEditor():
         self.name = tk.StringVar(self.top)
         self.maxjobs = tk.StringVar(self.top)
         
+        self.table_frame = tk.LabelFrame(self.top, text="Parameters")
+        
         #tk.Label(self.top, text='New Value Range',fg="blue").grid(row=9,column=0,pady=5,padx=5,columnspan=2)
         #tk.Label(self.top, text='Start',width=15, background='light gray',relief=tk.GROOVE).grid(row=10,column=0,pady=5,padx=5)
         #self.start_e = tk.Entry(self.top,width=25,textvariable=self.start)
@@ -683,20 +686,30 @@ class SweepEditor():
         #self.stride_e = tk.Entry(self.top,width=25,textvariable=self.stride)
         #self.stride_e.grid(row=12,column=1,padx=5)
         
-        self.b_submit = tk.Button(self.top, text="New Parameter Range", command=self.new_param)
-        self.b_submit.grid(pady=5, padx=5, column=0, row=12, sticky="WE",rowspan=1)
-        self.b_submit.config(state=tk.NORMAL)
+        #self.b_submit = tk.Button(self.top, text="New Parameter Range", command=self.new_param)
+        #self.b_submit.grid(pady=5, padx=5, column=0, row=11, sticky="WE",rowspan=1)
+        #self.b_submit.config(state=tk.NORMAL)
+        
+        self.table = ParameterTable(self.table_frame, self.parameter_sweep, basepath=self.sim_dir.sim_directory)
+        self.table.grid(pady=5, padx=5, column=0, row=12, sticky="WE",rowspan=1,columnspan=2)
         
         self.b_submit = tk.Button(self.top, text="Ok", command=self.ok, width=self.button_width)
-        self.b_submit.grid(pady=5, padx=5, column=0, row=13, sticky="WE",rowspan=1)
+        self.b_submit.grid(pady=5, padx=5, column=0, row=14, sticky="WE",rowspan=1)
         self.b_submit.config(state=tk.NORMAL)
         
         self.b_cancel = tk.Button(self.top, text="Cancel", command=self.cancel, width=self.button_width)
-        self.b_cancel.grid(pady=5, padx=5, column=1, row=13, sticky="WE",rowspan=1)
+        self.b_cancel.grid(pady=5, padx=5, column=1, row=14, sticky="WE",rowspan=1)
         self.b_cancel.config(state=tk.NORMAL)
             
+        self.table_frame.grid(pady=5, padx=5, column=0, row=12, sticky="WE",rowspan=1,columnspan=2)
+        
         if self.parameter_sweep: #Editor mode shouldn't be able to change the name
             self.name_e.config(state=tk.DISABLED)
+            self.load_ps()
+            
+        
+    def load_ps(self):  
+        self.maxjobs.set(self.parameter_sweep.maxjobs)
         
     def fill_fields(self):
         if self.parameter_sweep:
@@ -724,17 +737,7 @@ class SweepEditor():
     
     def new_param(self):
         """ TESTING START """
-        file_read = filedialog.askopenfilename()
-        if not file_read:
-            self.top.lift()
-            return
-        
-        file_read = os.path.abspath(file_read)
-        def c(parameter_container):
-            print(parameter_container.to_json())
-            self.parameter_sweep.add_parameter(parameter_container)
-            self.top.lift()
-        ParameterSelectTextBox(self.top, file_read, callback=c)
+        return
         
         """ TESTING END """
 
@@ -748,7 +751,7 @@ class SweepEditor():
     def write_ps(self):
         if not self.parameter_sweep:
             self.parameter_sweep = ParametricSweep(self.sim_dir, self.name.get())
-                
+        self.parameter_sweep.maxjobs = self.maxjobs.get()        
         return
     
     def ok(self):
@@ -768,11 +771,189 @@ class SweepEditor():
     def cancel(self):
         self.top.destroy()
         
-class ParameterTable():
-    def __init__(self):
+class ParameterTable(tk.Frame):
+    class Param_Button(enum.Enum):
+        ALL = 1
+        NEW = 2
+        EDIT = 3
+        DELETE = 4
+        
+    def __init__(self, parent, parameter_sweep, button_width = 15, use_buttons=[Param_Button.ALL], threads=None, basepath=None,*args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.root = tk.Frame(self.parent)
+        
+        self.columns = ["ID", "File", "Line #", "Line", "Parameters"]
+        self.col_wid = [45, 100, 45, 200, 100]
+        #https://timestamp.online/article/how-to-convert-timestamp-to-datetime-in-python
+        self.date_format = '%b %d %y\n%I:%M %p'
+        
+        self.parameter_sweep = parameter_sweep
+        self.button_width = button_width
+        self.use_buttons = use_buttons
+        self.threads = threads
+        self.basepath = basepath
+        
+        self.table = None
+        
+        self.selected_param_name = None
+        
+        self.display()
+        
+    def display(self):
+        
+        button_width = self.button_width
+        self.jobs_frame = tk.Frame(self.root)
+        
+        buttons_frame = tk.LabelFrame(self.jobs_frame, text="")        
+        buttons_frame.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+        
+        buttons_frame_inner_1 = tk.Frame(buttons_frame)        
+        buttons_frame_inner_1.grid(column=0,row=0,sticky='news',padx=10,pady=5)
+                
+        b = ParameterTable.Param_Button
+               
+        self.b_new = tk.Button(buttons_frame_inner_1, text="New Parameter", command=self.new_param, width=button_width,state=tk.NORMAL)
+        if b.NEW in self.use_buttons or b.ALL in self.use_buttons:
+            self.b_new.grid(pady=0, padx=5, column=1, row=0, sticky="WE")
+        
+        self.b_edit = tk.Button(buttons_frame_inner_1, text="Edit", command=self.edit_param, width=button_width,state=tk.DISABLED)
+        if b.EDIT in self.use_buttons or b.ALL in self.use_buttons:
+            self.b_edit.grid(pady=0, padx=5, column=2, row=0, sticky="WE")
+        
+        self.b_delete = tk.Button(buttons_frame_inner_1, text="Delete", command=self.delete_param, width=button_width,state=tk.DISABLED)
+        if b.DELETE in self.use_buttons or b.ALL in self.use_buttons:
+            self.b_delete.grid(pady=0, padx=5, column=3, row=0, sticky="WE")
+        
+            
+         
+        #self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row)
+        #self.table.grid(row=1,column=0,padx=5,pady=10)
+        #self.table.set_data([[""],[""],[""],[""]])
+        #table.cell(0,0, " This is testing a long sentence ")
+        #table.insert_row([22,23,24])
+        #table.insert_row([25,26,27],index=0)
+        
+        self.reload_table()
+        
+        self.jobs_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5,columnspan=2)
+        
         return
-    def dispaly(self):
+    
+    def reload_table(self):
+        
+        if self.parameter_sweep == None:
+            return
+        if self.table:
+            self.table.grid_forget()
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row)
+        self.table.grid(row=1,column=0,padx=5,pady=10)
+        #for i in range(self.table._number_of_rows):
+            #print(i)
+            #self.table.delete_row(i)
+        #self.table.set_data([[""],[""],[""],[""]])
+        
+        if self.parameter_sweep:
+            self.parameter_sweep.parameters.sort(key=lambda x: float(x.id), reverse=False)
+        
+        if self.parameter_sweep and len(self.parameter_sweep.parameters):
+            for i, p in enumerate(self.parameter_sweep.parameters):
+                data = self.row_of_data(p)
+                self.table.insert_row(data)#,index=0)
+        else:
+            self.table.set_data([[""],[""],[""],[""]])
+        
+        self.select_row(None)
+    
+    def new_param(self):
+        file_read = filedialog.askopenfilename()
+        if not file_read:
+            self.parent.lift()
+            return
+        
+        file_read = os.path.abspath(file_read)
+        def c(parameter_container):
+            #print(parameter_container.to_json())
+            self.parameter_sweep.add_parameter(parameter_container)
+            self.reload_table()
+            self.parent.lift()
+            
+        ParameterSelectTextBox(self.root, file_read, callback=c)
         return
+    
+    def edit_param(self):
+        def c(parameter_container):
+            #print(parameter_container.to_json())
+            p = self.parameter_sweep.get_parameter(parameter_container.id)
+            if p:
+                self.parameter_sweep.del_parameter(p)
+            self.parameter_sweep.add_parameter(parameter_container)
+            self.parameter_sweep.write_properties()
+            
+            self.reload_table()
+            self.parent.lift()
+            #self.update_row_info()
+        
+        param = self.parameter_sweep.get_parameter(self.selected_param_name)
+        if param:
+            ParameterSelectTextBox(self.root, None, callback=c, edit=param)
+        
+        
+        return
+    
+    def delete_param(self):
+        p = self.parameter_sweep.get_parameter(self.selected_param_name)
+        if p:
+            self.parameter_sweep.del_parameter(p)
+            self.reload_table()
+        return
+    
+    def select_row(self,row):
+                    
+        self.selected_row_num = row
+        if row != None:
+            name_of_selected = str(self.table.row(row)[0])
+        else:
+            name_of_selected = ""
+        
+        self.selected_param_name = name_of_selected
+        
+        if(self.selected_param_name != ""):
+            self.b_edit.config(state=tk.NORMAL)
+            self.b_delete.config(state=tk.NORMAL)
+        else:
+            self.b_edit.config(state=tk.DISABLED)
+            self.b_delete.config(state=tk.DISABLED)
+            
+    def row_of_data(self, param):
+        p_str = ""
+        for i, p in enumerate(param.parameters):
+            if i == 0:
+                p_str = str(p)
+            else:
+                p_str = p_str + "," + str(p)
+            
+        return [param.id, param.filename, param.location_start, param.location_start,p_str]
+    
+    def update_row_info(self):
+        self.parameter_sweep.read_properties()
+        
+        for i, p in enumerate(self.parameter_sweep.parameters):
+            data = self.row_of_data(p)
+            for j, c in enumerate(data):
+                #print("updating row {} column {} with {}".format(i,j,c))
+                self.table.cell(i,j,c)
+        
+        self.select_row(self.selected_row_num) #just to refresh the buttons
+            
+    def pack(self,*args,**kwargs):
+        super(ParameterTable,self).pack(*args,**kwargs)
+        self.root.pack(*args,**kwargs)
+            
+    def grid(self,*args,**kwargs):
+        super(ParameterTable,self).grid(*args,**kwargs)
+        self.root.grid(*args,**kwargs)
+        
         
 class ParameterSelectTextBox():
     
@@ -827,16 +1008,19 @@ class ParameterSelectTextBox():
             self.top.destroy()
             
     
-    def __init__(self, parent, file_, callback=None, edit_select=None, button_width=15):
+    def __init__(self, parent, file_, callback=None, button_width=15, edit=None):
         self.window_title = "New Parameter"
-        if edit_select:
+        if edit:
             self.window_title = "Edit Parameter Selection"
             
         self.parent = parent
         self.file_ = file_
+        if not file_ and edit:
+            self.file_ = edit.filename
+            
         self.callback = callback
-        self.edit_select = edit_select
         self.button_width = button_width
+        self.edit_param = edit
         self.valid_message = "Unspecified error, see console output"
         
         self.selected_text = ""
@@ -908,13 +1092,30 @@ class ParameterSelectTextBox():
         self.text_console.insert(tk.END, text)
         self.text_console.config(state=tk.DISABLED)
         
+        if self.edit_param:
+            self.load_edit()
+        
         self.load_other_highlights()
         
         
         self.manage_frame.grid(column=0,row=1,sticky='news',padx=5,pady=5,columnspan=2)
         self.text_frame.grid(column=0,row=2,sticky='news',padx=5,pady=5,columnspan=2)
         
-
+    def load_edit(self):
+                
+        self.text_console.tag_add(tk.SEL, self.edit_param.location_start, self.edit_param.location_end)
+        self.text_console.focus_set()
+        self.get_selection()
+        p_str = ""
+        for i, p in enumerate(self.edit_param.parameters):
+            if i == 0:
+                p_str = str(p)
+            else:
+                p_str = p_str + "," + str(p)
+        self.params_var.set(p_str)
+        
+        return
+    
     def get_selection(self):
         tag = "currenthighlight"
         try:
@@ -970,6 +1171,8 @@ class ParameterSelectTextBox():
         self.confirm = True
         self.parse_params()
         cont = ParameterContainer().init(self.file_,"",self.selected_start,self.selected_end,self.selected_params)
+        if self.edit_param:
+            cont.id = self.edit_param.id
         self.top.destroy()
         if self.callback:
             self.callback(cont)
