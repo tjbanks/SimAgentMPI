@@ -62,6 +62,8 @@ class SimDirectory(object):
         self.update_server_output = False
         self.update_interval_seconds = 60
         
+        self.init_results = init_results
+        self.init_sweeps = init_sweeps
         
         self.full_properties_path = os.path.join(self.sim_results_dir,SimDirectory.properties_file)
         self.full_ignore_path = os.path.join(self.sim_directory,SimDirectory.ignore_file)
@@ -81,9 +83,31 @@ class SimDirectory(object):
             else:
                 return
         
+        self.reload_job_dirs()
+        
+        self.read_properties()
+        
+        return
+    
+    def initialize(self):
+        try:
+            os.makedirs(self.sim_results_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        self.write_properties()
+        self.is_valid_sim_directory = True
+        
+        return
+    
+    def reload_job_dirs(self):
+        
+        self.sim_jobs.clear()
+        self.sim_sweeps.clear()
+        
         """ CREATE JOBS """
         #Grab all the data we need
-        if init_results:
+        if self.init_results:
             results_dir_files = os.listdir(self.sim_results_dir)
             results_dir_folder_names = []
             for file in results_dir_files:
@@ -101,7 +125,7 @@ class SimDirectory(object):
                 
         
         """ CREATE SWEEPS """
-        if init_sweeps and os.path.isdir(self.sim_sweeps_dir):
+        if self.init_sweeps and os.path.isdir(self.sim_sweeps_dir):
             sweep_dir_files = os.listdir(self.sim_sweeps_dir)
             sweep_dir_folder_names = []
             for file in sweep_dir_files:
@@ -116,21 +140,7 @@ class SimDirectory(object):
                 except Exception as e:
                     messagebox.showinfo("Load Error","Could not load sweep " + sweep_folder + ". See the console for info. Continuing...")
                     print(e)
-        
-        self.read_properties()
-        
-        return
     
-    def initialize(self):
-        try:
-            os.makedirs(self.sim_results_dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-        self.write_properties()
-        self.is_valid_sim_directory = True
-        
-        return
     def do_ignore(self, dir_, ignore):
         for f in ignore:
             if dir_.startswith(f):

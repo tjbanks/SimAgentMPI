@@ -599,7 +599,7 @@ class SweepNew():
         self.top.resizable(1,1)
         
         self.name = tk.StringVar(self.top)
-        
+                
         tk.Label(self.top, text='Name',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
         self.name_e = tk.Entry(self.top,width=25,textvariable=self.name)
         self.name_e.grid(row=2,column=1,padx=5)
@@ -623,7 +623,7 @@ class SweepNew():
             messagebox.showerror("Validation Error", self.verify_message)
             self.top.lift()
             return
-        if(messagebox.askquestion("Creating Sweep", "This will create a snapshot of your directory as it is and any edits to the original code will not be propagated. Ensure your code is how you want it. Create sweep?", icon='warning') == 'yes'):
+        if(messagebox.askquestion("Creating Sweep", "This will create a snapshot of your project directory, as it is currently, and any edits to the original code will not be propagated to this snapshot. Ensure your code is functioning how you want it to. Create sweep?", icon='warning') == 'yes'):
             self.parameter_sweep = ParametricSweep(self.sim_dir, self.name.get())
             self.parameter_sweep.write_properties()
             
@@ -662,23 +662,27 @@ class SweepEditor():
         self.name = tk.StringVar(self.top)
         self.maxjobs = tk.StringVar(self.top)
         
+        self.general_frame = tk.LabelFrame(self.top, text="General")
         self.table_frame = tk.LabelFrame(self.top, text="Parameters")
+        self.and_or_frame = tk.LabelFrame(self.top, text="Sweep Type")
         
         #tk.Label(self.top, text='New Value Range',fg="blue").grid(row=9,column=0,pady=5,padx=5,columnspan=2)
         #tk.Label(self.top, text='Start',width=15, background='light gray',relief=tk.GROOVE).grid(row=10,column=0,pady=5,padx=5)
         #self.start_e = tk.Entry(self.top,width=25,textvariable=self.start)
         #self.start_e.grid(row=10,column=1,padx=5)
         
-        tk.Label(self.top, text='Name',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
-        self.name_e = tk.Entry(self.top,width=25,textvariable=self.name)
+        tk.Label(self.top, text="Sweep Editor").grid(row=1,column=0,sticky="WE",columnspan=2,pady=15)
+        
+        tk.Label(self.general_frame, text='Sweep Name',width=30, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
+        self.name_e = tk.Entry(self.general_frame,width=25,textvariable=self.name)
         self.name_e.grid(row=2,column=1,padx=5)
         
-        tk.Label(self.top, text='Max Jobs',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
-        self.maxjobs_e = tk.Entry(self.top,width=25,textvariable=self.maxjobs)
+        tk.Label(self.general_frame, text='Maximum Concurrently Running Jobs',width=30, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
+        self.maxjobs_e = tk.Entry(self.general_frame,width=25,textvariable=self.maxjobs)
         self.maxjobs_e.grid(row=3,column=1,padx=5)
         
-        tk.Label(self.top, text='Job Template',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5)
-        self.b_edit_job = tk.Button(self.top, text="Edit", command=self.edit_job)
+        tk.Label(self.general_frame, text='Job Template',width=30, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5)
+        self.b_edit_job = tk.Button(self.general_frame, text="Edit", command=self.edit_job)
         self.b_edit_job.grid(pady=5, padx=5, column=1, row=4, sticky="WE",rowspan=1)
         
         
@@ -690,8 +694,29 @@ class SweepEditor():
         #self.b_submit.grid(pady=5, padx=5, column=0, row=11, sticky="WE",rowspan=1)
         #self.b_submit.config(state=tk.NORMAL)
         
-        self.table = ParameterTable(self.table_frame, self.parameter_sweep, basepath=self.sim_dir.sim_directory)
-        self.table.grid(pady=5, padx=5, column=0, row=12, sticky="WE",rowspan=1,columnspan=2)
+        self.table = ParameterTable(self.table_frame, self.parameter_sweep,on_param_change=self.on_sweep_type_change)
+        self.table.grid(pady=5, padx=5, column=0, row=8, sticky="WE",rowspan=1,columnspan=2)
+        
+        """ ### AND OR FRAME ### """
+        self.sweep_type = tk.BooleanVar(self.top)
+        self.sweep_type_text = tk.StringVar(self.top)
+        self.sweep_type.set(self.parameter_sweep.is_and_sweep)
+        
+        
+        self.on_sweep_type_change()
+        
+        tk.Label(self.and_or_frame, text='Parameter Sweep Type',width=30, background='light gray',relief=tk.GROOVE).grid(row=0,column=0,sticky="WE",columnspan=1)
+        tk.Radiobutton(self.and_or_frame, text="AND", variable=self.sweep_type, command=self.on_sweep_type_change, value=True).grid(column=1,row=0)
+        tk.Radiobutton(self.and_or_frame, text="OR", variable=self.sweep_type, command=self.on_sweep_type_change, value=False).grid(column=2,row=0)
+        
+        tk.Label(self.and_or_frame, textvariable=self.sweep_type_text).grid(row=1,column=0,sticky="WE",columnspan=4,pady=15)
+        
+        """ ### ####### ### """        
+            
+        
+        self.general_frame.grid(pady=5, padx=5, column=0, row=11, sticky="WE",rowspan=1,columnspan=2)
+        self.table_frame.grid(pady=5, padx=5, column=0, row=12, sticky="WE",rowspan=1,columnspan=2)
+        self.and_or_frame.grid(pady=5, padx=5, column=0, row=13, sticky="WE",rowspan=1,columnspan=2)
         
         self.b_submit = tk.Button(self.top, text="Ok", command=self.ok, width=self.button_width)
         self.b_submit.grid(pady=5, padx=5, column=0, row=14, sticky="WE",rowspan=1)
@@ -700,13 +725,42 @@ class SweepEditor():
         self.b_cancel = tk.Button(self.top, text="Cancel", command=self.cancel, width=self.button_width)
         self.b_cancel.grid(pady=5, padx=5, column=1, row=14, sticky="WE",rowspan=1)
         self.b_cancel.config(state=tk.NORMAL)
-            
-        self.table_frame.grid(pady=5, padx=5, column=0, row=12, sticky="WE",rowspan=1,columnspan=2)
+        
         
         if self.parameter_sweep: #Editor mode shouldn't be able to change the name
             self.name_e.config(state=tk.DISABLED)
             self.load_ps()
             
+    def on_sweep_type_change(self):
+            def math_str(op):
+                math_str = ""
+                result = 0
+                for i, p in enumerate(self.parameter_sweep.parameters):
+                    if i == 0:
+                        math_str=str(len(p.parameters))
+                        result = len(p.parameters)
+                    else:
+                        math_str = math_str + " "+op+" " + str(len(p.parameters))
+                        if op=="*":
+                            result = result*len(p.parameters)
+                        else:
+                            result = result+len(p.parameters)
+                        
+                return (math_str,result)
+            if(self.sweep_type.get()):
+                math = math_str("*")
+                s = ""
+                if math[1] != 1:
+                    s = "s"
+                self.sweep_type_text.set("The AND Sweep will combine parameters ({}) resulting in {} job{}.".format(math[0], math[1],s))
+            else:
+                math = math_str("+")
+                s = ""
+                if math[1] != 1:
+                    s = "s"
+                self.sweep_type_text.set("The OR Sweep will iterate over all parameters ({}) resulting in {} job{}.".format(math[0],math[1],s))
+            self.parameter_sweep.is_and_sweep = self.sweep_type.get()
+            return
         
     def load_ps(self):  
         self.maxjobs.set(self.parameter_sweep.maxjobs)
@@ -722,6 +776,8 @@ class SweepEditor():
     
     def edit_job(self):
         def edit_job_():
+            self.parameter_sweep.sweep_project_dir.reload_job_dirs()
+            self.on_sweep_type_change()
             return
         sj = self.parameter_sweep.sweep_project_dir.get_job(ParametricSweep.job_template_name)
         if sj:
@@ -735,12 +791,6 @@ class SweepEditor():
             JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir,oncomplete_callback=edit_job_,edit_job=sj)
         return
     
-    def new_param(self):
-        """ TESTING START """
-        return
-        
-        """ TESTING END """
-
     def verify(self):
         
         if self.name.get() == "":
@@ -778,7 +828,7 @@ class ParameterTable(tk.Frame):
         EDIT = 3
         DELETE = 4
         
-    def __init__(self, parent, parameter_sweep, button_width = 15, use_buttons=[Param_Button.ALL], threads=None, basepath=None,*args, **kwargs):
+    def __init__(self, parent, parameter_sweep, button_width = 15, use_buttons=[Param_Button.ALL], threads=None, on_param_change=None,*args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.root = tk.Frame(self.parent)
@@ -792,7 +842,7 @@ class ParameterTable(tk.Frame):
         self.button_width = button_width
         self.use_buttons = use_buttons
         self.threads = threads
-        self.basepath = basepath
+        self.on_param_change = on_param_change
         
         self.table = None
         
@@ -866,9 +916,14 @@ class ParameterTable(tk.Frame):
         self.select_row(None)
     
     def new_param(self):
-        file_read = filedialog.askopenfilename()
+        file_read = filedialog.askopenfilename(parent=self.root, initialdir=self.parameter_sweep.sweep_dir_working,title='Choose a file')
         if not file_read:
             self.parent.lift()
+            return
+        
+        if os.path.normcase(os.path.commonpath([file_read, self.parameter_sweep.sweep_dir_working])) != os.path.normcase(self.parameter_sweep.sweep_dir_working):
+            messagebox.showerror("File Selection Error","Selected file does not reside in {}. Select a file to meet this criteria.".format(self.parameter_sweep.sweep_dir_working))
+            self.new_param()
             return
         
         file_read = os.path.abspath(file_read)
@@ -877,8 +932,10 @@ class ParameterTable(tk.Frame):
             self.parameter_sweep.add_parameter(parameter_container)
             self.reload_table()
             self.parent.lift()
+            if self.on_param_change:
+                self.on_param_change()
             
-        ParameterSelectTextBox(self.root, file_read, callback=c)
+        ParameterSelectTextBox(self.root, file_read, self.parameter_sweep, callback=c)
         return
     
     def edit_param(self):
@@ -893,10 +950,12 @@ class ParameterTable(tk.Frame):
             self.reload_table()
             self.parent.lift()
             #self.update_row_info()
+            if self.on_param_change:
+                self.on_param_change()
         
         param = self.parameter_sweep.get_parameter(self.selected_param_name)
         if param:
-            ParameterSelectTextBox(self.root, None, callback=c, edit=param)
+            ParameterSelectTextBox(self.root, None, self.parameter_sweep, callback=c, edit=param)
         
         
         return
@@ -906,6 +965,8 @@ class ParameterTable(tk.Frame):
         if p:
             self.parameter_sweep.del_parameter(p)
             self.reload_table()
+            if self.on_param_change:
+                self.on_param_change()
         return
     
     def select_row(self,row):
@@ -932,8 +993,12 @@ class ParameterTable(tk.Frame):
                 p_str = str(p)
             else:
                 p_str = p_str + "," + str(p)
-            
-        return [param.id, param.filename, param.location_start, param.location_start,p_str]
+        
+        #os.path.normcase(os.path.commonpath([file_read, self.parameter_sweep.sweep_dir_working]))
+        f_str = param.filename
+        if os.path.normcase(param.filename).startswith(os.path.normcase(self.parameter_sweep.sweep_dir_working)):
+           f_str = f_str[len(os.path.normcase(self.parameter_sweep.sweep_dir_working)):]    
+        return [param.id, f_str, param.location_start, param.location_start,p_str]
     
     def update_row_info(self):
         self.parameter_sweep.read_properties()
@@ -1008,7 +1073,7 @@ class ParameterSelectTextBox():
             self.top.destroy()
             
     
-    def __init__(self, parent, file_, callback=None, button_width=15, edit=None):
+    def __init__(self, parent, file_, parameter_sweep, callback=None, button_width=15, edit=None):
         self.window_title = "New Parameter"
         if edit:
             self.window_title = "Edit Parameter Selection"
@@ -1017,6 +1082,7 @@ class ParameterSelectTextBox():
         self.file_ = file_
         if not file_ and edit:
             self.file_ = edit.filename
+        self.parameter_sweep = parameter_sweep
             
         self.callback = callback
         self.button_width = button_width
@@ -1155,7 +1221,8 @@ class ParameterSelectTextBox():
         ranger = ParameterSelectTextBox.Ranger(self.top,callback=cb)
         
     def get_file_text(self):
-        f = open(self.file_,"r")
+        file_path = os.path.join(self.parameter_sweep.sweep_dir_working, self.file_)
+        f = open(file_path,"r")
         string = f.read()
         f.close()
         return string
@@ -1164,7 +1231,16 @@ class ParameterSelectTextBox():
         return
     
     def parse_params(self):
+        f_str = self.file_
+        if os.path.normcase(f_str).startswith(os.path.normcase(self.parameter_sweep.sweep_dir_working)):
+           f_str = f_str[len(os.path.normcase(self.parameter_sweep.sweep_dir_working)):]    
+        
+        if len(f_str) and f_str.startswith('\\'):
+            f_str = f_str[1:]
+        
+        self.file_ = f_str
         self.selected_params = self.params_var.get().split(",")
+        
         return
     
     def ok(self):
