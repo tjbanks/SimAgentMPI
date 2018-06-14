@@ -833,7 +833,7 @@ class ParameterTable(tk.Frame):
         self.parent = parent
         self.root = tk.Frame(self.parent)
         
-        self.columns = ["ID", "File", "Line #", "Line", "Parameters"]
+        self.columns = ["ID", "File", "Pos.", "Line ( Replacing [[]] )", "Parameters"]
         self.col_wid = [45, 100, 45, 200, 100]
         #https://timestamp.online/article/how-to-convert-timestamp-to-datetime-in-python
         self.date_format = '%b %d %y\n%I:%M %p'
@@ -994,11 +994,15 @@ class ParameterTable(tk.Frame):
             else:
                 p_str = p_str + "," + str(p)
         
+        pos_str = param.location_start + "\n" + param.location_end
+        
         #os.path.normcase(os.path.commonpath([file_read, self.parameter_sweep.sweep_dir_working]))
         f_str = param.filename
         if os.path.normcase(param.filename).startswith(os.path.normcase(self.parameter_sweep.sweep_dir_working)):
-           f_str = f_str[len(os.path.normcase(self.parameter_sweep.sweep_dir_working)):]    
-        return [param.id, f_str, param.location_start, param.location_start,p_str]
+           f_str = f_str[len(os.path.normcase(self.parameter_sweep.sweep_dir_working)):]   
+           
+        l_str = param.get_line_text(self.parameter_sweep.sweep_dir_working,mark_select=True)
+        return [param.id, f_str, pos_str , l_str,p_str]
     
     def update_row_info(self):
         self.parameter_sweep.read_properties()

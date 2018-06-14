@@ -13,6 +13,10 @@ import datetime, time
 import SimAgentMPI
 from SimAgentMPI.SimJob import SimJob
 
+from tempfile import mkstemp
+from shutil import move
+from os import fdopen, remove
+
 
 class ParametricSweep(object):
     '''
@@ -225,10 +229,17 @@ class ParametricSweep(object):
             self._set_state(ParametricSweep.state[1])  #We're now building
             #Threaded stuff here
             
-            
-            simjob = SimJob(self.sweep_project_dir, "{}-run".format(1))
-            self.sweep_project_dir.add_new_job(simjob)
-            
+            #simjob = SimJob(self.sweep_project_dir, "{}-run".format(1))
+            #self.sweep_project_dir.add_new_job(simjob)
+            if self.is_and_sweep:
+                pass # could try restoring the directory from the zip file after all changes are made
+            else:
+                for i, param in enumerate(self.parameters):
+                    for j, sub_param in enumerate(param.parameters):
+                        simjob = SimJob(self.sweep_project_dir, "j{}.{}".format(i+1,j+1))
+                        param.apply_change_and_revert(self.sweep_project_dir.sim_directory, j, afterchange_callback=simjob.create_snapshot)
+                        self.sweep_project_dir.add_new_job(simjob)
+                
             self._set_state(ParametricSweep.state[2])  #We've built the Sweep
             self.is_in_working_state = False
             if callback:
@@ -336,6 +347,133 @@ class ParameterContainer():
         self.location_end = le
         self.parameters = p
         return self
+    
+    def get_line_numbers(self):
+        rng = range(int(self.location_start.split(".")[0])-1,int(self.location_end.split(".")[0]))
+        lines = []
+        for r in rng:
+            lines.append(r)
+            
+        
+        pos = [int(self.location_start.split(".")[1]),int(self.location_end.split(".")[1])]
+            
+        return (lines,pos)
+    
+    def get_line_text(self, directory,mark_select=False):
+        ret = ""
+        if directory:
+            file_ = os.path.join(directory, self.filename)
+            if os.path.isfile(file_):
+                fp = open(file_)
+                ln = self.get_line_numbers()
+                line_nums = ln[0]
+                start_line = ln[0][0]
+                end_line = ln[0][len(ln[0])-1]
+                start = ln[1][0]
+                end = ln[1][1]
+                
+                for i, line in enumerate(fp):
+                    if i in line_nums:
+                        if len(line_nums):
+                            if len(line_nums) == 1: #Single row
+                                if len(line) > end:
+                                    line = line[:start] + "[[]]" + line[end:]
+                                    
+                            else:
+                                if i == start_line and i < end_line: #start
+                                    line = line[:start] + "[[\n"
+                                elif i > start_line and i < end_line: #middle
+                                    line = "\n"
+                                elif i == end_line:#end
+                                    line = "]]" + line[end:]
+                            
+                        if ret == "":
+                            ret = line
+                        else:
+                            ret = ret + line
+                fp.close()
+        return ret
+    
+    def apply_change(self, directory, parameter_index):
+        if directory:
+            file_ = os.path.join(directory, self.filename)
+            if os.path.isfile(file_):
+                
+                fh, abs_path = mkstemp()
+                with fdopen(fh,'w') as new_file:
+                    with open(file_) as old_file:
+                        ln = self.get_line_numbers()
+                        line_nums = ln[0]
+                        start_line = ln[0][0]
+                        end_line = ln[0][len(ln[0])-1]
+                        start = ln[1][0]
+                        end = ln[1][1]
+                 
+                        for i, line in enumerate(old_file):
+                            if i in line_nums:
+                                if len(line_nums):
+                                    if len(line_nums) == 1: #Single row
+                                        if len(line) > end:
+                                            line = line[:start] + self.parameters[parameter_index] + line[end:]
+                                            
+                                    else:
+                                        if i == start_line and i < end_line: #start
+                                            line = line[:start] + self.parameters[parameter_index] +"\n"
+                                        elif i > start_line and i < end_line: #middle
+                                            line = "\n"
+                                        elif i == end_line:#end
+                                            line = line[end:]
+                                    
+                            new_file.write(line)
+                #Remove original file
+                remove(file_)
+                #Move new file
+                move(abs_path, file_)
+        return
+    
+    def apply_change_and_revert(self, directory, parameter_index, afterchange_callback=None):
+        if directory:
+            file_ = os.path.join(directory, self.filename)
+            if os.path.isfile(file_):
+                
+                fh, abs_path = mkstemp()
+                with fdopen(fh,'w') as new_file:
+                    with open(file_) as old_file:
+                        ln = self.get_line_numbers()
+                        line_nums = ln[0]
+                        start_line = ln[0][0]
+                        end_line = ln[0][len(ln[0])-1]
+                        start = ln[1][0]
+                        end = ln[1][1]
+                 
+                        for i, line in enumerate(old_file):
+                            if i in line_nums:
+                                if len(line_nums):
+                                    if len(line_nums) == 1: #Single row
+                                        if len(line) > end:
+                                            line = line[:start] + self.parameters[parameter_index] + line[end:]
+                                            
+                                    else:
+                                        if i == start_line and i < end_line: #start
+                                            line = line[:start] + self.parameters[parameter_index] +"\n"
+                                        elif i > start_line and i < end_line: #middle
+                                            line = "\n"
+                                        elif i == end_line:#end
+                                            line = line[end:]
+                                    
+                            new_file.write(line)
+                
+                file_bak = file_+".original"
+                move(file_, file_bak)    
+                
+                #Move new file
+                move(abs_path, file_)
+                
+                if afterchange_callback:
+                    afterchange_callback()
+                
+                remove(file_)
+                move(file_bak,file_)
     
     def to_json(self):
         data = {}

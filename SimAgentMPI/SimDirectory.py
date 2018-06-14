@@ -188,6 +188,7 @@ class SimDirectory(object):
     def delete_all_jobs(self,exclude=[]):
         for j in self.sim_jobs:
             if j not in exclude:
+                #print("deleting {} in dir {}".format(j.sim_name, j.job_directory_absolute))
                 self.delete_job(j)
         return
     
