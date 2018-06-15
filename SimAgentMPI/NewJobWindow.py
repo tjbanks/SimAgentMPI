@@ -752,13 +752,13 @@ class SweepEditor():
                 s = ""
                 if math[1] != 1:
                     s = "s"
-                self.sweep_type_text.set("The AND Sweep will combine parameters ({}) resulting in {} job{}.".format(math[0], math[1],s))
+                self.sweep_type_text.set("The AND Sweep will try all combinations of parameters resulting in {} job{}. ({})".format(math[1],s,math[0]))
             else:
                 math = math_str("+")
                 s = ""
                 if math[1] != 1:
                     s = "s"
-                self.sweep_type_text.set("The OR Sweep will iterate over all parameters ({}) resulting in {} job{}.".format(math[0],math[1],s))
+                self.sweep_type_text.set("The OR Sweep will iterate over all parameters individually resulting in {} job{}.  ({})".format(math[1],s,math[0]))
             self.parameter_sweep.is_and_sweep = self.sweep_type.get()
             return
         

@@ -650,7 +650,7 @@ class Job_Table(tk.Frame):
         DELETEREMOTE = 12
         DELETELOCAL = 13
         
-    def __init__(self, parent, sim_dir, button_width = 15, use_buttons=[Job_Button.ALL], job_notes=None,job_consoles=None,threads=None, create_snaps_on_run=True, table_height=400,*args, **kwargs):
+    def __init__(self, parent, sim_dir, button_width = 15, use_buttons=[Job_Button.ALL], job_notes=None,job_consoles=None,threads=None, create_snaps_on_run=True, table_height=400, newest_first=True, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.root = tk.Frame(self.parent)
@@ -668,6 +668,7 @@ class Job_Table(tk.Frame):
         self.threads = threads
         self.create_snaps_on_run = create_snaps_on_run
         self.table_height = table_height
+        self.newest_first = newest_first
         
         self.table = None
         
@@ -1027,7 +1028,7 @@ class Job_Table(tk.Frame):
         #self.table.set_data([[""],[""],[""],[""]])
         
         if self.sim_dir:
-            self.sim_dir.sim_jobs.sort(key=lambda x: float(x.created), reverse=True)
+            self.sim_dir.sim_jobs.sort(key=lambda x: float(x.created), reverse=self.newest_first)
         
         if self.sim_dir and len(self.sim_dir.get_displayable_jobs()):
             for job in self.sim_dir.get_displayable_jobs(): #Double call like this is ouchy
@@ -1528,7 +1529,7 @@ class PS_Page(tk.Frame):
         """=Jobs Frame======================================"""
         b = Job_Table.Job_Button
         btns = [b.EDIT, b.START, b.STOP, b.UPDATE, b.OPENRESULTS, b.RUNCUSTOM]
-        self.table = Job_Table(self.jobs_frame, None, use_buttons=btns,button_width=button_width,job_notes=self.notes,job_consoles=self.consoles, create_snaps_on_run=False, table_height=300)#on_select_row=self.display_job_notes_log,on_update_row=self.display_job_notes_log)
+        self.table = Job_Table(self.jobs_frame, None, use_buttons=btns,button_width=button_width,job_notes=self.notes,job_consoles=self.consoles, create_snaps_on_run=False, table_height=300, newest_first=False)#on_select_row=self.display_job_notes_log,on_update_row=self.display_job_notes_log)
         self.table.grid(column=0,row=0)
         
         

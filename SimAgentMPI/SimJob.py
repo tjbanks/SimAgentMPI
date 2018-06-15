@@ -40,11 +40,12 @@ class SimJob(object):
     default_log_text = "Write notes about this job here..."
     created_status = "SIMJOB_CREATED"
     
-    def __init__(self, sim_directory_object, job_directory):
+    def __init__(self, sim_directory_object, job_directory,write_new=True):
         self.sim_directory_object = sim_directory_object
         self.job_directory = job_directory
         self.sim_name = os.path.basename(self.job_directory)
         self.job_directory_absolute = os.path.join(sim_directory_object.sim_results_dir,self.sim_name)
+        self.write_new = write_new
         
         try:
             self.create_sim_directory()
@@ -284,8 +285,9 @@ class SimJob(object):
                 self.sim_last_update_time = data[self.propname_sim_last_update_time]
                 self.sim_delete_remote_on_finish = data.get(self.propname_sim_delete_remote_on_finish,True)
         else:
-            self.write_properties()
-            self.append_log("")
+            if self.write_new:
+                self.write_properties()
+                self.append_log("")
         return
     
     def write_properties(self):
@@ -389,3 +391,22 @@ class SimJob(object):
         
         
         return
+    
+    def clone(self, name,write_new=True):
+        simjob = SimJob(self.sim_directory_object, name, write_new=write_new)
+        simjob.batch_file = self.batch_file
+        simjob.update_interval = self.update_interval
+        simjob.server_connector = self.server_connector
+        simjob.server_nodes = self.server_nodes
+        simjob.server_cores = self.server_cores
+        simjob.server_stdout_file = self.server_stdout_file
+        simjob.server_stderr_file = self.server_stderr_file
+        simjob.server_nsg_tool = self.server_nsg_tool
+        simjob.server_ssh_tool = self.server_ssh_tool
+        simjob.server_nsg_python = self.server_nsg_python
+        simjob.server_mpi_partition = self.server_mpi_partition
+        simjob.server_max_runtime = self.server_max_runtime
+        simjob.server_status_email = self.server_status_email
+        simjob.sim_delete_remote_on_finish = self.sim_delete_remote_on_finish
+        
+        return simjob

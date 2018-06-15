@@ -107,12 +107,18 @@ class ParametricSweep(object):
         self.write_properties()
     
     def del_parameter(self, container):
+        c_id = container.id
         self.parameters.remove(container)
+        
+        for p in self.parameters:#re-assign ids to keep consitant
+            if p.id > c_id:
+                p.id = int(p.id)-1
+                
         return
     
     def get_parameter(self, id_):
         for p in self.parameters:
-            if p.id == id_:
+            if str(p.id) == str(id_):
                 return p
             
     def get_parameters_sorted(self):
@@ -240,18 +246,27 @@ class ParametricSweep(object):
         self.take_project_snapshot()
         self.sweep_project_dir = SimAgentMPI.SimDirectory.SimDirectory(self.sweep_dir_working, initialize=True,prompt=False)
         return
-    """
-    Create snapshot of project_dir
-    Create all simjobs in the sweep_dir
-    """
-    def build(self, callback=None):
+    
+    def create_new_jobs(self):
         
         def recurse_params(i=0,path_="",param_path=[]):
             
             if not len(self.parameters):
                 return
             if i == len(self.parameters): #Base case
-                simjob = SimJob(self.sweep_project_dir, "j{}".format(path_))
+                path_ = path_[1:]#get rid of first -
+                path_arr = path_.split("-")
+                s = sorted(path_arr, key = lambda x: int(x.split(".")[1]), reverse=False) 
+                path_n = sorted(s, key = lambda x: int(x.split(".")[0]), reverse=False) 
+                path_ = '-'.join(str(x) for x in path_n)
+                #simjob = SimJob(self.sweep_project_dir, "job-{}".format(path_))
+                template_job = self.sweep_project_dir.get_job(ParametricSweep.job_template_name)
+                if template_job:
+                    simjob = template_job.clone("job-{}".format(path_))
+                    simjob.write_properties()
+                else: #Should never happen, but will create jobs
+                    simjob = SimJob(self.sweep_project_dir, "job-{}".format(path_))
+                
                 simjob.clear_notes()
                 for p in param_path:
                     parameter = self.get_parameters_sorted()[p[0]]
@@ -272,28 +287,42 @@ class ParametricSweep(object):
            
             return 
         
+        
+        if self.is_and_sweep:
+            recurse_params()
+        else:
+            for i, param in enumerate(self.get_parameters_sorted()):
+                for j, sub_param in enumerate(param.parameters):
+                    ###simjob = SimJob(self.sweep_project_dir, "j{}.{}".format(i+1,j+1))
+                    #simjob = SimJob(self.sweep_project_dir, "job-{}.{}".format(param.id,j+1))
+                    template_job = self.sweep_project_dir.get_job(ParametricSweep.job_template_name)
+                    if template_job:
+                        simjob = template_job.clone("job-{}.{}".format(param.id,j+1))
+                        simjob.write_properties()
+                    else:
+                        simjob = SimJob(self.sweep_project_dir, "job-{}.{}".format(param.id,j+1))
+                    notes_text = param.apply_change(self.sweep_project_dir.sim_directory, j)#make changes
+                    simjob.clear_notes()
+                    simjob.append_notes(notes_text)
+                    simjob.create_snapshot()#copy changes
+                    self.take_project_snapshot()#reset changes
+                    self.sweep_project_dir.add_new_job(simjob)
+                    
+    """
+    Create snapshot of project_dir
+    Create all simjobs in the sweep_dir
+    """
+    def build(self, callback=None):
+        
         if self.state == ParametricSweep.state[0]: #If we're done creating
             self.is_in_working_state = True
             self._set_state(ParametricSweep.state[1])  #We're now building
-            #Threaded stuff here
             
+            #Threaded stuff here
+            self.create_new_jobs()
             #simjob = SimJob(self.sweep_project_dir, "{}-run".format(1))
             #self.sweep_project_dir.add_new_job(simjob)
-            if self.is_and_sweep:
-                #pass
-                recurse_params()
-            else:
-                for i, param in enumerate(self.get_parameters_sorted()):
-                    for j, sub_param in enumerate(param.parameters):
-                        #simjob = SimJob(self.sweep_project_dir, "j{}.{}".format(i+1,j+1))
-                        simjob = SimJob(self.sweep_project_dir, "j{}.{}".format(param.id,j+1))
-                        notes_text = param.apply_change(self.sweep_project_dir.sim_directory, j)#make changes
-                        simjob.clear_notes()
-                        simjob.append_notes(notes_text)
-                        simjob.create_snapshot()#copy changes
-                        self.take_project_snapshot()#reset changes
-                        self.sweep_project_dir.add_new_job(simjob)
-                
+                            
             self._set_state(ParametricSweep.state[2])  #We've built the Sweep
             self.is_in_working_state = False
             if callback:
