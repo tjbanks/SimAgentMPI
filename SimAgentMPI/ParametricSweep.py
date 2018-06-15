@@ -198,7 +198,7 @@ class ParametricSweep(object):
         files = os.listdir(source)
         
         for f in files:
-            shutil.move(os.path.join(source, f), dest1)
+            shutil.move(os.path.join(source, f), os.path.abspath(os.path.join(dest1,f)))#Full path to overwrite
         
         shutil.rmtree(source,ignore_errors=True)
         
@@ -224,6 +224,34 @@ class ParametricSweep(object):
     Create all simjobs in the sweep_dir
     """
     def build(self, callback=None):
+        
+        def recurse_params(i=0,path_="",param_path=[]):
+            
+            if not len(self.parameters):
+                return
+            
+            if i == len(self.parameters): #Base case
+                simjob = SimJob(self.sweep_project_dir, "j{}".format(path_))
+                simjob.clear_notes()
+                for p in param_path:
+                    parameter = self.parameters[p[0]]
+                    notes_text = parameter.apply_change(self.sweep_project_dir.sim_directory, p[1])#make changes
+                    simjob.append_notes(notes_text)
+                   
+                simjob.create_snapshot()#copy changes
+                self.take_project_snapshot()#reset changes
+                self.sweep_project_dir.add_new_job(simjob)
+                return simjob
+            
+            parameter = self.parameters[i]
+            for j, p in enumerate(parameter.parameters):
+                path_n = path_ + "-{}.{}".format(i+1,j+1)
+                param_path_n = list(param_path)
+                param_path_n.append([i,j])
+                recurse_params(i=i+1,path_=path_n,param_path=param_path_n)
+           
+            return 
+        
         if self.state == ParametricSweep.state[0]: #If we're done creating
             self.is_in_working_state = True
             self._set_state(ParametricSweep.state[1])  #We're now building
@@ -232,12 +260,17 @@ class ParametricSweep(object):
             #simjob = SimJob(self.sweep_project_dir, "{}-run".format(1))
             #self.sweep_project_dir.add_new_job(simjob)
             if self.is_and_sweep:
-                pass # could try restoring the directory from the zip file after all changes are made
+                #pass
+                recurse_params()
             else:
                 for i, param in enumerate(self.parameters):
                     for j, sub_param in enumerate(param.parameters):
                         simjob = SimJob(self.sweep_project_dir, "j{}.{}".format(i+1,j+1))
-                        param.apply_change_and_revert(self.sweep_project_dir.sim_directory, j, afterchange_callback=simjob.create_snapshot)
+                        notes_text = param.apply_change(self.sweep_project_dir.sim_directory, j)#make changes
+                        simjob.clear_notes()
+                        simjob.append_notes(notes_text)
+                        simjob.create_snapshot()#copy changes
+                        self.take_project_snapshot()#reset changes
                         self.sweep_project_dir.add_new_job(simjob)
                 
             self._set_state(ParametricSweep.state[2])  #We've built the Sweep
@@ -270,7 +303,7 @@ class ParametricSweep(object):
     def submit(self, callback=None):
         if self.state == ParametricSweep.state[2] or self.state==ParametricSweep.state[5]: #If we're in a ready state or running
             if not self.is_in_working_state and not self.cancel_initiated:
-                if self.current_running_jobs < self.maxjobs:
+                if self.current_running_jobs < int(self.maxjobs):
                     self.is_in_working_state = True
                     self._set_state(ParametricSweep.state[4]) # We're going to be submitting new jobs now
                     #Threaded stuff here
@@ -395,6 +428,7 @@ class ParameterContainer():
         return ret
     
     def apply_change(self, directory, parameter_index):
+        ret_text = ""
         if directory:
             file_ = os.path.join(directory, self.filename)
             if os.path.isfile(file_):
@@ -408,10 +442,22 @@ class ParameterContainer():
                         end_line = ln[0][len(ln[0])-1]
                         start = ln[1][0]
                         end = ln[1][1]
-                 
+                        s = ""
+                        dash = ""
+                        end_ = ""
+                        if start_line != end_line:
+                            s = "s"
+                            dash = "-"
+                            end_ = end_line+1
+                        ret_text = "Changed file {} - line{}:{}{}{}\n".format(self.filename, s, start_line+1,dash,end_)
+                        
+                        
                         for i, line in enumerate(old_file):
                             if i in line_nums:
                                 if len(line_nums):
+                                    ret_text = ret_text + "[Original line:{}]\n".format(i+1)
+                                    ret_text = ret_text + line
+                                    ret_text = ret_text + "[Changed to]\n"
                                     if len(line_nums) == 1: #Single row
                                         if len(line) > end:
                                             line = line[:start] + self.parameters[parameter_index] + line[end:]
@@ -424,57 +470,17 @@ class ParameterContainer():
                                         elif i == end_line:#end
                                             line = line[end:]
                                     
+                                    ret_text = ret_text + line
+                                    
                             new_file.write(line)
+                        
                 #Remove original file
                 remove(file_)
                 #Move new file
                 move(abs_path, file_)
-        return
-    
-    def apply_change_and_revert(self, directory, parameter_index, afterchange_callback=None):
-        if directory:
-            file_ = os.path.join(directory, self.filename)
-            if os.path.isfile(file_):
                 
-                fh, abs_path = mkstemp()
-                with fdopen(fh,'w') as new_file:
-                    with open(file_) as old_file:
-                        ln = self.get_line_numbers()
-                        line_nums = ln[0]
-                        start_line = ln[0][0]
-                        end_line = ln[0][len(ln[0])-1]
-                        start = ln[1][0]
-                        end = ln[1][1]
-                 
-                        for i, line in enumerate(old_file):
-                            if i in line_nums:
-                                if len(line_nums):
-                                    if len(line_nums) == 1: #Single row
-                                        if len(line) > end:
-                                            line = line[:start] + self.parameters[parameter_index] + line[end:]
-                                            
-                                    else:
-                                        if i == start_line and i < end_line: #start
-                                            line = line[:start] + self.parameters[parameter_index] +"\n"
-                                        elif i > start_line and i < end_line: #middle
-                                            line = "\n"
-                                        elif i == end_line:#end
-                                            line = line[end:]
-                                    
-                            new_file.write(line)
-                
-                file_bak = file_+".original"
-                move(file_, file_bak)    
-                
-                #Move new file
-                move(abs_path, file_)
-                
-                if afterchange_callback:
-                    afterchange_callback()
-                
-                remove(file_)
-                move(file_bak,file_)
-    
+        return ret_text
+        
     def to_json(self):
         data = {}
         data["id"] = self.id

@@ -650,7 +650,7 @@ class Job_Table(tk.Frame):
         DELETEREMOTE = 12
         DELETELOCAL = 13
         
-    def __init__(self, parent, sim_dir, button_width = 15, use_buttons=[Job_Button.ALL], job_notes=None,job_consoles=None,threads=None, *args, **kwargs):
+    def __init__(self, parent, sim_dir, button_width = 15, use_buttons=[Job_Button.ALL], job_notes=None,job_consoles=None,threads=None, create_snaps_on_run=True, table_height=400,*args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.root = tk.Frame(self.parent)
@@ -666,6 +666,8 @@ class Job_Table(tk.Frame):
         self.job_notes = job_notes
         self.job_consoles = job_consoles
         self.threads = threads
+        self.create_snaps_on_run = create_snaps_on_run
+        self.table_height = table_height
         
         self.table = None
         
@@ -762,7 +764,7 @@ class Job_Table(tk.Frame):
             self.b_del_all.grid(pady=0, padx=5, column=6, row=0, sticky="WE") 
             
          
-        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=self.table_height, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
         self.table.grid(row=1,column=0,padx=5,pady=10)
         self.table.set_data([[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""],[""]])
         #table.cell(0,0, " This is testing a long sentence ")
@@ -885,7 +887,7 @@ class Job_Table(tk.Frame):
                 
         class StartJobThread(StoppableThread):
             def run(self):
-                job.run()
+                job.run(self.ref.create_snaps_on_run)
                 self.ref.update_row_info()
                 return
         
@@ -1005,16 +1007,19 @@ class Job_Table(tk.Frame):
         return data
     
     
-    def reload_table(self, dir_=None):
+    def reload_table(self, dir_=None, clear=False):
         
-        if self.sim_dir == dir_ == None:
-            return
-        
-        if dir_:
-            self.sim_dir = dir_
+        if not clear:
+            if self.sim_dir == dir_ == None:
+                return
+            
+            if dir_:
+                self.sim_dir = dir_
+        else:
+            self.sim_dir=None
         
         self.table.grid_forget()
-        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=400, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
+        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=self.table_height, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
         self.table.grid(row=1,column=0,padx=10,pady=10)
         #for i in range(self.table._number_of_rows):
             #print(i)
@@ -1311,7 +1316,7 @@ class Parametric_Sweep_Managment(tk.Frame):
         
         return
     
-    def load_ps(self):
+    def load_ps(self, clear=False):
         if self.sim_dir:
             if self.sweep_picked.get() != "" and self.sweep_picked.get() != self.sweep_picked_default:
                 self.ps = self.sim_dir.get_sweep(self.sweep_picked.get())
@@ -1325,7 +1330,7 @@ class Parametric_Sweep_Managment(tk.Frame):
                 self.parametric_sweep_state.set("")
             
             if self.on_load_callback:
-                self.on_load_callback()
+                self.on_load_callback(clear=clear)
                     
         return
     
@@ -1333,7 +1338,7 @@ class Parametric_Sweep_Managment(tk.Frame):
         
         if self.sim_dir:
             self.sim_dir.delete_sweep(self.sweep_picked.get())
-            self.load_ps()
+            self.load_ps(clear=True)
             self.load_sweeps()
             self.reload_old_sweeps()
             self.sweep_picked.set(self.sweep_picked_default)
@@ -1501,6 +1506,7 @@ class PS_Page(tk.Frame):
         self.jobs_frame = tk.LabelFrame(self.left_frame, text="Sweep Jobs")
         self.ps_stats_frame = tk.LabelFrame(self.right_frame, text="Parameter Sweep Information")
         self.log_frame = tk.Frame(self.right_frame)
+        self.notes_frame = tk.LabelFrame(self.right_frame, text="Job Notes")
         
         button_width = 15
         
@@ -1508,6 +1514,11 @@ class PS_Page(tk.Frame):
         
         #self.notes = Job_Notes(self.notes_frame)
         #self.notes.grid(column=0,row=0)
+        
+        """=Job Notes Frame======================================"""
+        
+        self.notes = Job_Notes(self.notes_frame)
+        self.notes.grid(column=0,row=0)
         
         """=Logs Frame======================================"""
         
@@ -1517,17 +1528,18 @@ class PS_Page(tk.Frame):
         """=Jobs Frame======================================"""
         b = Job_Table.Job_Button
         btns = [b.EDIT, b.START, b.STOP, b.UPDATE, b.OPENRESULTS, b.RUNCUSTOM]
-        self.table = Job_Table(self.jobs_frame, None, use_buttons=btns,button_width=button_width,job_notes=None,job_consoles=self.consoles)#on_select_row=self.display_job_notes_log,on_update_row=self.display_job_notes_log)
+        self.table = Job_Table(self.jobs_frame, None, use_buttons=btns,button_width=button_width,job_notes=self.notes,job_consoles=self.consoles, create_snaps_on_run=False, table_height=300)#on_select_row=self.display_job_notes_log,on_update_row=self.display_job_notes_log)
         self.table.grid(column=0,row=0)
         
         
         """=PS Frame========================================"""
-        def load_ps_callback():
+        def load_ps_callback(clear = False):
             if self.para_sweeper.ps:
                 psdir = self.para_sweeper.ps.sweep_project_dir
             else:
                 psdir = None
-            self.table.reload_table(dir_=psdir)
+                clear = True
+            self.table.reload_table(dir_=psdir, clear=clear)
             
         self.para_sweeper = Parametric_Sweep_Managment(self.ps_frame, on_load_callback=load_ps_callback, button_width=button_width)
         self.para_sweeper.grid(column=0,row=0)
@@ -1553,6 +1565,7 @@ class PS_Page(tk.Frame):
         
         self.ps_stats_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5)
         self.log_frame.grid(column=0,row=1,sticky='news',padx=0,pady=5)
+        self.notes_frame.grid(column=0,row=2,sticky='news',padx=0,pady=5)
         
         return
     

@@ -169,6 +169,37 @@ class SimJob(object):
         
         return
     
+    def clear_notes(self):
+        full_notes_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.notes)
+        os.remove(full_notes_path)
+        self.write_notes("")
+    
+    def append_notes(self, text):
+        
+        full_notes_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.notes)
+        append_write = ''
+        if os.path.exists(full_notes_path):
+            append_write = 'a' # append if already exists
+        else:
+            append_write = 'w' # make a new file if not
+        try:
+            f = open(full_notes_path,append_write)
+            if isinstance(text,list):
+                for i,line in enumerate(text):
+                    if i == 0:
+                        f.write(line)
+                    else:
+                        f.write(line)
+            else:
+                f.write(text+'\n')
+            f.close()
+        except Exception as e:
+            print("Could not append notes" + full_notes_path)
+            print("Directory could be deleted")
+            print(e)
+        
+        return
+    
     def run_custom(self):
         tool = self.sim_directory_object.custom_tool
         
@@ -319,11 +350,13 @@ class SimJob(object):
         self.sim_directory_object.take_snapshotzip(os.path.join(self.sim_directory_object.sim_results_dir,self.job_directory,self.file_snapshotzip))
         self.file_snapshotzip = self.file_snapshotzip +".zip" #for later use
             
-    def run(self):
+    def run(self,create_snap=True):
         self.append_log("Run initiated")
-        self.append_log("Creating directory snapshot")
-        self.create_snapshot()
-        self.append_log(self.file_snapshotzip + " created")
+        
+        if create_snap:
+            self.append_log("Creating directory snapshot")
+            self.create_snapshot()
+            self.append_log(self.file_snapshotzip + " created")
                 
         ServerInterface().start_simjob(self)
         return

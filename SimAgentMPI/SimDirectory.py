@@ -186,10 +186,14 @@ class SimDirectory(object):
         return
     
     def delete_all_jobs(self,exclude=[]):
+        delete_these = []
         for j in self.sim_jobs:
             if j not in exclude:
                 #print("deleting {} in dir {}".format(j.sim_name, j.job_directory_absolute))
-                self.delete_job(j)
+                #self.delete_job(j)#you're deleting before finishing loop
+                delete_these.append(j)
+        for j in delete_these:
+            self.delete_job(j)
         return
     
     def take_snapshotzip(self, save_to_file):
