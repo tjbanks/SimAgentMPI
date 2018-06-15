@@ -114,6 +114,27 @@ class ParametricSweep(object):
         for p in self.parameters:
             if p.id == id_:
                 return p
+            
+    def get_parameters_sorted(self):
+        #The thinking behind this is: if the same file has multiple edits we want 
+        #to change later parameters first, as to to not mess with line numbers and row 
+        #numbers of later params
+        #tertiary (column number)
+        s = sorted(self.parameters, key = lambda x: int(x.location_start.split(".")[1]), reverse=True) 
+        #secondary (line row number)
+        s = sorted(s, key = lambda x: int(x.location_start.split(".")[0]), reverse=True) 
+        #primary (filename)
+        s = sorted(s, key = lambda x: x.filename)
+        
+        return s
+    
+    def get_next_parameter_id(self):
+        maximum = 0
+        for p in self.parameters:
+            if int(p.id) > maximum:
+                maximum = int(p.id)
+        
+        return maximum + 1
     
     def set_external_state_var(self, external_state_var):
         self.external_state_var = external_state_var
@@ -229,12 +250,11 @@ class ParametricSweep(object):
             
             if not len(self.parameters):
                 return
-            
             if i == len(self.parameters): #Base case
                 simjob = SimJob(self.sweep_project_dir, "j{}".format(path_))
                 simjob.clear_notes()
                 for p in param_path:
-                    parameter = self.parameters[p[0]]
+                    parameter = self.get_parameters_sorted()[p[0]]
                     notes_text = parameter.apply_change(self.sweep_project_dir.sim_directory, p[1])#make changes
                     simjob.append_notes(notes_text)
                    
@@ -243,9 +263,9 @@ class ParametricSweep(object):
                 self.sweep_project_dir.add_new_job(simjob)
                 return simjob
             
-            parameter = self.parameters[i]
+            parameter = self.get_parameters_sorted()[i]
             for j, p in enumerate(parameter.parameters):
-                path_n = path_ + "-{}.{}".format(i+1,j+1)
+                path_n = path_ + "-{}.{}".format(parameter.id,j+1)
                 param_path_n = list(param_path)
                 param_path_n.append([i,j])
                 recurse_params(i=i+1,path_=path_n,param_path=param_path_n)
@@ -263,9 +283,10 @@ class ParametricSweep(object):
                 #pass
                 recurse_params()
             else:
-                for i, param in enumerate(self.parameters):
+                for i, param in enumerate(self.get_parameters_sorted()):
                     for j, sub_param in enumerate(param.parameters):
-                        simjob = SimJob(self.sweep_project_dir, "j{}.{}".format(i+1,j+1))
+                        #simjob = SimJob(self.sweep_project_dir, "j{}.{}".format(i+1,j+1))
+                        simjob = SimJob(self.sweep_project_dir, "j{}.{}".format(param.id,j+1))
                         notes_text = param.apply_change(self.sweep_project_dir.sim_directory, j)#make changes
                         simjob.clear_notes()
                         simjob.append_notes(notes_text)
@@ -370,9 +391,12 @@ class ParameterContainer():
         self.init("","","","",[])
         return
     
-    def init(self, fn, fh, ls, le, p):
-        ts = time.time()
-        st = datetime.datetime.fromtimestamp(ts).strftime('%H%M%S')
+    def init(self, fn, fh, ls, le, p,id_=None):
+        if id_:
+            st = id_
+        else:
+            ts = time.time()
+            st = datetime.datetime.fromtimestamp(ts).strftime('%H%M%S')
         self.id = st
         self.filename = fn
         self.filehash = fh

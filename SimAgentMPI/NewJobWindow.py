@@ -1250,7 +1250,7 @@ class ParameterSelectTextBox():
     def ok(self):
         self.confirm = True
         self.parse_params()
-        cont = ParameterContainer().init(self.file_,"",self.selected_start,self.selected_end,self.selected_params)
+        cont = ParameterContainer().init(self.file_,"",self.selected_start,self.selected_end,self.selected_params,id_=self.parameter_sweep.get_next_parameter_id())
         if self.edit_param:
             cont.id = self.edit_param.id
         self.top.destroy()
