@@ -116,6 +116,7 @@ class UpdateWindow:
                 update_SimAgentMPI(sa_path, branch)
             except Exception as e:
                 messagebox.showerror("Update error","Error updating: {}".format(e))
+                return
         if self.callback:
             self.callback()
         
