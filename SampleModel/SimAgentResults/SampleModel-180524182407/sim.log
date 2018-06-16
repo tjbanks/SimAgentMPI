@@ -1,7 +1,0 @@
-18-05-24 18:24:34 > Job created
-18-05-24 18:24:41 > Run initiated
-18-05-24 18:24:41 > Creating directory snapshot
-18-05-24 18:24:41 > SampleModel-180524182407.zip created
-18-05-24 18:24:41 > Loading server nsg-tbg28
-18-05-24 18:24:41 > Creating NSG parameter files: param.properties,input.properties
-18-05-24 18:24:41 > Validating job build with NSG...

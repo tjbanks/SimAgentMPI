@@ -20,7 +20,7 @@ import SimAgentMPI
 
 class JobEntryBox:
         
-        def __init__(self, parent, sim_directory, job_name=None, sim_job_copy=None, oncomplete_callback=None, edit_job=None, clone_mode=False):
+        def __init__(self, parent, sim_directory, job_name=None, sim_job_copy=None, oncomplete_callback=None, edit_job=None, clone_mode=False, view_mode=False):
             self.window_title = "New Job"
             if edit_job:
                 self.window_title = "Edit Job"
@@ -32,6 +32,10 @@ class JobEntryBox:
             self.oncomplete_callback = oncomplete_callback
             self.edit_job = edit_job
             self.clone_mode = clone_mode
+            self.view_mode = view_mode
+            
+            if self.view_mode:
+                self.window_title = self.window_title + " (View Mode)"
             self.valid_message = "Unspecified error, see console output"
             
             
@@ -175,6 +179,9 @@ class JobEntryBox:
                 toptext = "Edit Job"
             if self.clone_mode:
                 toptext = "Clone Job"
+                
+            if self.view_mode:
+                toptext = toptext  + " (View Mode)"
             
             tk.Label(top, text=toptext).grid(row=0,column=0,sticky="WE",pady=15, columnspan=3)
             
@@ -193,8 +200,8 @@ class JobEntryBox:
             set_server_choices()
             
             self.server_connector.trace('w', change_dropdown)
-            b = tk.Button(general_option_frame, text="New", command=new_server)
-            b.grid(pady=5, padx=5, column=2, row=5, sticky="WE",columnspan=1)
+            self.b_new_server = tk.Button(general_option_frame, text="New", command=new_server)
+            self.b_new_server.grid(pady=5, padx=5, column=2, row=5, sticky="WE",columnspan=1)
             
             general_option_frame.grid(column=0,row=2,sticky='news',padx=10,pady=5,columnspan=3)
             
@@ -207,37 +214,38 @@ class JobEntryBox:
             
             tk.Label(conn_option_frame, text='Tool',width=15, background='light gray',relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5)
             self.ssh_tool_choices = ServerInterface().get_ssh_tools()
-            popupMenu = OptionMenu(conn_option_frame, self.server_ssh_tool, *self.ssh_tool_choices)
-            popupMenu.grid(row = 1, column =1)
+            self.ssh_popupMenu = OptionMenu(conn_option_frame, self.server_ssh_tool, *self.ssh_tool_choices)
+            self.ssh_popupMenu.grid(row = 1, column =1)
             self.server_ssh_tool.trace('w', change_dropdown_ssh_tool)
                     
             tk.Label(conn_option_frame, text='Batch File',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.batch_file,state=tk.DISABLED)
-            self.name_e.grid(row=2,column=1,padx=5,columnspan=1)
-            b = tk.Button(conn_option_frame, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
+            self.batch_e = tk.Entry(conn_option_frame,width=25,textvariable=self.batch_file,state=tk.DISABLED)
+            self.batch_e.grid(row=2,column=1,padx=5,columnspan=1)
+            self.b_batch = tk.Button(conn_option_frame, text="Select", command=select_batch)
+            self.b_batch.grid(pady=5, padx=5, column=2, row=2, sticky="WE",columnspan=1)
             self.batch_file.trace('w', self.change_batch)
             #b = tk.Button(conn_option_frame, text="New", command=new_batch).grid(pady=5, padx=5, column=3, row=2, sticky="WE",columnspan=1)
             
             
             tk.Label(conn_option_frame, text='Partition',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
-            self.host_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_mpi_partition)
-            self.host_e.grid(row=3,column=1,padx=5)
+            self.part_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_mpi_partition)
+            self.part_e.grid(row=3,column=1,padx=5)
             
             tk.Label(conn_option_frame, text='Nodes',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_nodes)
-            self.name_e.grid(row=4,column=1,padx=5,columnspan=1)
+            self.node_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_nodes)
+            self.node_e.grid(row=4,column=1,padx=5,columnspan=1)
             
             tk.Label(conn_option_frame, text='Cores per Node',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_cores)
-            self.name_e.grid(row=5,column=1,padx=5,columnspan=1)
+            self.core_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_cores)
+            self.core_e.grid(row=5,column=1,padx=5,columnspan=1)
             
             tk.Label(conn_option_frame, text='Max Run (hours)',width=15, background='light gray',relief=tk.GROOVE).grid(row=6,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_max_runtime)
-            self.name_e.grid(row=6,column=1,padx=5,columnspan=1)
+            self.max_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_max_runtime)
+            self.max_e.grid(row=6,column=1,padx=5,columnspan=1)
             
             tk.Label(conn_option_frame, text='Delete Remote Files',width=15, background='light gray',relief=tk.GROOVE).grid(row=7,column=0,pady=5,padx=5)
-            dcb1 = tk.Checkbutton(conn_option_frame, text="", variable=self.server_delete_remote_on_finish)
-            dcb1.grid(row=7,column=1,padx=5, sticky='W')
+            self.dcb1 = tk.Checkbutton(conn_option_frame, text="", variable=self.server_delete_remote_on_finish)
+            self.dcb1.grid(row=7,column=1,padx=5, sticky='W')
             #CreateToolTip(dcb1,text="Delete the files on the remote server upon completion. This is a recommended setting")
             
                         
@@ -245,48 +253,75 @@ class JobEntryBox:
             
             tk.Label(nsgconn_option_frame, text='Tool',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
             self.nsg_tool_choices = self.get_nsg_tools()
-            popupMenu = OptionMenu(nsgconn_option_frame, self.server_nsg_tool, *self.nsg_tool_choices)
-            popupMenu.grid(row = 2, column =1)
+            self.nsg_popupMenu = OptionMenu(nsgconn_option_frame, self.server_nsg_tool, *self.nsg_tool_choices)
+            self.nsg_popupMenu.grid(row = 2, column =1)
             self.server_nsg_tool.trace('w', change_dropdown_nsg_tool)
             
             tk.Label(nsgconn_option_frame, text='Main Run File',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5,columnspan=1)
             self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.batch_file,state=tk.DISABLED)
             self.name_e.grid(row=3,column=1,padx=5,columnspan=1)
-            b = tk.Button(nsgconn_option_frame, text="Select", command=select_batch).grid(pady=5, padx=5, column=2, row=3, sticky="WE",columnspan=1)
+            self.b_tool = tk.Button(nsgconn_option_frame, text="Select", command=select_batch)
+            self.b_tool.grid(pady=5, padx=5, column=2, row=3, sticky="WE",columnspan=1)
             
             tk.Label(nsgconn_option_frame, text='Nodes',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nodes)
-            self.name_e.grid(row=4,column=1,padx=5,columnspan=1)
+            self.nnodes_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nodes)
+            self.nnodes_e.grid(row=4,column=1,padx=5,columnspan=1)
             
             tk.Label(nsgconn_option_frame, text='Cores per Node',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_cores)
-            self.name_e.grid(row=5,column=1,padx=5,columnspan=1)
+            self.ncores_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_cores)
+            self.ncores_e.grid(row=5,column=1,padx=5,columnspan=1)
             
             tk.Label(nsgconn_option_frame, text='Max Run (hours)',width=15, background='light gray',relief=tk.GROOVE).grid(row=6,column=0,pady=5,padx=5,columnspan=1)
-            self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_max_runtime)
-            self.name_e.grid(row=6,column=1,padx=5,columnspan=1)
+            self.nmax_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_max_runtime)
+            self.nmax_e.grid(row=6,column=1,padx=5,columnspan=1)
                         
             tk.Label(nsgconn_option_frame, text='Uses Python',width=15, background='light gray',relief=tk.GROOVE).grid(row=7,column=0,pady=5,padx=5)
-            tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_nsg_python).grid(row=7,column=1,padx=5, sticky='W')
+            self.py_c = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_nsg_python)
+            self.py_c.grid(row=7,column=1,padx=5, sticky='W')
             
             tk.Label(nsgconn_option_frame, text='Send Status Emails',width=15, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
-            tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email).grid(row=8,column=1,padx=5, sticky='W')
+            self.send_c = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email)
+            self.send_c.grid(row=8,column=1,padx=5, sticky='W')
             
             
             tk.Label(nsgconn_option_frame, text='Delete Remote Files',width=15, background='light gray',relief=tk.GROOVE).grid(row=9,column=0,pady=5,padx=5)
-            dcb = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_delete_remote_on_finish)
-            dcb.grid(row=9,column=1,padx=5, sticky='W')
+            self.dcb = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_delete_remote_on_finish)
+            self.dcb.grid(row=9,column=1,padx=5, sticky='W')
             #CreateToolTip(dcb,text="Delete the files on the remote server upon completion. This is a recommended setting")
             #Return
                         
             button_frame = tk.Frame(top)
             button_frame.grid(row=20,column=0,columnspan=3)
             
-            b = tk.Button(button_frame, text="Ok", command=self.ok)
-            b.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
+            self.b_ok = tk.Button(button_frame, text="Ok", command=self.ok)
+            self.b_ok.grid(pady=5, padx=5, column=0, row=0, sticky="WE")
             
-            b = tk.Button(button_frame, text="Cancel", command=self.cancel)
-            b.grid(pady=5, padx=5, column=1, row=0, sticky="WE")
+            self.b_can = tk.Button(button_frame, text="Cancel", command=self.cancel)
+            self.b_can.grid(pady=5, padx=5, column=1, row=0, sticky="WE")
+            
+            
+            if self.view_mode:
+                self.server_choicedrop.config(state=tk.DISABLED)
+                self.b_new_server.config(state=tk.DISABLED)
+                self.ssh_popupMenu.config(state=tk.DISABLED)
+                self.batch_e.config(state=tk.DISABLED)
+                self.b_batch.config(state=tk.DISABLED)
+                self.part_e.config(state=tk.DISABLED)
+                self.node_e.config(state=tk.DISABLED)
+                self.core_e.config(state=tk.DISABLED)
+                self.max_e.config(state=tk.DISABLED)
+                self.dcb1.config(state=tk.DISABLED)
+                
+                self.b_tool.config(state=tk.DISABLED)
+                self.nsg_popupMenu.config(state=tk.DISABLED)
+                self.nnodes_e.config(state=tk.DISABLED)
+                self.ncores_e.config(state=tk.DISABLED)
+                self.nmax_e.config(state=tk.DISABLED)
+                self.dcb.config(state=tk.DISABLED)
+                self.py_c.config(state=tk.DISABLED)
+                self.send_c.config(state=tk.DISABLED)
+                
+                self.b_ok.config(state=tk.DISABLED)             
             
         
         def change_batch(self, *args):
@@ -637,7 +672,7 @@ class SweepNew():
     
 class SweepEditor():
     
-    def __init__(self, parent,sim_dir,parameter_sweep,callback=None,button_width=15):
+    def __init__(self, parent,sim_dir,parameter_sweep,callback=None,button_width=15,view_mode=False):
         self.window_title = "Create Range"
         self.top = tk.Toplevel(parent)
         self.parent = parent
@@ -649,6 +684,7 @@ class SweepEditor():
         self.confirm = False
         self.callback=callback  
         self.button_width = button_width
+        self.view_mode = view_mode
         self.verify_message = ""
         
         self.display()
@@ -670,8 +706,10 @@ class SweepEditor():
         #tk.Label(self.top, text='Start',width=15, background='light gray',relief=tk.GROOVE).grid(row=10,column=0,pady=5,padx=5)
         #self.start_e = tk.Entry(self.top,width=25,textvariable=self.start)
         #self.start_e.grid(row=10,column=1,padx=5)
-        
-        tk.Label(self.top, text="Sweep Editor").grid(row=1,column=0,sticky="WE",columnspan=2,pady=15)
+        text_top = "Sweep Editor"
+        tk.Label(self.top, text=text_top).grid(row=0,column=0,sticky="WE",columnspan=2,pady=5)
+        if self.view_mode:
+            tk.Label(self.top, text="(View mode - Build has been run, deconstruct to edit all parameters)",fg="blue").grid(row=1,column=0,sticky="WE",columnspan=2,pady=5)
         
         tk.Label(self.general_frame, text='Sweep Name',width=30, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
         self.name_e = tk.Entry(self.general_frame,width=25,textvariable=self.name)
@@ -694,7 +732,7 @@ class SweepEditor():
         #self.b_submit.grid(pady=5, padx=5, column=0, row=11, sticky="WE",rowspan=1)
         #self.b_submit.config(state=tk.NORMAL)
         
-        self.table = ParameterTable(self.table_frame, self.parameter_sweep,on_param_change=self.on_sweep_type_change)
+        self.table = ParameterTable(self.table_frame, self.parameter_sweep,on_param_change=self.on_sweep_type_change,view_mode=self.view_mode)
         self.table.grid(pady=5, padx=5, column=0, row=8, sticky="WE",rowspan=1,columnspan=2)
         
         """ ### AND OR FRAME ### """
@@ -706,8 +744,10 @@ class SweepEditor():
         self.on_sweep_type_change()
         
         tk.Label(self.and_or_frame, text='Parameter Sweep Type',width=30, background='light gray',relief=tk.GROOVE).grid(row=0,column=0,sticky="WE",columnspan=1)
-        tk.Radiobutton(self.and_or_frame, text="AND", variable=self.sweep_type, command=self.on_sweep_type_change, value=True).grid(column=1,row=0)
-        tk.Radiobutton(self.and_or_frame, text="OR", variable=self.sweep_type, command=self.on_sweep_type_change, value=False).grid(column=2,row=0)
+        self.b_and = tk.Radiobutton(self.and_or_frame, text="AND", variable=self.sweep_type, command=self.on_sweep_type_change, value=True)
+        self.b_and.grid(column=1,row=0)
+        self.b_or = tk.Radiobutton(self.and_or_frame, text="OR", variable=self.sweep_type, command=self.on_sweep_type_change, value=False)
+        self.b_or.grid(column=2,row=0)
         
         tk.Label(self.and_or_frame, textvariable=self.sweep_type_text).grid(row=1,column=0,sticky="WE",columnspan=4,pady=15)
         
@@ -730,6 +770,11 @@ class SweepEditor():
         if self.parameter_sweep: #Editor mode shouldn't be able to change the name
             self.name_e.config(state=tk.DISABLED)
             self.load_ps()
+            
+        if self.view_mode:
+            self.name_e.config(state=tk.DISABLED)
+            self.b_and.config(state=tk.DISABLED)
+            self.b_or.config(state=tk.DISABLED)
             
     def on_sweep_type_change(self):
             def math_str(op):
@@ -782,13 +827,13 @@ class SweepEditor():
         sj = self.parameter_sweep.sweep_project_dir.get_job(ParametricSweep.job_template_name)
         if sj:
             sj.append_log("Template edited")
-            JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir, oncomplete_callback=edit_job_, edit_job=sj)
+            JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir, oncomplete_callback=edit_job_, edit_job=sj, view_mode=self.view_mode)
         else:
             sj = SimJob(self.parameter_sweep.sweep_project_dir,ParametricSweep.job_template_name)
             sj.write_properties()
             sj.append_log("Template created")
             self.sim_dir.add_new_job(sj)
-            JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir,oncomplete_callback=edit_job_,edit_job=sj)
+            JobEntryBox(self.top, self.parameter_sweep.sweep_project_dir,oncomplete_callback=edit_job_,edit_job=sj, view_mode=self.view_mode)
         return
     
     def verify(self):
@@ -828,7 +873,7 @@ class ParameterTable(tk.Frame):
         EDIT = 3
         DELETE = 4
         
-    def __init__(self, parent, parameter_sweep, button_width = 15, use_buttons=[Param_Button.ALL], threads=None, on_param_change=None,*args, **kwargs):
+    def __init__(self, parent, parameter_sweep, button_width = 15, use_buttons=[Param_Button.ALL], threads=None, on_param_change=None, view_mode=False,*args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.root = tk.Frame(self.parent)
@@ -843,6 +888,7 @@ class ParameterTable(tk.Frame):
         self.use_buttons = use_buttons
         self.threads = threads
         self.on_param_change = on_param_change
+        self.view_mode = view_mode
         
         self.table = None
         
@@ -883,6 +929,10 @@ class ParameterTable(tk.Frame):
         #table.cell(0,0, " This is testing a long sentence ")
         #table.insert_row([22,23,24])
         #table.insert_row([25,26,27],index=0)
+        
+        if self.view_mode:
+            self.b_new.config(state=tk.DISABLED)
+            self.b_delete.config(state=tk.DISABLED)
         
         self.reload_table()
         
@@ -935,7 +985,7 @@ class ParameterTable(tk.Frame):
             if self.on_param_change:
                 self.on_param_change()
             
-        ParameterSelectTextBox(self.root, file_read, self.parameter_sweep, callback=c)
+        ParameterSelectTextBox(self.root, file_read, self.parameter_sweep, callback=c, view_mode=self.view_mode)
         return
     
     def edit_param(self):
@@ -955,7 +1005,7 @@ class ParameterTable(tk.Frame):
         
         param = self.parameter_sweep.get_parameter(self.selected_param_name)
         if param:
-            ParameterSelectTextBox(self.root, None, self.parameter_sweep, callback=c, edit=param)
+            ParameterSelectTextBox(self.root, None, self.parameter_sweep, callback=c, edit=param, view_mode=self.view_mode)
         
         
         return
@@ -981,7 +1031,10 @@ class ParameterTable(tk.Frame):
         
         if(self.selected_param_name != ""):
             self.b_edit.config(state=tk.NORMAL)
-            self.b_delete.config(state=tk.NORMAL)
+            if self.view_mode:
+                self.b_delete.config(state=tk.DISABLED)
+            else:
+                self.b_delete.config(state=tk.NORMAL)
         else:
             self.b_edit.config(state=tk.DISABLED)
             self.b_delete.config(state=tk.DISABLED)
@@ -1077,7 +1130,7 @@ class ParameterSelectTextBox():
             self.top.destroy()
             
     
-    def __init__(self, parent, file_, parameter_sweep, callback=None, button_width=15, edit=None):
+    def __init__(self, parent, file_, parameter_sweep, callback=None, button_width=15, edit=None, view_mode=False):
         self.window_title = "New Parameter"
         if edit:
             self.window_title = "Edit Parameter Selection"
@@ -1091,6 +1144,7 @@ class ParameterSelectTextBox():
         self.callback = callback
         self.button_width = button_width
         self.edit_param = edit
+        self.view_mode = view_mode
         self.valid_message = "Unspecified error, see console output"
         
         self.selected_text = ""
@@ -1164,6 +1218,11 @@ class ParameterSelectTextBox():
         
         if self.edit_param:
             self.load_edit()
+        if self.view_mode:
+            self.b_get_select.config(state=tk.DISABLED)
+            self.b_new_range.config(state=tk.DISABLED)
+            self.params_e.config(state=tk.DISABLED)
+            self.b_submit.config(state=tk.DISABLED)
         
         self.load_other_highlights()
         

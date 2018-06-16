@@ -344,6 +344,18 @@ class SimJob(object):
             self.append_log("Couldn't download the files: " + e)
         return
     
+    #ssh_status = ["SSH_sbatch_RUNNING","SSH_sbatch_COMPLETED","SSH_sbatch_DOWNLOADED","SSH_batch_CANCELLED","SSH_sbatch_DOWNLOADING","SSH_STARTING"]
+    #nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED","NSG_DOWNLOADING","NSG_STARTING"]
+    def is_running(self):
+        if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]:
+            return True
+        return False
+    
+    def is_ready_to_submit(self):
+        if self.status not in ServerInterface.ssh_status and self.status not in ServerInterface.nsg_status:
+            return True
+        return False
+    
     def create_snapshot(self):
         #snapshot of project, put in this directory to be sent to server
         #ts = time.time()
@@ -351,6 +363,9 @@ class SimJob(object):
         self.file_snapshotzip = self.sim_name #-" + st
         self.sim_directory_object.take_snapshotzip(os.path.join(self.sim_directory_object.sim_results_dir,self.job_directory,self.file_snapshotzip))
         self.file_snapshotzip = self.file_snapshotzip +".zip" #for later use
+        
+    def set_snapshot(self):
+        self.file_snapshotzip = self.sim_name +".zip" #for later use
             
     def run(self,create_snap=True):
         self.append_log("Run initiated")
@@ -359,6 +374,8 @@ class SimJob(object):
             self.append_log("Creating directory snapshot")
             self.create_snapshot()
             self.append_log(self.file_snapshotzip + " created")
+        else:
+            self.set_snapshot()
                 
         ServerInterface().start_simjob(self)
         return

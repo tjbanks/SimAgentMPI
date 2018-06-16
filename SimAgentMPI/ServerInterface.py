@@ -47,6 +47,12 @@ class ServerInterface(object):
                 
         else:
             simjob.append_log("ERROR: Can't start job... not a valid server connector")
+            if server:#check to make sure we have a valid server
+                if(server.type == "nsg"):
+                    simjob.status = ServerInterface.nsg_status[3]
+                elif(server.type == "ssh"):
+                    simjob.status = ServerInterface.ssh_status[3]
+                simjob.write_properties()
             
             
         return 

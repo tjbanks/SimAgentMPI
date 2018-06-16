@@ -12,6 +12,7 @@ import shutil
 import datetime, time
 import SimAgentMPI
 from SimAgentMPI.SimJob import SimJob
+from SimAgentMPI.Utils import StoppableThread
 
 from tempfile import mkstemp
 from shutil import move
@@ -130,7 +131,7 @@ class ParametricSweep(object):
         #secondary (line row number)
         s = sorted(s, key = lambda x: int(x.location_start.split(".")[0]), reverse=True) 
         #primary (filename)
-        s = sorted(s, key = lambda x: x.filename)
+        s = sorted(s, key = lambda x: int(x.id))
         
         return s
     
@@ -307,7 +308,10 @@ class ParametricSweep(object):
                     simjob.create_snapshot()#copy changes
                     self.take_project_snapshot()#reset changes
                     self.sweep_project_dir.add_new_job(simjob)
-                    
+            
+    def get_num_running_jobs(self):
+        return self.sweep_project_dir.get_num_running_jobs()
+    
     """
     Create snapshot of project_dir
     Create all simjobs in the sweep_dir
@@ -350,39 +354,95 @@ class ParametricSweep(object):
     """
     Loop through all simjobs and submit
     """
-    def submit(self, callback=None):
+    def submit(self, finish_callback=None,each_run_callback=None):
+        
+        class SubmitThread(StoppableThread):
+            def run(self):
+                self.ref.is_in_working_state = True
+                self.ref._set_state(ParametricSweep.state[4]) # We're going to be submitting new jobs now
+                
+                for j in self.ref.sweep_project_dir.get_displayable_jobs():
+                    if self.stopped():
+                        break
+                    
+                    if self.ref.get_num_running_jobs() < int(self.ref.maxjobs):
+                        if(j.is_ready_to_submit()):
+                            j.run(create_snap=False)
+                            if self.ref.each_run_callback:
+                                self.ref.each_run_callback()
+                    else:
+                        break
+                self.ref._set_state(ParametricSweep.state[5]) # We're done sumbitting for now
+                self.ref.is_in_working_state = False
+                
+                if self.ref.cancel_initiated:
+                    self.ref.cancel()
+                
+                if self.ref.finish_callback:
+                    self.ref.finish_callback()
+                    
+                return
+        
+        self.each_run_callback = each_run_callback
+        self.finish_callback = finish_callback
+        
         if self.state == ParametricSweep.state[2] or self.state==ParametricSweep.state[5]: #If we're in a ready state or running
             if not self.is_in_working_state and not self.cancel_initiated:
                 if self.current_running_jobs < int(self.maxjobs):
-                    self.is_in_working_state = True
-                    self._set_state(ParametricSweep.state[4]) # We're going to be submitting new jobs now
+                    
                     #Threaded stuff here
-                    self._set_state(ParametricSweep.state[5]) # We're done sumbitting for now
-                    self.is_in_working_state = False
+                    submit_thread = SubmitThread(ref=self)#Strongly untyped, be careful
+                    submit_thread.setDaemon(True)
+                    submit_thread.start()
+                    
+                    return submit_thread
+        
                 elif self.completed_jobs == self.maxjobs:
                     self._set_state(ParametricSweep.state[8])
-                    
-                if callback:
-                        callback()
-        return
+                
+        return None
     
     """
     Loop through all simjobs and cancel
     """
     def cancel(self, callback=None):
+                
+        class CancelThread(StoppableThread):
+            def run(self):
+                self.ref.is_in_working_state = True
+                self.ref._set_state(ParametricSweep.state[6])
+                
+                for j in self.ref.sweep_project_dir.sim_jobs:
+                    if self.stopped():
+                        break
+                    
+                    if j.is_running():
+                        j.stop()
+                
+                self.ref._set_state(ParametricSweep.state[7])
+                self.ref.is_in_working_state = False
+                if self.ref.callback:
+                    self.ref.callback()
+                
+                return
+            
+        self.callback = callback
+        
         if self.state == ParametricSweep.state[4] or self.state == ParametricSweep.state[5]:
             if not self.is_in_working_state:
-                self.is_in_working_state = True
-                self._set_state(ParametricSweep.state[6])
+                
                 #Threaded stuff here
-                self._set_state(ParametricSweep.state[7])
-                self.is_in_working_state = False
-                if callback:
-                    callback()
+                    cancel_thread = CancelThread(ref=self)#Strongly untyped, be careful
+                    cancel_thread.setDaemon(True)
+                    cancel_thread.start()
+                    
+                    return cancel_thread
+                
             else:
                 self.cancel_initiated = True
                 #Run a thread to keep trying to cancel, since we're probably in the mid of submitting
-        return
+                
+        return None
     
     def read_properties(self, from_cold=False):
         if(os.path.isfile(self.full_properties_path)):
@@ -502,13 +562,13 @@ class ParameterContainer():
                             s = "s"
                             dash = "-"
                             end_ = end_line+1
-                        ret_text = "Changed file {} - line{}:{}{}{}\n".format(self.filename, s, start_line+1,dash,end_)
+                        ret_text = "P{}. Changed file \"{}\" - line{}:{}{}{}\n".format(self.id, self.filename, s, start_line+1,dash,end_)
                         
                         
                         for i, line in enumerate(old_file):
                             if i in line_nums:
                                 if len(line_nums):
-                                    ret_text = ret_text + "[Original line:{}]\n".format(i+1)
+                                    ret_text = ret_text + "[Original]\n"
                                     ret_text = ret_text + line
                                     ret_text = ret_text + "[Changed to]\n"
                                     if len(line_nums) == 1: #Single row

@@ -196,6 +196,13 @@ class SimDirectory(object):
             self.delete_job(j)
         return
     
+    def get_num_running_jobs(self):
+        num = 0
+        for job in self.sim_jobs:
+            if job.is_running():
+                num = num + 1
+        return num
+    
     def take_snapshotzip(self, save_to_file):
         ignoref = []
         if(os.path.isfile(self.full_ignore_path)):
