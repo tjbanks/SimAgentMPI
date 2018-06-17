@@ -667,6 +667,7 @@ class Job_Table(tk.Frame):
         self.create_snaps_on_run = create_snaps_on_run
         self.table_height = table_height
         self.newest_first = newest_first
+        self.selected_row_num = 0
         
         self.table = None
         
@@ -1026,13 +1027,10 @@ class Job_Table(tk.Frame):
         else:
             self.sim_dir=None
         
-        self.table.grid_forget()
-        self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=self.table_height, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
-        self.table.grid(row=1,column=0,padx=10,pady=10)
-        #for i in range(self.table._number_of_rows):
-            #print(i)
-            #self.table.delete_row(i)
-        #self.table.set_data([[""],[""],[""],[""]])
+        #self.table.grid_forget()
+        #self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=self.table_height, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
+        #self.table.grid(row=1,column=0,padx=10,pady=10)
+        self.table.delete_all_rows()
         
         if self.sim_dir:
             self.sim_dir.sim_jobs.sort(key=lambda x: float(x.created), reverse=self.newest_first)

@@ -500,10 +500,15 @@ class Table(Frame):
                 self._data_vars[i][j].set("")
 
         if self._on_change_data is not None: self._on_change_data()
+        
+    def delete_all_rows(self):
+        #for i in range(self._number_of_rows-1,-1,-1):
+        #    self.delete_row(i)
+        self._pop_n_rows(self._number_of_rows)
 
     def delete_row(self, index):
         i = index
-        while i < self._number_of_rows:
+        while i < self._number_of_rows-1:
             row_of_vars_1 = self._data_vars[i]
             row_of_vars_2 = self._data_vars[i+1]
 
