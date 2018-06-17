@@ -1,0 +1,1 @@
+argv (['/projects/ps-nsg/home/nsguser/ngbwr/contrib/scripts/submit.py', '--account', 'csd403', '--url', '-k -K ~/.jobcurl.rc https://nsgr.sdsc.edu:8443/cipresrest/v1/admin/updateJob?taskId=6026\\&jh=NGBW-JOB-NEURON75_TG-DC691F87E7384489ABAC61129A16D6A8', '--', 'inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv '])

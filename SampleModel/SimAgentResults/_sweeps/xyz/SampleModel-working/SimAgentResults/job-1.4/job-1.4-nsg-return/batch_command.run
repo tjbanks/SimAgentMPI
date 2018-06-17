@@ -1,0 +1,32 @@
+#!/bin/sh
+#SBATCH -o scheduler_stdout.txt    # Name of stdout output file(%j expands to jobId)
+#SBATCH -e scheduler_stderr.txt    # Name of stderr output file(%j expands to jobId)
+#SBATCH --partition=compute           # submit to the 'large' queue for jobs > 256 nodes
+#SBATCH --qos=nsg
+#SBATCH -L nsg:1
+#SBATCH -J NGBW-JOB-NEURON75_TG-25DBF0C5AF414D92B359A73BA248F49C        # Job name
+#SBATCH -t 00:60:00         # Run time (hh:mm:ss) - 1.5 hours
+#SBATCH --mail-user=nsgprod@sdsc.edu
+#SBATCH --mail-type=begin
+#SBATCH --mail-type=end
+#The next line is required if the user has more than one project
+# #SBATCH -A A-yourproject  # Allocation name to charge job against
+#SBATCH -A csd403  # Allocation name to charge job against
+#SBATCH --nodes=1              # Total number of nodes requested (16 cores/node)
+#SBATCH --ntasks-per-node=1             # Total number of mpi tasks requested
+source $HOME/.bashrc
+module load gsl
+cd '/projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-25DBF0C5AF414D92B359A73BA248F49C/job-1.4'
+
+echo Job starting at `date` > ../start.txt
+curl -k -K ~/.jobcurl.rc https://nsgr.sdsc.edu:8443/cipresrest/v1/admin/updateJob?taskId=6028\&jh=NGBW-JOB-NEURON75_TG-25DBF0C5AF414D92B359A73BA248F49C\&status=START
+export CIPRES_THREADSPP=1
+export CIPRES_NP=1
+#export NPROCS=`wc -l < $PBS_NODEFILE`
+/projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-25DBF0C5AF414D92B359A73BA248F49C/./batch_command.cmdline 1>/projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-25DBF0C5AF414D92B359A73BA248F49C/stdout.txt 2>/projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-25DBF0C5AF414D92B359A73BA248F49C/stderr.txt
+cd '/projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-25DBF0C5AF414D92B359A73BA248F49C'
+##/bin/tar -cvzf tar.gz ./*
+##/bin/tar -cvzf ../output.tar.gz ../*
+echo Job finished at `date` > done.txt
+/bin/tar -cvzf job-1.4-nsg-return.tar.gz ./*
+curl -k -K ~/.jobcurl.rc https://nsgr.sdsc.edu:8443/cipresrest/v1/admin/updateJob?taskId=6028\&jh=NGBW-JOB-NEURON75_TG-25DBF0C5AF414D92B359A73BA248F49C\&status=DONE

@@ -1,0 +1,21 @@
+Task label=REST v1
+Task ID=6025
+Tool=NEURON75_TG
+created on=2018-06-16 16:03:33.0
+JobHandle=NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE
+resource=comet
+User ID=1216
+User Name=tbg28
+email=tbg28@mail.missouri.edu
+
+Output=(outputfile,*.tar.gz,UNKNOWN,UNKNOWN,UNKNOWN)
+JOBID=17041380
+
+job_properties ({'Task': 'ID=6025', 'resource': 'comet', 'created': 'on=2018-06-16 16:03:33.0', 'Tool': 'NEURON75_TG', 'JobHandle': 'NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE', 'JOBID': '17041380', 'User': 'Name=tbg28', 'Output': '(outputfile,*.tar.gz,UNKNOWN,UNKNOWN,UNKNOWN)', 'email': 'tbg28@mail.missouri.edu'})
+
+gatewayuser (tbg28)
+
+gateway_submit_attributes=/opt/ctss/gateway_submit_attributes/gateway_submit_attributes -gateway_user tbg28@nsgportal.org -submit_time "`date '+%F %T %:z'`" -jobid 17041380
+
+gateway_submit_attributes retval (255) output (Gateway attributes [ gateway_user = tbg28@nsgportal.org; submit_time = 2018-06-16 16:03:42 -0700; jobid = 17041380 ] from  may not have been sent due to an un-recoverable error. Please contact support.
+)

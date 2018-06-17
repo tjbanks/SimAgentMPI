@@ -1,0 +1,6 @@
+NEURON -- VERSION 7.5 master (6b4c19f) 2017-09-25
+Duke, Yale, and the BlueBrain Project -- Copyright 1984-2016
+See http://neuron.yale.edu/neuron/credits
+
+Additional mechanisms from files
+

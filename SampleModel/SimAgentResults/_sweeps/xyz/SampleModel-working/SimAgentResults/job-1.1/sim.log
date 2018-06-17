@@ -1,0 +1,80 @@
+18-06-16 18:03:14 > 
+18-06-16 18:03:31 > Run initiated
+18-06-16 18:03:31 > Creating NSG parameter files: param.properties,input.properties
+18-06-16 18:03:31 > Validating job build with NSG...
+18-06-16 18:03:32 > NSG template validation success
+18-06-16 18:03:33 > NSG template submit success
+18-06-16 18:03:46 > Updating NSG information on job...
+18-06-16 18:03:48 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:03:48 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:03:48 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:03:48 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:03:48 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:03:48 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:03:48 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:03:48 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:03:48 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:03:48 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:04:51 > Updating NSG information on job...
+18-06-16 18:04:52 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:04:52 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:04:52 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:04:52 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:04:52 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:04:52 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:04:52 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:04:52 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:04:52 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:04:52 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:05:54 > Updating NSG information on job...
+18-06-16 18:05:55 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:05:55 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:05:55 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:05:55 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:05:55 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:05:55 > 2018-06-16T16:05:53-07:00: Trying to transfer results.
+18-06-16 18:05:55 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:05:55 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:05:55 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:05:55 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:05:55 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:05:55 > 2018-06-16T16:05:53-07:00: Trying to transfer results.
+18-06-16 18:06:57 > Updating NSG information on job...
+18-06-16 18:06:58 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:06:58 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:06:58 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:06:58 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:06:58 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:06:58 > 2018-06-16T16:05:53-07:00: Trying to transfer results.
+18-06-16 18:06:58 > 2018-06-16T16:06:27-07:00: Output files retrieved.  Task is finished.
+18-06-16 18:06:58 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:06:58 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:06:58 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:06:58 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:06:58 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:06:58 > 2018-06-16T16:05:53-07:00: Trying to transfer results.
+18-06-16 18:06:58 > 2018-06-16T16:06:27-07:00: Output files retrieved.  Task is finished.
+18-06-16 18:06:58 > NSG Job found in finished state
+18-06-16 18:07:00 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:07:00 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:07:00 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:07:00 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:07:00 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:07:00 > 2018-06-16T16:05:53-07:00: Trying to transfer results.
+18-06-16 18:07:00 > 2018-06-16T16:06:27-07:00: Output files retrieved.  Task is finished.
+18-06-16 18:07:00 > 2018-06-16T16:03:33-07:00: Added to NSG run queue.
+18-06-16 18:07:00 > 2018-06-16T16:03:35-07:00: Command rendered successfully: inputfile /projects/ps-nsg/home/nsguser/applications/neuron7.5/installdir/x86_64/bin/nrniv
+18-06-16 18:07:00 > 2018-06-16T16:03:35-07:00: Staging input files to comet
+18-06-16 18:07:00 > 2018-06-16T16:03:38-07:00: Input files staged successfully to /projects/ps-nsg/home/nsguser/ngbwr/workspace/NGBW-JOB-NEURON75_TG-F06450394FD249A982967CE6ACC21CBE/
+18-06-16 18:07:00 > 2018-06-16T16:03:43-07:00: Submitted to comet as job '17041380'.
+18-06-16 18:07:00 > 2018-06-16T16:05:53-07:00: Trying to transfer results.
+18-06-16 18:07:00 > 2018-06-16T16:06:27-07:00: Output files retrieved.  Task is finished.
+18-06-16 18:07:00 > Downloading: STDOUT
+18-06-16 18:07:00 > Downloading: STDERR
+18-06-16 18:07:00 > Downloading: job-1.1-nsg-return.tar.gz
+18-06-16 18:07:01 > Extracting results
+18-06-16 18:07:02 > Extracted results to C:/Users/Tyler/Desktop/git_stage/SimAgentMPI/SampleModel\SimAgentResults\_sweeps\xyz\SampleModel-working\SimAgentResults\job-1.1\job-1.1-nsg-return
+18-06-16 18:07:03 > NSG Job Deleted on remote server
+18-06-16 19:28:45 > Executed cd "C:/Users/Tyler/Desktop/git_stage/SimAgentMPI/SampleModel\SimAgentResults\_sweeps\xyz\SampleModel-working\SimAgentResults\job-1.1\job-1.1-nsg-return\job-1.1" && start  && exit
+18-06-16 19:28:55 > Executed cd "C:/Users/Tyler/Desktop/git_stage/SimAgentMPI/SampleModel\SimAgentResults\_sweeps\xyz\SampleModel-working\SimAgentResults\job-1.1\job-1.1-nsg-return\job-1.1" && start  && exit
+18-06-16 19:29:02 > Executed cd "C:/Users/Tyler/Desktop/git_stage/SimAgentMPI/SampleModel\SimAgentResults\_sweeps\xyz\SampleModel-working\SimAgentResults\job-1.1\job-1.1-nsg-return\job-1.1" && start  && exit

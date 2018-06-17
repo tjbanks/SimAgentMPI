@@ -97,7 +97,7 @@ class SimJob(object):
         self.server_cores = ""
         self.server_nsg_tool = "NONE"
         self.server_ssh_tool = "sbatch"
-        self.server_nsg_python = "1"
+        self.server_nsg_python = "0"
         self.server_mpi_partition = ""
         self.server_stdout_file = "stdout.txt"
         self.server_stderr_file = "stderr.txt"
@@ -110,7 +110,6 @@ class SimJob(object):
         self.sim_delete_remote_on_finish = True
         
         self.full_properties_path = os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties)
-        
         
         self.read_properties()
         return
@@ -172,7 +171,8 @@ class SimJob(object):
     
     def clear_notes(self):
         full_notes_path = os.path.join(self.sim_directory_object.sim_results_dir,self.sim_name,self.notes)
-        os.remove(full_notes_path)
+        if os.path.isfile(full_notes_path):
+            os.remove(full_notes_path)
         self.write_notes("")
     
     def append_notes(self, text):
@@ -224,9 +224,12 @@ class SimJob(object):
             subprocess.call(self.cmd, shell=True)
         
     def get_notes(self):
-        f = open(os.path.join(self.job_directory_absolute,self.notes_file),"r")
-        string = f.read()
-        f.close()
+        string = ""
+        notes_file = os.path.join(self.job_directory_absolute,self.notes_file)
+        if os.path.isfile(notes_file):
+            f = open(notes_file,"r")
+            string = f.read()
+            f.close()
         return string
     
     
@@ -322,7 +325,7 @@ class SimJob(object):
         with open(os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties), 'w') as outfile:  
             json.dump(data, outfile)
             
-        self.write_notes(SimJob.default_log_text)
+        #self.write_notes(SimJob.default_log_text)
         return
     
     def get_server(self):
@@ -348,6 +351,13 @@ class SimJob(object):
     #nsg_status = ["NSG_RUNNING","NSG_COMPLETED","NSG_DOWNLOADED","NSG_CANCELLED","NSG_DOWNLOADING","NSG_STARTING"]
     def is_running(self):
         if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]:
+            return True
+        return False
+    
+    def is_complete(self):
+        if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1] or \
+            ServerInterface.ssh_status[2] or self.status == ServerInterface.nsg_status[2] or \
+            ServerInterface.ssh_status[3] or self.status == ServerInterface.nsg_status[3]:
             return True
         return False
     

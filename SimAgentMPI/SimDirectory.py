@@ -203,6 +203,21 @@ class SimDirectory(object):
                 num = num + 1
         return num
     
+    def get_num_completed_jobs(self):
+        num = 0
+        for job in self.sim_jobs:
+            if job.sim_name != ParametricSweep.job_template_name:
+                if job.is_complete():
+                    num = num + 1
+        return num
+    
+    def get_num_total_jobs(self):
+        num = 0
+        for job in self.sim_jobs:
+            if job.sim_name != ParametricSweep.job_template_name:
+                num = num + 1
+        return num
+    
     def take_snapshotzip(self, save_to_file):
         ignoref = []
         if(os.path.isfile(self.full_ignore_path)):
@@ -256,10 +271,13 @@ class SimDirectory(object):
                 return job
         return None
     
-    def update_all_jobs(self):
+    def update_all_jobs(self, update_server_output=False):
     
         nsg_job_lists = {}
         ssh_conns = {}
+        _update_server_output=self.update_server_output
+        if update_server_output:
+            _update_server_output = True
         
         for job in self.sim_jobs:
             if(job.status==ServerInterface.ssh_status[0]):
@@ -278,7 +296,7 @@ class SimDirectory(object):
                         except:
                             pass
                         
-                job.update(ssh_connection=ssh_conn, update_server_output=self.update_server_output)
+                job.update(ssh_connection=ssh_conn, update_server_output=_update_server_output)
                 job.read_properties()
             
             if(job.status==ServerInterface.nsg_status[0]):
@@ -289,7 +307,7 @@ class SimDirectory(object):
                     nsg = Client(server.nsg_api_appname, server.nsg_api_appid, server.user, server.password, server.nsg_api_url)
                     nsg_job_lists[job.server_connector] = nsg.listJobs()
                 
-                job.update(nsg_job_list=nsg_list, update_server_output=self.update_server_output)
+                job.update(nsg_job_list=nsg_list, update_server_output=_update_server_output)
                 job.read_properties()
                      
         

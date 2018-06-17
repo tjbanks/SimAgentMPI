@@ -104,7 +104,7 @@ class MainWindow():
         para_sweep_page.set_threads(self.threads)
         
         self.threads.append(jobs_page.start_refresh_thread())
-        #self.threads.append(para_sweep_page.start_refresh_thread())
+        self.threads.append(para_sweep_page.start_refresh_thread())
         
         self.display_app_status("Ready")
                 
@@ -786,6 +786,8 @@ class Job_Table(tk.Frame):
                     
         self.selected_row_num = row
         if row != None:
+            #print("updating row: {}".format(row))
+            #print("size of that row: {}".format(len(self.table.row(row))))
             name_of_selected = str(self.table.row(row)[1])
         else:
             name_of_selected = ""
@@ -975,16 +977,17 @@ class Job_Table(tk.Frame):
             
         #datetime.datetime.fromtimestamp(float(str(time.time()))).strftime('%y%m%d-%H%M%S')
         #Out[22]: '180524-203332'
-        timeofstart = ""
+        timeofstart = "-"
         if job.sim_start_time != "":
            timeofstart = datetime.datetime.fromtimestamp(float(job.sim_start_time)).strftime(self.date_format)
            
-        timedif = ""
+        timedif = "-"
         try:
             if job.sim_last_update_time != "" and job.sim_start_time != "":
                 _start = datetime.datetime.fromtimestamp(float(job.sim_start_time))
                 _update = datetime.datetime.fromtimestamp(float(job.sim_last_update_time))
                 elapse = _update - _start
+                timedif = ""
                 (m, s) = divmod(elapse.total_seconds(),60)
                 (h, m) = divmod(m,60)
                 (d, h) = divmod(h,24)
@@ -1001,8 +1004,14 @@ class Job_Table(tk.Frame):
                 if timedif == "":
                     timedif = "0s"
         except Exception:
-            pass #just blank timedif
-        data = [job.status, job.sim_name, job.server_connector, part_tool , job.server_nodes, job.server_cores, timeofstart, timedif,job.server_remote_identifier]
+            timedif = '-'
+            
+        if not job.server_remote_identifier:
+            job_remote_id = '-'
+        else:
+            job_remote_id = job.server_remote_identifier
+            
+        data = [job.status, job.sim_name, job.server_connector, part_tool , job.server_nodes, job.server_cores, timeofstart, timedif,job_remote_id]
         return data
     
     
@@ -1053,7 +1062,7 @@ class Job_Table(tk.Frame):
                 update_buttons = True
         elif row == self.selected_row_num:
             update_buttons = True
-            
+        #print("getting row {} to update".format(row))
         name_of_selected = str(self.table.row(row)[1])#If you move around the index of the name it will mess up
         job = self.sim_dir.get_job(name_of_selected)
         
@@ -1177,6 +1186,8 @@ class Parametric_Sweep_Managment(tk.Frame):
         self.button_width = button_width
         self.view_mode = False
         self.threads = threads
+        
+        self.is_running = False
         
         self.sim_dir = None
         
@@ -1304,6 +1315,10 @@ class Parametric_Sweep_Managment(tk.Frame):
                 self.running_jobs_text.config(fg="red")
             else:
                 self.running_jobs_text.config(fg="green")
+        else:
+            self.max_jobs.set("0")
+            self.running_jobs.set("0")
+            self.running_jobs_text.config(fg="green")
             
     def new_ps(self):
         
@@ -1347,7 +1362,6 @@ class Parametric_Sweep_Managment(tk.Frame):
         if self.sim_dir:
             if self.sweep_picked.get() != "" and self.sweep_picked.get() != self.sweep_picked_default:
                 self.ps = self.sim_dir.get_sweep(self.sweep_picked.get())
-                self.update_ps_stats()
                 if self.ps: 
                     self.ps.set_external_state_var(self.parametric_sweep_state)
             else:
@@ -1355,6 +1369,8 @@ class Parametric_Sweep_Managment(tk.Frame):
                 self.b_load.config(state=tk.DISABLED)
                 self.b_delete.config(state=tk.DISABLED)
                 self.parametric_sweep_state.set("")
+                
+            self.update_ps_stats()
             
             if self.on_load_callback:
                 self.on_load_callback(clear=clear)
@@ -1362,14 +1378,14 @@ class Parametric_Sweep_Managment(tk.Frame):
         return
     
     def delete_ps(self):
-        
-        if self.sim_dir:
-            self.sim_dir.delete_sweep(self.sweep_picked.get())
-            self.load_ps(clear=True)
-            self.load_sweeps()
-            self.reload_old_sweeps()
-            self.sweep_picked.set(self.sweep_picked_default)
-            self.sweep_popupMenu.config(state=tk.NORMAL)
+        if (messagebox.askquestion("Delete Sweep", "Are you sure you want to delete the sweep \""+self.sweep_picked.get()+"\"? This will delete all jobs in the sweep.", icon='warning') == 'yes'):
+            if self.sim_dir:
+                self.sim_dir.delete_sweep(self.sweep_picked.get())
+                self.load_ps(clear=True)
+                self.load_sweeps()
+                self.reload_old_sweeps()
+                self.sweep_picked.set(self.sweep_picked_default)
+                self.sweep_popupMenu.config(state=tk.NORMAL)
         return
     
     def edit_ps(self):
@@ -1413,13 +1429,15 @@ class Parametric_Sweep_Managment(tk.Frame):
                 self.threads.append(cancel_thread)
         return
     
-    def is_running():
+    def is_ps_running(self):
         return self.is_running
     
     def open_sweep_folder(self):
+        messagebox.showinfo("Sim Agent MPI", "To be implemented.")
         return
     
     def custom_run(self):
+        messagebox.showinfo("Sim Agent MPI", "To be implemented.")
         return
  
     '''
@@ -1443,6 +1461,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.DISABLED)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = False
             self.is_running = False
             
@@ -1453,6 +1473,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.DISABLED)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = False
             self.is_running = False
             
@@ -1463,6 +1485,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.NORMAL)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = True
             self.is_running = False
             
@@ -1473,6 +1497,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.NORMAL)
             self.b_start.config(state=tk.NORMAL)
             self.b_cancel.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.NORMAL)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = True
             self.is_running = False
             
@@ -1483,6 +1509,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.NORMAL)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = True
             self.is_running = False
             
@@ -1493,6 +1521,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.NORMAL)
+            self.b_open.config(state=tk.NORMAL)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = True
             self.is_running = True
             
@@ -1503,6 +1533,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.NORMAL)
+            self.b_open.config(state=tk.NORMAL)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = True
             self.is_running = True
             
@@ -1513,6 +1545,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.DISABLED)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = True
             self.is_running = True
             
@@ -1523,6 +1557,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.NORMAL)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.NORMAL)
+            self.b_run_cust.config(state=tk.DISABLED)
             self.view_mode = True
             self.is_running = True
             
@@ -1533,6 +1569,8 @@ class Parametric_Sweep_Managment(tk.Frame):
             self.b_decon.config(state=tk.DISABLED)
             self.b_start.config(state=tk.DISABLED)
             self.b_cancel.config(state=tk.DISABLED)
+            self.b_open.config(state=tk.NORMAL)
+            self.b_run_cust.config(state=tk.NORMAL)
             self.view_mode = True
             self.is_running = False
         return
@@ -1593,15 +1631,9 @@ class PS_Page(tk.Frame):
         
         
         """=PS Frame========================================"""
-        def load_ps_callback(clear = False):
-            if self.para_sweeper.ps:
-                psdir = self.para_sweeper.ps.sweep_project_dir
-            else:
-                psdir = None
-                clear = True
-            self.table.reload_table(dir_=psdir, clear=clear)
+        
             
-        self.para_sweeper = Parametric_Sweep_Managment(self.ps_frame, on_load_callback=load_ps_callback, button_width=button_width,threads=self.threads)
+        self.para_sweeper = Parametric_Sweep_Managment(self.ps_frame, on_load_callback=self.load_ps_callback, button_width=button_width,threads=self.threads)
         self.para_sweeper.grid(column=0,row=0)
         
         """=Dir Frame======================================="""
@@ -1610,7 +1642,7 @@ class PS_Page(tk.Frame):
             if sim_dir:
                 self.para_sweeper.set_current_sim_dir(sim_dir)
             
-        self.dir_loader = Dir_Loader(self.directory_frame, on_load_callback=load_callback, button_width=button_width, display_dir_options=False, sweeps_only=True)
+        self.dir_loader = Dir_Loader(self.directory_frame, on_load_callback=load_callback, button_width=button_width, display_dir_options=True, sweeps_only=True)
         self.dir_loader.grid(column=0,row=0)
         
         
@@ -1629,6 +1661,14 @@ class PS_Page(tk.Frame):
         
         return
     
+    def load_ps_callback(self, clear = False):
+            if self.para_sweeper.ps:
+                psdir = self.para_sweeper.ps.sweep_project_dir
+            else:
+                psdir = None
+                clear = True
+            self.table.reload_table(dir_=psdir, clear=clear)
+            
     def force_use_directory(self, dir_):
         self.dir_loader.force_use_directory(dir_)
         return self
@@ -1639,18 +1679,23 @@ class PS_Page(tk.Frame):
         self.para_sweeper.set_threads(self.threads)
         
     def start_refresh_thread(self):
-        self.refresh_time = 90
+        self.refresh_time = 60
         class RefreshThread(StoppableThread):
             def run(self):
                 while not self.stopped():
-                    if self.ref.para_sweeper.is_running():
-                        self.ref.para_sweeper.start_ps()
                     #print("Update status thread running")
-                    if(self.ref.dir_loader.sim_dir and self.ref.dir_loader.sim_dir.is_update_enabled()):
-                        self.ref.dir_loader.sim_dir.update_all_jobs()
+                    if(self.ref.dir_loader.sim_dir and self.ref.para_sweeper.ps and self.ref.para_sweeper.ps.sweep_project_dir and self.ref.dir_loader.sim_dir.is_update_enabled()):
+                        self.ref.para_sweeper.ps.sweep_project_dir.update_all_jobs(update_server_output=self.ref.dir_loader.sim_dir.update_server_output)
+                        
                         for i in range(self.ref.table.table.number_of_rows):
-                           self.ref.table.update_row_info(row=i)
+                            try:
+                                self.ref.table.update_row_info(row=i)
+                            except Exception as e:
+                                print("".format(e))
                     #print("sleeping for {} seconds".format(self.refresh_time))
+                    if self.ref.para_sweeper.is_ps_running():
+                        self.ref.para_sweeper.start_ps()
+                        
                     for i in range(self.ref.refresh_time): #this is 60 seconds from when we're done updating everything
                         if self.stopped():
                             return

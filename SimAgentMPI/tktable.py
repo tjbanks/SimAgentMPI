@@ -473,6 +473,7 @@ class Table(Frame):
 
     def column(self, index, data=None):
         number_of_rows = self._number_of_rows
+        number_of_columns = self._number_of_columns
 
         if data is None:
             column= []

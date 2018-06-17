@@ -388,7 +388,11 @@ class ParametricSweep(object):
         
         if self.state == ParametricSweep.state[2] or self.state==ParametricSweep.state[5]: #If we're in a ready state or running
             if not self.is_in_working_state and not self.cancel_initiated:
-                if self.current_running_jobs < int(self.maxjobs):
+                print("Completed: {}\nTotal: {}".format(self.sweep_project_dir.get_num_completed_jobs(),self.sweep_project_dir.get_num_total_jobs()))
+                if self.sweep_project_dir.get_num_completed_jobs() == self.sweep_project_dir.get_num_total_jobs():
+                    self._set_state(ParametricSweep.state[8])
+                    
+                elif self.get_num_running_jobs() < int(self.maxjobs):
                     
                     #Threaded stuff here
                     submit_thread = SubmitThread(ref=self)#Strongly untyped, be careful
@@ -397,9 +401,6 @@ class ParametricSweep(object):
                     
                     return submit_thread
         
-                elif self.completed_jobs == self.maxjobs:
-                    self._set_state(ParametricSweep.state[8])
-                
         return None
     
     """

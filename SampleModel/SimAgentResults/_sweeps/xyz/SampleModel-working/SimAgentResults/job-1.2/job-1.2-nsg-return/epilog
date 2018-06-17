@@ -1,0 +1,2 @@
+#!/bin/bash
+curl -k -K ~/.jobcurl.rc https://nsgr.sdsc.edu:8443/cipresrest/v1/admin/updateJob?taskId=6026\&jh=NGBW-JOB-NEURON75_TG-DC691F87E7384489ABAC61129A16D6A8\&status=DONE

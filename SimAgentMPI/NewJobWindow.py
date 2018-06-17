@@ -133,7 +133,11 @@ class JobEntryBox:
         
         
             def new_server():
-                ServerEntryBox(self.top, confirm_callback=set_server_choices)
+                def c():
+                    set_server_choices()
+                    self.top.lift()
+                    
+                ServerEntryBox(self.top, confirm_callback=c)
                 #Refresh options
                 
                 # on change dropdown value
@@ -823,6 +827,7 @@ class SweepEditor():
         def edit_job_():
             self.parameter_sweep.sweep_project_dir.reload_job_dirs()
             self.on_sweep_type_change()
+            self.parent.lift()
             return
         sj = self.parameter_sweep.sweep_project_dir.get_job(ParametricSweep.job_template_name)
         if sj:

@@ -1,0 +1,13 @@
+18-06-16 18:16:24 > 
+18-06-16 18:16:24 > Job created
+18-06-16 18:21:37 > Run initiated
+18-06-16 18:21:37 > Creating directory snapshot
+18-06-16 18:21:37 > SampleModel-180616181611.zip created
+18-06-16 18:21:37 > Creating NSG parameter files: param.properties,input.properties
+18-06-16 18:21:37 > Validating job build with NSG...
+18-06-16 18:21:39 > NSG template validation success
+18-06-16 18:21:40 > NSG template submit success
+18-06-16 18:21:42 > Attempting to stop
+18-06-16 18:21:43 > 2018-06-16T16:21:40-07:00: Added to NSG run queue.
+18-06-16 18:21:43 > 2018-06-16T16:21:40-07:00: Added to NSG run queue.
+18-06-16 18:21:43 > NSG Job Canceled
