@@ -1221,7 +1221,7 @@ class ParameterSelectTextBox():
         self.b_cancel.config(state=tk.NORMAL)
         
         """ TEXT FRAME """
-        tk.Label(self.text_frame, text='Hightlight area to be replaced during parameter search and click \'Mark Selection\'.').grid(row=0,column=0,pady=5,padx=5,columnspan=1)
+        tk.Label(self.text_frame, text='Hightlight area to be replaced during parameter search and click \'Mark Selection\'.').grid(row=0,column=0,pady=5,padx=5,columnspan=2)
         
         self.text_console = tk.Text(self.text_frame)
         self.text_console.config( bg='white',fg='black')
@@ -1232,6 +1232,11 @@ class ParameterSelectTextBox():
         self.text_console.delete('1.0', tk.END)
         self.text_console.insert(tk.END, text)
         self.text_console.config(state=tk.DISABLED)
+        
+        scrollb = tk.Scrollbar(self.text_frame, command=self.text_console.yview)
+        scrollb.grid(row=1, column=1, sticky='nsew')
+        self.text_console['yscrollcommand'] = scrollb.set
+        
         
         if self.edit_param:
             self.load_edit()

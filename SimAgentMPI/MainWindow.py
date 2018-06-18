@@ -395,7 +395,7 @@ class Dir_Loader(tk.Frame):
         
         self.sim_dir_var = tk.StringVar(self.root)
         self.sim_dir_var.set("Select a project folder to get started.")
-        self.sim_dir_label = tk.Label(self.directory_frame, fg="blue",textvariable=self.sim_dir_var,anchor=tk.W,width=75)
+        self.sim_dir_label = tk.Label(self.directory_frame, fg="blue",textvariable=self.sim_dir_var,anchor=tk.W,width=65)
         self.sim_dir_label.grid(column=1,row=0,sticky='news',padx=10,pady=5,rowspan=2)
         
         #self.b_tool_exclude = tk.Button(self.directory_frame, text="Exclude Folders", command=self.exclude_folders_tool, width=self.button_width)
@@ -515,16 +515,28 @@ class Job_Consoles(tk.Frame):
             self.log_console = tk.Text(root)
             self.log_console.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
             self.log_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+            
+            scrollb = tk.Scrollbar(root, command=self.log_console.yview)
+            scrollb.grid(row=0, column=1, sticky='nsew')
+            self.log_console['yscrollcommand'] = scrollb.set
         
         def stdout_file(root):
             self.log_console_stdout = tk.Text(root)
             self.log_console_stdout.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
             self.log_console_stdout.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
             
+            scrollb = tk.Scrollbar(root, command=self.log_console_stdout.yview)
+            scrollb.grid(row=0, column=1, sticky='nsew')
+            self.log_console_stdout['yscrollcommand'] = scrollb.set
+            
         def stderr_file(root):
             self.log_console_stderr = tk.Text(root)
             self.log_console_stderr.config(width= 50, height=15, bg='black',fg='light green',state=tk.DISABLED)
             self.log_console_stderr.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+            
+            scrollb = tk.Scrollbar(root, command=self.log_console_stderr.yview)
+            scrollb.grid(row=0, column=1, sticky='nsew')
+            self.log_console_stderr['yscrollcommand'] = scrollb.set
             
         nb = Autoresized_Notebook(self.log_frame)
         nb.pack(padx=5,pady=5,side="left",fill="both",expand=True)
@@ -607,6 +619,11 @@ class Job_Notes(tk.Frame):
         self.notes_console = tk.Text(self.notes_frame)
         self.notes_console.config(width= 50, height=18, bg='white',fg='black')
         self.notes_console.grid(column=0, row=0, padx=5, pady=5, sticky='NEWS')
+        
+        scrollb = tk.Scrollbar(self.notes_frame, command=self.notes_console.yview)
+        scrollb.grid(row=0, column=1, sticky='nsew')
+        self.notes_console['yscrollcommand'] = scrollb.set
+            
         self.notes_frame.grid(column=0,row=0,sticky='news',padx=5,pady=5)
     
     def display_job_notes(self, job):
@@ -764,7 +781,7 @@ class Job_Table(tk.Frame):
         if b.DELETELOCAL in self.use_buttons or b.ALL in self.use_buttons:
             self.b_del_all.grid(pady=0, padx=5, column=6, row=0, sticky="WE") 
         
-        self.b_del_dups = tk.Button(buttons_frame_inner_2, text="Delete Duplicate Files", command=self.delete_job_dups, width=button_width,state=tk.DISABLED)
+        self.b_del_dups = tk.Button(buttons_frame_inner_2, text="Del Duplicate Files", command=self.delete_job_dups, width=button_width,state=tk.DISABLED)
         if b.DELETEDUPS in self.use_buttons or b.ALL in self.use_buttons:
             self.b_del_dups.grid(pady=0, padx=5, column=7, row=0, sticky="WE") 
             
