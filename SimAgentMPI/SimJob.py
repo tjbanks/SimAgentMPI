@@ -124,7 +124,7 @@ class SimJob(object):
         subprocess.call("start \"\" \""+self.job_directory+"\"", shell=True)
         
     def open_sim_results_directory(self):
-        res_path = os.path.join(self.sim_directory_object.sim_directory, self.job_directory,self.dir_results,self.sim_name)
+        res_path = os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.dir_results,self.sim_name)
         subprocess.call("start \"\" \""+res_path+"\"", shell=True)
         
     def write_notes(self, text):
