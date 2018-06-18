@@ -17,6 +17,7 @@ import os
 import zipfile
 import threading
 import requests
+import filecmp
 
 def update_SimAgentMPI(install_dir, branch):
     updates_json_url = "https://raw.githubusercontent.com/tjbanks/SimAgentMPI/master/updates.json"
@@ -144,6 +145,74 @@ def get_line_with(file_path, text):
             if (text in line)==True:
                 return line
     return
+
+class DuplicateFinder():
+    def __init__(self, dir1, dir2,ignore=[]):
+        self.dir1 = dir1
+        self.dir2 = dir2
+        self.dups = []
+        self.f2_diff = [] #Files in dir2 not in dir1
+        self.ignore = ignore
+        
+        self._build_()
+        return
+    
+    def _build_(self):
+        
+        if not os.path.isdir(self.dir1):
+            raise Exception("{} not found".format(self.dir1))
+        if not os.path.isdir(self.dir2):
+            raise Exception("{} not found".format(self.dir2))
+        
+        f1 = self.file_list(self.dir1)
+        f2 = self.file_list(self.dir2)
+        intersect = set(f1).intersection(f2)
+        
+        for f in intersect:
+            dir1_file = os.path.join(self.dir1,f)
+            dir2_file = os.path.join(self.dir2,f)
+            #print("\n Compare: {} \n {} \n".format(dir1_file, dir2_file))
+            if filecmp.cmp(dir1_file, dir2_file):
+                self.dups.append(f)
+                #print("same")
+            else:
+                self.f2_diff.append(f)
+                #print("not same")
+        return
+    
+    def do_ignore(self, dir_):
+        for f in self.ignore:
+            if dir_.startswith(f):
+                return True
+        return False
+    
+    def file_list(self, path):
+        ret = []
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                dir_ = root.split(path, 1)[-1]
+                if(len(dir_) and dir_[0] == "\\"):
+                    dir_ = dir_[1:]
+                
+                if self.do_ignore(dir_):
+                    continue
+                
+                ret.append(os.path.join(dir_,file))
+        return ret
+    
+    def get_num_duplicate_files(self):
+        return len(self.dups)
+    
+    def get_num_dir2_diff(self):
+        return len(self.f2_diff)
+    
+    def remove_duplicates_dir2(self):
+        for f in self.dups:
+            d_file = os.path.join(self.dir2,f)
+            if os.path.isfile(d_file):
+                os.remove(d_file)
+            
+        return
 
 class Autoresized_Notebook(ttk.Notebook):
     def __init__(self, master=None, **kw):

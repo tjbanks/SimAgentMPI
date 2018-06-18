@@ -33,7 +33,7 @@ class JobEntryBox:
             self.edit_job = edit_job
             self.clone_mode = clone_mode
             self.view_mode = view_mode
-            
+            self.label_width = 30
             if self.view_mode:
                 self.window_title = self.window_title + " (View Mode)"
             self.valid_message = "Unspecified error, see console output"
@@ -74,6 +74,8 @@ class JobEntryBox:
             self.server_status_email.set(True)
             self.server_delete_remote_on_finish = tk.BooleanVar(top)
             self.server_delete_remote_on_finish.set(True)
+            self.server_delete_duplicates_on_finish = tk.BooleanVar(top)
+            self.server_delete_duplicates_on_finish.set(True)
             self.confirm = tk.BooleanVar(top)
             self.confirm.set(False)
             
@@ -94,6 +96,7 @@ class JobEntryBox:
                 self.server_max_runtime.set(edit_job.server_max_runtime)
                 self.server_status_email.set(edit_job.server_status_email)
                 self.server_delete_remote_on_finish.set(edit_job.sim_delete_remote_on_finish)
+                self.server_delete_duplicates_on_finish.set(edit_job.sim_delete_duplicates_on_finish)
                 
                 if clone_mode:
                     self.name.set(edit_job.sim_name+"_clone")
@@ -191,7 +194,7 @@ class JobEntryBox:
             
             general_option_frame = tk.LabelFrame(top, text="General")
             
-            tk.Label(general_option_frame, text='Sim Job Name',width=15, background='light gray', relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(general_option_frame, text='Sim Job Name',width=self.label_width, background='light gray', relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5,columnspan=1)
             self.name_e = tk.Entry(general_option_frame,width=25,textvariable=self.name,validate='key', validatecommand=vcmd)
             self.name_e.grid(row=1,column=1,padx=5,columnspan=1)
             
@@ -200,7 +203,7 @@ class JobEntryBox:
             if self.clone_mode:
                 self.name_e.config(state=tk.NORMAL)
             
-            tk.Label(general_option_frame, text='Server Connection',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(general_option_frame, text='Server Connection',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
             set_server_choices()
             
             self.server_connector.trace('w', change_dropdown)
@@ -216,13 +219,13 @@ class JobEntryBox:
                 change_dropdown()#In case we're editing
             ###SSH###
             
-            tk.Label(conn_option_frame, text='Tool',width=15, background='light gray',relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5)
+            tk.Label(conn_option_frame, text='Tool',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=1,column=0,pady=5,padx=5)
             self.ssh_tool_choices = ServerInterface().get_ssh_tools()
             self.ssh_popupMenu = OptionMenu(conn_option_frame, self.server_ssh_tool, *self.ssh_tool_choices)
             self.ssh_popupMenu.grid(row = 1, column =1)
             self.server_ssh_tool.trace('w', change_dropdown_ssh_tool)
                     
-            tk.Label(conn_option_frame, text='Batch File',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(conn_option_frame, text='Batch File',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5,columnspan=1)
             self.batch_e = tk.Entry(conn_option_frame,width=25,textvariable=self.batch_file,state=tk.DISABLED)
             self.batch_e.grid(row=2,column=1,padx=5,columnspan=1)
             self.b_batch = tk.Button(conn_option_frame, text="Select", command=select_batch)
@@ -231,68 +234,75 @@ class JobEntryBox:
             #b = tk.Button(conn_option_frame, text="New", command=new_batch).grid(pady=5, padx=5, column=3, row=2, sticky="WE",columnspan=1)
             
             
-            tk.Label(conn_option_frame, text='Partition',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
+            tk.Label(conn_option_frame, text='Partition',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5)
             self.part_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_mpi_partition)
             self.part_e.grid(row=3,column=1,padx=5)
             
-            tk.Label(conn_option_frame, text='Nodes',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(conn_option_frame, text='Nodes',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
             self.node_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_nodes)
             self.node_e.grid(row=4,column=1,padx=5,columnspan=1)
             
-            tk.Label(conn_option_frame, text='Cores per Node',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(conn_option_frame, text='Cores per Node',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
             self.core_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_cores)
             self.core_e.grid(row=5,column=1,padx=5,columnspan=1)
             
-            tk.Label(conn_option_frame, text='Max Run (hours)',width=15, background='light gray',relief=tk.GROOVE).grid(row=6,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(conn_option_frame, text='Max Run (hours)',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=6,column=0,pady=5,padx=5,columnspan=1)
             self.max_e = tk.Entry(conn_option_frame,width=25,textvariable=self.server_max_runtime)
             self.max_e.grid(row=6,column=1,padx=5,columnspan=1)
             
-            tk.Label(conn_option_frame, text='Delete Remote Files',width=15, background='light gray',relief=tk.GROOVE).grid(row=7,column=0,pady=5,padx=5)
+            tk.Label(conn_option_frame, text='Delete Remote Files on Complete',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=7,column=0,pady=5,padx=5)
             self.dcb1 = tk.Checkbutton(conn_option_frame, text="", variable=self.server_delete_remote_on_finish)
             self.dcb1.grid(row=7,column=1,padx=5, sticky='W')
             #CreateToolTip(dcb1,text="Delete the files on the remote server upon completion. This is a recommended setting")
             
+            tk.Label(conn_option_frame, text='Remove Duplicated Files When Done',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
+            self.dedup1 = tk.Checkbutton(conn_option_frame, text="", variable=self.server_delete_duplicates_on_finish)
+            self.dedup1.grid(row=10,column=1,padx=5, sticky='W')
                         
             ####NSG###
             
-            tk.Label(nsgconn_option_frame, text='Tool',width=15, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
+            tk.Label(nsgconn_option_frame, text='Tool',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=2,column=0,pady=5,padx=5)
             self.nsg_tool_choices = self.get_nsg_tools()
             self.nsg_popupMenu = OptionMenu(nsgconn_option_frame, self.server_nsg_tool, *self.nsg_tool_choices)
             self.nsg_popupMenu.grid(row = 2, column =1)
             self.server_nsg_tool.trace('w', change_dropdown_nsg_tool)
             
-            tk.Label(nsgconn_option_frame, text='Main Run File',width=15, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(nsgconn_option_frame, text='Main Run File',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=3,column=0,pady=5,padx=5,columnspan=1)
             self.name_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.batch_file,state=tk.DISABLED)
             self.name_e.grid(row=3,column=1,padx=5,columnspan=1)
             self.b_tool = tk.Button(nsgconn_option_frame, text="Select", command=select_batch)
             self.b_tool.grid(pady=5, padx=5, column=2, row=3, sticky="WE",columnspan=1)
             
-            tk.Label(nsgconn_option_frame, text='Nodes',width=15, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(nsgconn_option_frame, text='Nodes',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=4,column=0,pady=5,padx=5,columnspan=1)
             self.nnodes_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_nodes)
             self.nnodes_e.grid(row=4,column=1,padx=5,columnspan=1)
             
-            tk.Label(nsgconn_option_frame, text='Cores per Node',width=15, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(nsgconn_option_frame, text='Cores per Node',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=5,column=0,pady=5,padx=5,columnspan=1)
             self.ncores_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_cores)
             self.ncores_e.grid(row=5,column=1,padx=5,columnspan=1)
             
-            tk.Label(nsgconn_option_frame, text='Max Run (hours)',width=15, background='light gray',relief=tk.GROOVE).grid(row=6,column=0,pady=5,padx=5,columnspan=1)
+            tk.Label(nsgconn_option_frame, text='Max Run (hours)',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=6,column=0,pady=5,padx=5,columnspan=1)
             self.nmax_e = tk.Entry(nsgconn_option_frame,width=25,textvariable=self.server_max_runtime)
             self.nmax_e.grid(row=6,column=1,padx=5,columnspan=1)
                         
-            tk.Label(nsgconn_option_frame, text='Uses Python',width=15, background='light gray',relief=tk.GROOVE).grid(row=7,column=0,pady=5,padx=5)
+            tk.Label(nsgconn_option_frame, text='Uses Python',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=7,column=0,pady=5,padx=5)
             self.py_c = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_nsg_python)
             self.py_c.grid(row=7,column=1,padx=5, sticky='W')
             
-            tk.Label(nsgconn_option_frame, text='Send Status Emails',width=15, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
+            tk.Label(nsgconn_option_frame, text='Send Status Emails',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
             self.send_c = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_status_email)
             self.send_c.grid(row=8,column=1,padx=5, sticky='W')
             
             
-            tk.Label(nsgconn_option_frame, text='Delete Remote Files',width=15, background='light gray',relief=tk.GROOVE).grid(row=9,column=0,pady=5,padx=5)
+            tk.Label(nsgconn_option_frame, text='Delete Remote Files on Complete',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=9,column=0,pady=5,padx=5)
             self.dcb = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_delete_remote_on_finish)
             self.dcb.grid(row=9,column=1,padx=5, sticky='W')
             #CreateToolTip(dcb,text="Delete the files on the remote server upon completion. This is a recommended setting")
             #Return
+            
+            tk.Label(nsgconn_option_frame, text='Delete Duplicated Files When Done',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=10,column=0,pady=5,padx=5)
+            self.dedup = tk.Checkbutton(nsgconn_option_frame, text="", variable=self.server_delete_duplicates_on_finish)
+            self.dedup.grid(row=10,column=1,padx=5, sticky='W')
                         
             button_frame = tk.Frame(top)
             button_frame.grid(row=20,column=0,columnspan=3)
@@ -315,6 +325,7 @@ class JobEntryBox:
                 self.core_e.config(state=tk.DISABLED)
                 self.max_e.config(state=tk.DISABLED)
                 self.dcb1.config(state=tk.DISABLED)
+                self.dedup1.config(state=tk.DISABLED)
                 
                 self.b_tool.config(state=tk.DISABLED)
                 self.nsg_popupMenu.config(state=tk.DISABLED)
@@ -324,6 +335,7 @@ class JobEntryBox:
                 self.dcb.config(state=tk.DISABLED)
                 self.py_c.config(state=tk.DISABLED)
                 self.send_c.config(state=tk.DISABLED)
+                self.dedup.config(state=tk.DISABLED)
                 
                 self.b_ok.config(state=tk.DISABLED)             
             

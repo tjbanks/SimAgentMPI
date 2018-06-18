@@ -647,6 +647,7 @@ class Job_Table(tk.Frame):
         DOWNLOAD = 11
         DELETEREMOTE = 12
         DELETELOCAL = 13
+        DELETEDUPS = 14
         
     def __init__(self, parent, sim_dir, button_width = 15, use_buttons=[Job_Button.ALL], job_notes=None,job_consoles=None,threads=None, create_snaps_on_run=True, table_height=400, newest_first=True, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
@@ -762,6 +763,10 @@ class Job_Table(tk.Frame):
         self.b_del_all = tk.Button(buttons_frame_inner_2, text="Delete Job", command=self.delete_job_files, width=button_width,state=tk.DISABLED)
         if b.DELETELOCAL in self.use_buttons or b.ALL in self.use_buttons:
             self.b_del_all.grid(pady=0, padx=5, column=6, row=0, sticky="WE") 
+        
+        self.b_del_dups = tk.Button(buttons_frame_inner_2, text="Delete Duplicate Files", command=self.delete_job_dups, width=button_width,state=tk.DISABLED)
+        if b.DELETEDUPS in self.use_buttons or b.ALL in self.use_buttons:
+            self.b_del_dups.grid(pady=0, padx=5, column=7, row=0, sticky="WE") 
             
          
         self.table = Table(self.jobs_frame, self.columns, column_minwidths=self.col_wid,height=self.table_height, onselect_method=self.select_row,text_to_img=self.get_status_image_dict())
@@ -842,12 +847,14 @@ class Job_Table(tk.Frame):
                 self.b_run_cust.config(state=tk.NORMAL)
                 self.b_down_remote.config(state=tk.NORMAL)
                 self.b_promote.config(state=tk.NORMAL)
+                self.b_del_dups.config(state=tk.NORMAL)
             else:
                 self.b_open.config(state=tk.DISABLED)
                 self.b_run_cust.config(state=tk.DISABLED)
                 self.b_down_remote.config(state=tk.DISABLED)
                 self.b_promote.config(state=tk.DISABLED)
-            
+                self.b_del_dups.config(state=tk.DISABLED)
+                
             if(job.status==ServerInterface.ssh_status[0] or job.status==ServerInterface.nsg_status[0]):
                 self.b_stop.config(state=tk.NORMAL)
                 self.b_update.config(state=tk.NORMAL)
@@ -871,6 +878,7 @@ class Job_Table(tk.Frame):
         self.b_down_remote.config(state=tk.DISABLED)
         self.b_del_remote.config(state=tk.DISABLED)
         self.b_del_all.config(state=tk.DISABLED)
+        self.b_del_dups.config(state=tk.DISABLED)
             
     def new_job(self):
         JobEntryBox(self.root, self.sim_dir, oncomplete_callback=self.reload_table)
@@ -932,7 +940,29 @@ class Job_Table(tk.Frame):
                 self.sim_dir.delete_job(job)
                 self.reload_table()
             except Exception as e:
-                messagebox.showerror("Error", "There was an error deleting job files:\n\n" + e)
+                messagebox.showerror("Error", "There was an error deleting job files:{}".format(e))
+        return
+    
+    def delete_job_dups(self):
+        job = self.sim_dir.get_job(self.selected_job_name)
+        if not job:
+            return
+        try:
+            num_dups = job.get_num_dups()
+        except Exception as e:
+            messagebox.showinfo("Delete Duplicated Job Files","Error deleting duplicate files: {}".format(e))
+            return
+            
+        if not num_dups or num_dups == 0:
+            messagebox.showinfo("Delete Duplicated Job Files","You are already maximizing your space. No duplicate files found.")
+            return
+        
+        if(messagebox.askquestion("Delete Duplicated Job Files", "Are you sure you want to delete {} duplicated job files?".format(num_dups), icon='warning') == 'yes'):  
+            try:
+                job.delete_dups()
+                messagebox.showinfo("Delete Duplicated Job Files","Files deleted successfully.")
+            except Exception as e:
+                messagebox.showerror("Error", "There was an error deleting job files:{}".format(e))
         return
     
     def promote_callback(self):

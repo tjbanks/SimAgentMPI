@@ -29,6 +29,7 @@ import subprocess
 
 from SimAgentMPI.ServerInterface import ServerInterface
 from SimAgentMPI.SimServer import ServersFile
+from SimAgentMPI.Utils import DuplicateFinder
 
 class SimJob(object):
     properties_file = "sim.properties"
@@ -79,6 +80,7 @@ class SimJob(object):
         self.propname_sim_start_time = "sim_start_time"
         self.propname_sim_last_update_time = "sim_last_update_time"
         self.propname_sim_delete_remote_on_finish = "sim_delete_remote_on_finish"
+        self.propname_sim_delete_duplicates_on_finish = "sim_delete_duplicates_on_finish"
         
         self.file_snapshotzip = ""
         self.file_resultszip = ""
@@ -108,6 +110,7 @@ class SimJob(object):
         self.sim_start_time = ""
         self.sim_last_update_time = ""
         self.sim_delete_remote_on_finish = True
+        self.sim_delete_duplicates_on_finish = True
         
         self.full_properties_path = os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties)
         
@@ -287,6 +290,7 @@ class SimJob(object):
                 self.sim_start_time = data[self.propname_sim_start_time]
                 self.sim_last_update_time = data[self.propname_sim_last_update_time]
                 self.sim_delete_remote_on_finish = data.get(self.propname_sim_delete_remote_on_finish,True)
+                self.sim_delete_duplicates_on_finish = data.get(self.propname_sim_delete_duplicates_on_finish,True)
         else:
             if self.write_new:
                 self.write_properties()
@@ -321,6 +325,7 @@ class SimJob(object):
         data[self.propname_sim_start_time] = self.sim_start_time
         data[self.propname_sim_last_update_time] = self.sim_last_update_time
         data[self.propname_sim_delete_remote_on_finish] = self.sim_delete_remote_on_finish
+        data[self.propname_sim_delete_duplicates_on_finish] = self.sim_delete_duplicates_on_finish
         
         with open(os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.file_properties), 'w') as outfile:  
             json.dump(data, outfile)
@@ -401,6 +406,20 @@ class SimJob(object):
         ServerInterface.download_status_simjob(self)
         return
     
+    def _get_dups_obj(self):
+        res_path = os.path.join(self.sim_directory_object.sim_results_dir, self.job_directory,self.dir_results,self.sim_name)
+        d = DuplicateFinder(self.sim_directory_object.sim_directory,  res_path, ignore=[self.sim_directory_object.results_folder_name])
+        return d
+    
+    def get_num_dups(self):
+        return self._get_dups_obj().get_num_duplicate_files()
+    
+    def delete_dups(self):
+        d_obj = self._get_dups_obj()
+        d_obj.remove_duplicates_dir2()
+        self.append_log("{} duplicate files deleted".format(d_obj.get_num_duplicate_files()))
+        return
+    
     def update(self, nsg_job_list=None, ssh_connection=None, update_server_output=True):
         if self.status == ServerInterface.ssh_status[0] or self.status == ServerInterface.nsg_status[0]: 
             ServerInterface().update_for_completion(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
@@ -412,7 +431,9 @@ class SimJob(object):
         if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1]:
             ServerInterface().download_results_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
             if self.sim_delete_remote_on_finish:
-                ServerInterface().delete_remote_results(self,nsg_job_list=nsg_job_list, ssh_connection=ssh_connection)            
+                ServerInterface().delete_remote_results(self,nsg_job_list=nsg_job_list, ssh_connection=ssh_connection)   
+            if self.sim_delete_duplicates_on_finish:
+                self.delete_dups()
             self.sim_last_update_time = time.time()
             self.write_properties()
         
@@ -435,5 +456,6 @@ class SimJob(object):
         simjob.server_max_runtime = self.server_max_runtime
         simjob.server_status_email = self.server_status_email
         simjob.sim_delete_remote_on_finish = self.sim_delete_remote_on_finish
+        simjob.sim_delete_duplicates_on_finish = self.sim_delete_duplicates_on_finish
         
         return simjob
