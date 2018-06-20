@@ -430,6 +430,8 @@ class SimJob(object):
             
         if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1]:
             ServerInterface().download_results_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
+            if self.state==ServerInterface.ssh_status[1] and not update_server_output:#We always want to download the status regardless
+                ServerInterface().download_status_simjob(self,nsg_job_list=nsg_job_list,ssh_connection=ssh_connection)
             if self.sim_delete_remote_on_finish:
                 ServerInterface().delete_remote_results(self,nsg_job_list=nsg_job_list, ssh_connection=ssh_connection)   
             if self.sim_delete_duplicates_on_finish:

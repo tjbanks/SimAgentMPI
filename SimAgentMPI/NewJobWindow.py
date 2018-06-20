@@ -257,7 +257,7 @@ class JobEntryBox:
             
             tk.Label(conn_option_frame, text='Remove Duplicated Files When Done',width=self.label_width, background='light gray',relief=tk.GROOVE).grid(row=8,column=0,pady=5,padx=5)
             self.dedup1 = tk.Checkbutton(conn_option_frame, text="", variable=self.server_delete_duplicates_on_finish)
-            self.dedup1.grid(row=10,column=1,padx=5, sticky='W')
+            self.dedup1.grid(row=8,column=1,padx=5, sticky='W')
                         
             ####NSG###
             
@@ -519,6 +519,7 @@ class JobEntryBox:
             simjob.server_max_runtime = self.server_max_runtime.get()
             simjob.server_status_email = self.server_status_email.get()
             simjob.sim_delete_remote_on_finish = self.server_delete_remote_on_finish.get()
+            simjob.sim_delete_duplicates_on_finish = self.server_delete_duplicates_on_finish.get()
                                     
             return simjob
         
