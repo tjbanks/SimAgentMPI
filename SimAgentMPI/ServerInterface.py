@@ -474,9 +474,9 @@ class ServerInterface(object):
             
             if simjob.server_ssh_tool == self.get_ssh_tools()[0]: #SBATCH
                 zip_dir = simjob.file_snapshotzip.split(".zip")[0]
-                simjob.file_resultsdir = zip_dir + "-results"
-                simjob.file_resultszip = simjob.file_resultsdir + ".zip"
-                results_dir_absolute = os.path.join(simjob.job_directory_absolute,simjob.file_resultsdir)
+                simjob.dir_results = zip_dir + "-results"
+                simjob.file_resultszip = simjob.dir_results + ".zip"
+                results_dir_absolute = os.path.join(simjob.job_directory_absolute,simjob.dir_results)
                 results_zip_absolute = os.path.join(simjob.job_directory_absolute,simjob.file_resultszip)
                 
                 command = "cd " + self.remote_dir + '/' + zip_dir + " && zip -r ../" + simjob.file_snapshotzip +" "+ zip_dir + " && cd ~"
