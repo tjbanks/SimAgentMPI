@@ -226,7 +226,10 @@ class ParametricSweep(object):
         files = os.listdir(source)
         
         for f in files:
-            shutil.move(os.path.join(source, f), os.path.abspath(os.path.join(dest1,f)))#Full path to overwrite
+            try:
+                shutil.move(os.path.abspath(os.path.join(source, f)), os.path.abspath(os.path.join(dest1,f)))#Full path to overwrite
+            except Exception as e:
+                print("There was still an exception when moving files for snapshot: {}".format(e))
         
         shutil.rmtree(source,ignore_errors=True)
         
