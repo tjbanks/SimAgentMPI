@@ -40,6 +40,7 @@ class SimDirectory(object):
     properties_file = "dir.properties"
     ignore_file = ".simignore"
     version = "1.0"
+    default_ignore = ["*.dll","tk","lib","tcl","mpl-data",".git"]
      
     def __init__(self, directory, initialize=False,prompt=True, init_results= True, init_sweeps=False):
         self.sim_directory = directory
@@ -97,7 +98,15 @@ class SimDirectory(object):
                 raise
         self.write_properties()
         self.is_valid_sim_directory = True
-        
+        self.init_simignore()
+        return
+    
+    def init_simignore(self):
+        if not os.path.isfile(self.full_ignore_path):
+            f = open(self.full_ignore_path,"w+")
+            for item in self.default_ignore:
+                f.write(item+"\n")
+            f.close()
         return
     
     def reload_job_dirs(self):
