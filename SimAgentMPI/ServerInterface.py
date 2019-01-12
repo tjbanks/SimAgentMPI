@@ -141,12 +141,13 @@ class ServerInterface(object):
         with open(os.path.join(simjob.sim_directory_object.sim_results_dir, simjob.job_directory,nsg_template_param_file), 'w') as the_file:
             the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
             the_file.write('{}={}\n'.format("filename_",simjob.batch_file))
-            the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
-            the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
-            the_file.write('{}={}\n'.format("pythonoption_",simjob.server_nsg_python))
-            the_file.write('{}={}\n'.format("outputfilename_",return_filename))
             the_file.write('{}={}\n'.format("runtime_",simjob.server_max_runtime))
-            the_file.write('{}={}\n'.format("singlelayer_","0")) 
+            the_file.write('{}={}\n'.format("outputfilename_",return_filename))
+            if(simjob.server_nsg_tool != "EEGLAB_TG"):
+                the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
+                the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
+                the_file.write('{}={}\n'.format("pythonoption_",simjob.server_nsg_python))
+                the_file.write('{}={}\n'.format("singlelayer_","0")) 
             
         #validate
         simjob.file_resultszip = return_filename + ".tar.gz"
@@ -666,7 +667,7 @@ class ServerInterface(object):
     
     def get_nsg_tools(self):
         #implement in api sometime... see http://www.nsgportal.org/guide.html#ToolAPI --> /tool
-        tools = ["NEURON75_TG","NEURON74_TG","NEURON73_TG"]
+        tools = ["NEURON75_TG","NEURON74_TG","NEURON73_TG", "EEGLAB_TG"]
         return tools
     
     def get_ssh_tools(self):
