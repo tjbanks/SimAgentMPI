@@ -139,10 +139,11 @@ class ServerInterface(object):
         with open(os.path.join(simjob.sim_directory_object.sim_results_dir,simjob.job_directory,nsg_template_input_file), 'w') as the_file:
             the_file.write('{}={}\n'.format("infile_",os.path.join(simjob.job_directory, simjob.file_snapshotzip)))
         with open(os.path.join(simjob.sim_directory_object.sim_results_dir, simjob.job_directory,nsg_template_param_file), 'w') as the_file:
-            the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
             the_file.write('{}={}\n'.format("filename_",simjob.batch_file))
             the_file.write('{}={}\n'.format("runtime_",simjob.server_max_runtime))
             the_file.write('{}={}\n'.format("outputfilename_",return_filename))
+            if(simjob.server_nsg_tool in ["NEURON75_TG","NEURON74_TG","NEURON73_TG","EEGLAB_TG"]):
+                the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
             if(simjob.server_nsg_tool in ["NEURON75_TG","NEURON74_TG","NEURON73_TG","PY_TG_2.7.9","PY_TG_3.5.0"]):
                 the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
                 the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
