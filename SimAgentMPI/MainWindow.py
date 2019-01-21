@@ -921,6 +921,10 @@ class Job_Table(tk.Frame):
         job = self.sim_dir.get_job(self.selected_job_name)
         if(messagebox.askquestion("Start Job", "Are you sure you want to start this job?\n\nAll files in " + self.sim_dir.sim_directory + " will be uploaded to your selected server and the selected file will run. The display may freeze for a few moments.", icon='warning') == 'yes'):
             job.status = ServerInterface.ssh_status[0]
+            server = ServerInterface().get_server(job)
+            if server:
+                if(server.type == "nsg"):
+                    job.status = ServerInterface.nsg_status[0]
             job.write_properties()
             self.update_row_info(self.selected_row_num)
             self.disable_all_job_buttons()
