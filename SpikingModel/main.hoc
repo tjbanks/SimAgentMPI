@@ -1,0 +1,34 @@
+{load_file("nrngui.hoc")}
+{load_file("cell_template.hoc")}
+{load_file("graphic_library.hoc")}
+
+
+// main.hoc
+objref Voltage1[1], SaveMat, save2Pre
+
+SaveMat = new Matrix(1001,1)     //nrow = tstop/dt + 1, num_cells
+
+tstop = 500
+dt = .5
+
+objref CellA // declare neuron object
+CellA = new Spikingcell() // build neuron from template
+// for stimulating it using current injection
+objref ccl
+CellA.soma ccl = new IClamp(.5)
+ccl.del = 50
+ccl.dur = 300
+ccl.amp = 1
+celsius = 34
+
+Voltage1[0] = new Vector()
+Voltage1[0].record(&CellA.soma.v(.5),0.5)
+
+run()
+
+SaveMat.setcol(0,Voltage1[0])
+
+save2Pre = new File()
+save2Pre.wopen("./synaptic.txt")
+SaveMat.fprint(0,save2Pre,"%f ")
+save2Pre.close()

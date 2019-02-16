@@ -1,0 +1,50 @@
+// Cell_Template defines geometrical and biophysical properties of a type of cells.
+//	- Don't forget to include the cell_template.hoc file in your main program. 
+//		Example:
+//		{load_file('cell_template.hoc')}
+// 	- Always build different types of cells with different templates.
+// 	- For cells of the same type, just repeat building new cell objects with of same template. 
+//		Example:
+//		objref CellA
+//		CellA = new HCOcell()
+
+begintemplate Spikingcell
+	public soma	// declares object soma is a public object that can be accessed by any procedures/functions
+	create soma	// declares soma as a membrane compartment object
+
+	proc init() {
+
+    		create soma	// create soma in the initialization
+
+		/////// geometrical properties //////
+		soma {
+			nseg=1	// create only one segment in the soma
+			// gives area of .628e-3 cm^2
+			L=1000		// (micrometer)
+			diam=9.99593	// (micrometer)
+            ra=1
+	    	}
+
+		/////// biophysical properties //////
+		soma {
+			cm = 1		// (microF/cm2)
+			// gives leak conductance of .03 mS/cm2
+			insert leak
+			eleak = -50 // (mV)
+			gbar_leak = .03e-3 // (siemens/cm2)
+			
+			/////////////////////////////////////////////////////////////////////////
+			// Use insert command to insert more channels here
+
+			///Spiking
+			insert na
+			ena = 50
+			gbar_na = .3 // (.1~.5 siemens/cm2)
+
+			insert kdr
+			ek = -80
+			gbar_kdr = .3 // (.1~.5 siemens/cm2)
+			/////////////////////////////////////////////////////////////////////////
+		}
+	}
+endtemplate Spikingcell
