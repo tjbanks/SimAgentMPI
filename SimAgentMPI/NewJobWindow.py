@@ -48,8 +48,8 @@ class JobEntryBox:
             self.simjob = None
             
             top = self.top = tk.Toplevel(self.parent)
-            icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
-            self.top.iconbitmap(r'{}'.format(icon))
+            #icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+            #self.top.iconbitmap(r'{}'.format(icon))
             self.name = tk.StringVar(top)
             self.name.set(self.job_name)
             
@@ -636,8 +636,8 @@ class SweepNew():
         self.parent = parent
         
         self.sim_dir = sim_dir
-        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
-        self.top.iconbitmap(r'{}'.format(icon))
+        #icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        #self.top.iconbitmap(r'{}'.format(icon))
         self.confirm = False
         self.callback=callback  
         self.button_width = button_width
@@ -696,8 +696,8 @@ class SweepEditor():
         
         self.sim_dir = sim_dir
         self.parameter_sweep = parameter_sweep
-        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
-        self.top.iconbitmap(r'{}'.format(icon))
+        #icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        #self.top.iconbitmap(r'{}'.format(icon))
         self.confirm = False
         self.callback=callback  
         self.button_width = button_width
@@ -1102,8 +1102,8 @@ class ParameterSelectTextBox():
             self.window_title = "Create Range"
             self.top = tk.Toplevel(parent)
             self.parent = parent
-            icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
-            self.top.iconbitmap(r'{}'.format(icon))
+            #icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+            #self.top.iconbitmap(r'{}'.format(icon))
             self.confirm = False
             self.start = tk.StringVar(self.top)
             self.end = tk.StringVar(self.top)
@@ -1171,8 +1171,8 @@ class ParameterSelectTextBox():
         self.selected_params = []
         
         self.top = tk.Toplevel(self.parent)
-        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
-        self.top.iconbitmap(r'{}'.format(icon))
+        #icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        #self.top.iconbitmap(r'{}'.format(icon))
             
         self.confirm = False
         self.display()

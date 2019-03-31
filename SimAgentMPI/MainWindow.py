@@ -27,8 +27,8 @@ import threading
 class MainWindow():
     def __init__(self):
         self.root = tk.Tk()
-        icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
-        self.root.iconbitmap(r'{}'.format(icon))
+        #icon = os.path.abspath("SimAgentMPI/icons/sa_icon.ico")
+        #self.root.iconbitmap(r'{}'.format(icon))
         self.window_title = "Sim Agent MPI (University of Missouri - Nair Neural Engineering Laboratory) [Tyler Banks]"
         self.about_text = "Written for:\nProfessor Satish Nair's Neural Engineering Laboratory\nat The University of Missouri 2018\n\nDeveloped by: Tyler Banks\n\nContributors:\nFeng Feng\nBen Latimer\nZiao Chen\n\nEmail tbanks@mail.missouri.edu with questions"
         self.warnings_text = "This program was written for testing purposes only.\nBy using this program you assume the risk of any problem that may occur, including accidental data deletion. Always backup your data.\nThe author(s) assume no liability for problems that may arise from using this program."
