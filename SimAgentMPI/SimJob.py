@@ -360,7 +360,9 @@ class SimJob(object):
         return False
     
     def is_complete(self):
-        if self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1] or \
+        if self.status == SimJob.created_status:
+            return False
+        if  self.status == ServerInterface.ssh_status[1] or self.status == ServerInterface.nsg_status[1] or \
             ServerInterface.ssh_status[2] or self.status == ServerInterface.nsg_status[2] or \
             ServerInterface.ssh_status[3] or self.status == ServerInterface.nsg_status[3]:
             return True
