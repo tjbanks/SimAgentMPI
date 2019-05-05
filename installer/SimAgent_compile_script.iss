@@ -25,7 +25,7 @@ UsedUserAreasWarning=no
 LicenseFile=C:\Users\Tyler\Downloads\SimAgentMPI.win-amd64.v1.2b\SimAgent\LICENSE.txt
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+PrivilegesRequiredOverridesAllowed=commandline
 OutputDir=C:\Users\Tyler\Desktop\SimAgent_output
 OutputBaseFilename=SimAgent
 SetupIconFile=C:\Users\Tyler\Downloads\SimAgentMPI.win-amd64.v1.2b\SimAgent\SimAgentMPI\icons\sa_icon.ico
