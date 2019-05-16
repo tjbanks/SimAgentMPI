@@ -18,4 +18,4 @@ cd SimAgentMPI
 git checkout linux
 python SimAgentMPI.py
 ```
-See https://www.youtube.com/watch?v=aNwE5Womp7A for installtion instructions.
+See https://www.youtube.com/watch?v=aNwE5Womp7A for installation instructions.
