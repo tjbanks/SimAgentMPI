@@ -208,7 +208,7 @@ for(i=pc.id;i<NCELL;i+=pc.nhost) {              // Distribute the cells evenly a
 	    cell.drv.amp=0.0//I_amp_random.repick()
 	}
 	cells.append(cell)                          // Add this cell to the list (otherwise its lost!)
-	pc.set_gid2node(i, pc.id)                   // Associate “i?with this node id
+	pc.set_gid2node(i, pc.id)                   // Associate â€œi?with this node id
 												// nc = (create netcon object on cell)
 	nc = cell.connect2target(nil) 				// attach spike detector $
 	nc.delay = 2
@@ -878,7 +878,7 @@ LFP_per_core=new Vector(LFPrecording_len.x[0])    ////to record sum of LFP per c
 
 }
 }
-multiLFP()
+//multiLFP()
 
 
 
@@ -919,7 +919,7 @@ f_LFP.close()
 }
 }
 }
-SavLFP()
+//SavLFP()
 */
 
 
