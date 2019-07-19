@@ -4,7 +4,6 @@ import pandas as pd
 import sys
 
 df = pd.read_csv('data',sep='\t',header=None)
-print(df)
 spiketimes = df[0].tolist()
 
 bins = 500
