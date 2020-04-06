@@ -142,12 +142,12 @@ class ServerInterface(object):
             the_file.write('{}={}\n'.format("filename_",simjob.batch_file))
             the_file.write('{}={}\n'.format("runtime_",simjob.server_max_runtime))
             the_file.write('{}={}\n'.format("outputfilename_",return_filename))
-            if(simjob.server_nsg_tool in ["NEURON75_TG","NEURON74_TG","NEURON73_TG","EEGLAB_TG"]):
+            if(simjob.server_nsg_tool in ["NEURON77_TG","NEURON75_TG","NEURON74_TG","NEURON73_TG","EEGLAB_TG"]):
                 the_file.write('{}={}\n'.format("toolId",simjob.server_nsg_tool))
-            if(simjob.server_nsg_tool in ["NEURON75_TG","NEURON74_TG","NEURON73_TG","PY_TG_2.7.9","PY_TG_3.5.0"]):
+            if(simjob.server_nsg_tool in ["NEURON77_TG","NEURON75_TG","NEURON74_TG","NEURON73_TG","PY_TG_2.7.9","PY_TG_3.5.0"]):
                 the_file.write('{}={}\n'.format("number_nodes_",simjob.server_nodes))
                 the_file.write('{}={}\n'.format("number_cores_",simjob.server_cores))
-            if(simjob.server_nsg_tool in ["NEURON75_TG","NEURON74_TG","NEURON73_TG"]):
+            if(simjob.server_nsg_tool in ["NEURON77_TG","NEURON75_TG","NEURON74_TG","NEURON73_TG"]):
                 the_file.write('{}={}\n'.format("pythonoption_",simjob.server_nsg_python))
                 the_file.write('{}={}\n'.format("singlelayer_","0")) 
             if(simjob.server_nsg_tool in ["PY_TG_2.7.9","PY_TG_3.5.0"]):
@@ -676,7 +676,7 @@ class ServerInterface(object):
     
     def get_nsg_tools(self):
         #implement in api sometime... see http://www.nsgportal.org/guide.html#ToolAPI --> /tool
-        tools = ["NEURON75_TG","NEURON74_TG","NEURON73_TG", "EEGLAB_TG","PY_TG_2.7.9","PY_TG_3.5.0"]
+        tools = ["NEURON77_TG", "EEGLAB_TG","PY_TG_2.7.9","PY_TG_3.5.0"]
         return tools
     
     def get_ssh_tools(self):
