@@ -693,7 +693,8 @@ class Job_Table(tk.Frame):
         
         try:
             #http://www.iconarchive.com/show/small-n-flat-icons-by-paomedia/sign-error-icon.html
-            icon_dir = "./SimAgentMPI/icons"
+            icon_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),"icons")
+            
             new = os.path.join(icon_dir,"sun-icon.png")
             check = os.path.join(icon_dir,"sign-check-icon.png")
             error = os.path.join(icon_dir,"sign-error-icon.png")

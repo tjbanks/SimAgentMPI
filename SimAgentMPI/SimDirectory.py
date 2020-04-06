@@ -176,7 +176,8 @@ class SimDirectory(object):
         for root, dirs, files in os.walk(path):
             for file in files:
                 dir_ = root.split(self.sim_directory, 1)[-1]
-                if(len(dir_) and dir_[0] == "\\"):
+                
+                if(len(dir_) and (dir_[0] == "\\" or dir_[0]=="/")):
                     dir_ = dir_[1:]
                     
                 if(dir_.startswith(SimDirectory.results_folder_name) or dir_.startswith(".git")):#only want files in root dir and not results
