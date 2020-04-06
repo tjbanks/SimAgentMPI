@@ -8,7 +8,7 @@ import json
 import os.path
 
 class ServersFile(object):
-    servers_file = "SimAgentMPI/.servers"
+    servers_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),".servers")
     
     def __init__(self, filename = None):
         if not filename:
