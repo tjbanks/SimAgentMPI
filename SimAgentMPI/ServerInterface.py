@@ -209,7 +209,7 @@ class ServerInterface(object):
         for root, dirs, files in os.walk(path):
             for file in files:
                 dir_ = root.split(zipfold, 1)[-1]
-                if(len(dir_) and dir_[0] == "\\"):
+                if(len(dir_) and (dir_[0] == "\\" or dir_[0]=="/")):
                     dir_ = dir_[1:]
                 #print(os.path.join(dir_,file))
                 ziph.write(os.path.join(root, file), arcname=os.path.join(dir_,file))
